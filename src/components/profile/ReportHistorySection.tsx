@@ -1,30 +1,37 @@
-import { ArrowRight, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Link } from "react-router-dom";
-import type { PollutionReport } from "../../types";
+import type { Report } from "../../types";
 import { ProfileReportItem } from "./ProfileReportItem";
 
-export function ReportHistorySection({
-  reports,
-}: {
-  reports: PollutionReport[];
-}) {
+function ReportItemSkeleton() {
+  return <div className="h-20 animate-pulse rounded-xl bg-gray-100" />;
+}
+
+interface ReportHistorySectionProps {
+  reports: Report[];
+  isLoading: boolean;
+}
+
+export function ReportHistorySection({ reports, isLoading }: ReportHistorySectionProps) {
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-lg font-bold text-gray-800">ประวัติการรายงาน</h2>
-        <button
-          type="button"
-          className="text-brand-600 flex items-center gap-1 text-sm font-medium"
-        >
-          ดูทั้งหมด
-          <ArrowRight size={15} />
-        </button>
       </div>
 
       <div className="flex flex-col gap-3">
-        {reports.map((report) => (
-          <ProfileReportItem key={report.id} report={report} />
-        ))}
+        {isLoading ? (
+          <>
+            <ReportItemSkeleton />
+            <ReportItemSkeleton />
+          </>
+        ) : reports.length === 0 ? (
+          <p className="py-2 text-center text-sm text-gray-400">
+            คุณยังไม่เคยส่งรายงาน
+          </p>
+        ) : (
+          reports.map((report) => <ProfileReportItem key={report.id} report={report} />)
+        )}
       </div>
 
       <Link

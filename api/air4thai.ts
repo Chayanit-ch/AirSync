@@ -10,12 +10,33 @@
 // calls itself, not a guessed/legacy one:
 //   https://air4thai.com/forweb/getAQI_JSON.php
 import https from "node:https";
-import { getAqiSeverity } from "../src/utils/aqi";
 
 const AIR4THAI_URL = "https://air4thai.com/forweb/getAQI_JSON.php";
 const FETCH_TIMEOUT_MS = 8000;
 /** 12 minutes — inside the requested 10–15 min window. */
 const CACHE_TTL_MS = 12 * 60 * 1000;
+
+/**
+ * Deliberately duplicated from `src/utils/aqi.ts` instead of imported.
+ *
+ * Production incident (2026-07-19): `import { getAqiSeverity } from
+ * "../src/utils/aqi"` caused every request to this function to fail with
+ * `ERR_MODULE_NOT_FOUND: Cannot find module '/var/task/src/utils/aqi'`
+ * (confirmed via `vercel logs`) — Vercel's function bundler didn't trace
+ * this relative import crossing from `api/` into `src/` into the deployed
+ * function bundle, even though it worked fine locally under `vercel dev`.
+ * Rather than fight the bundler's file-tracing config under a deployment
+ * deadline, this one small pure function is copied here so the function has
+ * zero dependencies outside its own file. Keep the two in sync manually if
+ * the AQI breakpoints ever change (unlikely).
+ */
+type AqiSeverity = "good" | "moderate" | "sensitive" | "unhealthy";
+function getAqiSeverity(aqi: number): AqiSeverity {
+  if (aqi <= 50) return "good";
+  if (aqi <= 100) return "moderate";
+  if (aqi <= 150) return "sensitive";
+  return "unhealthy";
+}
 
 /**
  * Air4Thai stationID -> this app's areaId. Only the stations that actually

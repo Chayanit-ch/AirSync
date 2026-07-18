@@ -4,13 +4,10 @@ import { PM25StatsCard } from "../components/profile/PM25StatsCard";
 import { ReportHistorySection } from "../components/profile/ReportHistorySection";
 import { AlertPreferencesCard } from "../components/profile/AlertPreferencesCard";
 import { FollowedAreasGrid } from "../components/home/FollowedAreasGrid";
-import {
-  currentUser as mockUser,
-  MOCK_RESIDENTIAL_AREA_LABEL,
-  pollutionReports,
-} from "../data/mockData";
+import { currentUser as mockUser, MOCK_RESIDENTIAL_AREA_LABEL } from "../data/mockData";
 import { useAuth } from "../contexts/AuthContext";
 import { useFollowedAreaSummaries } from "../hooks/useFollowedAreaSummaries";
+import { useMyReports } from "../hooks/useMyReports";
 import { logOut } from "../services/auth";
 
 export function ProfilePage() {
@@ -34,6 +31,7 @@ export function ProfilePage() {
   // show different numbers for the same followed areas.
   const { areas: followedAreaCards, isLoading: areasLoading } =
     useFollowedAreaSummaries(followedAreaIds);
+  const { reports, isLoading: reportsLoading } = useMyReports();
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -62,7 +60,7 @@ export function ProfilePage() {
           ยังไม่มีพื้นที่ที่ติดตาม — เพิ่มได้ในส่วนตั้งค่าการแจ้งเตือนด้านล่าง
         </div>
       )}
-      <ReportHistorySection reports={pollutionReports} />
+      <ReportHistorySection reports={reports} isLoading={reportsLoading} />
       <AlertPreferencesCard />
     </div>
   );

@@ -10,12 +10,15 @@ import { ImageUploader } from "./ImageUploader";
  * free text into coordinates. */
 const DEFAULT_COORDS = { lat: 13.5475, lng: 100.2745 };
 
-type FormErrors = Partial<Record<"type" | "description" | "locationLabel", string>>;
+type FormErrors = Partial<
+  Record<"type" | "description" | "locationLabel" | "customTypeDescription", string>
+>;
 
 export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
   const { currentUser, loading: authLoading } = useAuth();
 
   const [type, setType] = useState<ReportType | "">("");
+  const [customTypeDescription, setCustomTypeDescription] = useState("");
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [locationLabel, setLocationLabel] = useState("");
@@ -63,6 +66,9 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
   function validate(): boolean {
     const nextErrors: FormErrors = {};
     if (!type) nextErrors.type = "กรุณาเลือกประเภทเหตุการณ์";
+    if (type === "other" && !customTypeDescription.trim()) {
+      nextErrors.customTypeDescription = "กรุณาระบุประเภทเหตุการณ์";
+    }
     if (!description.trim()) nextErrors.description = "กรุณากรอกรายละเอียดเหตุการณ์";
     if (!locationLabel.trim()) nextErrors.locationLabel = "กรุณาระบุสถานที่เกิดเหตุ";
     setErrors(nextErrors);
@@ -79,6 +85,7 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
     try {
       await createReport({
         type: type as ReportType,
+        customTypeDescription: type === "other" ? customTypeDescription.trim() : undefined,
         description: description.trim(),
         latitude: coords.lat,
         longitude: coords.lng,
@@ -87,6 +94,7 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
       });
 
       setType("");
+      setCustomTypeDescription("");
       setDescription("");
       setImages([]);
       setLocationLabel("");
@@ -143,6 +151,26 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
         </div>
         {errors.type && <p className="mt-1 text-xs text-red-500">{errors.type}</p>}
       </div>
+
+      {type === "other" && (
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            ระบุประเภทเหตุการณ์
+          </label>
+          <input
+            type="text"
+            value={customTypeDescription}
+            onChange={(e) => setCustomTypeDescription(e.target.value)}
+            placeholder="เช่น กลิ่นสารเคมี, ฝุ่นจากเหมืองหิน..."
+            className={`w-full rounded-xl border px-3.5 py-3 text-sm text-gray-700 outline-none placeholder:text-gray-400 focus:border-brand-500 ${
+              errors.customTypeDescription ? "border-red-300" : "border-gray-200"
+            }`}
+          />
+          {errors.customTypeDescription && (
+            <p className="mt-1 text-xs text-red-500">{errors.customTypeDescription}</p>
+          )}
+        </div>
+      )}
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-gray-700">

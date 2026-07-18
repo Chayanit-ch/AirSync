@@ -84,7 +84,14 @@ export interface PollutionReport {
   createdAt: string;
 }
 
-export type ReportType = "burning" | "smoke_vehicle" | "factory";
+export type ReportType =
+  | "burning"
+  | "smoke_vehicle"
+  | "factory"
+  | "construction"
+  | "garbage_burning"
+  | "unknown_smell"
+  | "other";
 
 /**
  * A citizen-submitted pollution report, live in Firestore. Firestore: `reports/{reportId}`.
@@ -96,6 +103,8 @@ export interface Report {
   id: string;
   reportedBy: string;
   type: ReportType;
+  /** User-entered replacement label, only meaningful when `type === "other"` — never merged into `description`. */
+  customTypeDescription?: string | null;
   description: string;
   imageUrls: string[];
   latitude: number;

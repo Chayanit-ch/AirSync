@@ -1,6 +1,6 @@
 import { Calendar, Clock } from "lucide-react";
-import type { Report, ReportType } from "../../types";
-import { REPORT_TYPE_LABELS_TH } from "../../services/reports";
+import type { Report } from "../../types";
+import { getReportTypeLabel } from "../../services/reports";
 import { StatusBadge } from "../shared/StatusBadge";
 
 const STATUS_BORDER: Record<Report["status"], string> = {
@@ -27,7 +27,7 @@ export function ReportHistoryCard({ report }: { report: Report }) {
   // before Firestore resolves the serverTimestamp() — fall back to "now".
   const createdAtDate = report.createdAt?.toDate?.() ?? new Date();
   const { date, time } = formatThaiDateTime(createdAtDate);
-  const title = REPORT_TYPE_LABELS_TH[report.type as ReportType];
+  const title = getReportTypeLabel(report);
   const image = report.imageUrls[0];
 
   return (
