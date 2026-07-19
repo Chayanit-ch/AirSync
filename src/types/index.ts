@@ -6,12 +6,35 @@
 
 import type { Timestamp } from "firebase/firestore";
 
-export type AQISeverityLevel = "good" | "moderate" | "sensitive" | "unhealthy";
+/**
+ * Full 6-tier US EPA AQI scale. "sensitive" = Unhealthy for Sensitive Groups
+ * (AQI 101-150), "unhealthy" = Unhealthy (151-200), "veryUnhealthy" = Very
+ * Unhealthy (201-300), "hazardous" = Hazardous (301-500) — see
+ * `getAqiSeverity` in `utils/aqi.ts` for the exact thresholds. Display labels
+ * and health recommendations for every level always come from
+ * `dict.common.severity` / `dict.common.severityRecommendation` (see
+ * `useTranslation()`) — never hard-code them elsewhere.
+ */
+export type AQISeverityLevel =
+  | "good"
+  | "moderate"
+  | "sensitive"
+  | "unhealthy"
+  | "veryUnhealthy"
+  | "hazardous";
 
 export interface GeoPoint {
   lat: number;
   lng: number;
 }
+
+/**
+ * Which integration produced a reading — internal/diagnostic only (debugging,
+ * logging), not a user-facing concept. Surfaced only in the Map's "more
+ * details" expanded panel alongside other technical fields (station ID,
+ * coordinates), never anywhere else in the UI.
+ */
+export type DataSource = "air4thai" | "waqi" | "mock";
 
 /**
  * A single timestamped air quality reading. Firestore: `airQualityRecords/{id}`.
@@ -36,9 +59,23 @@ export interface AirQualityRecord {
   pm10?: number;
   temperature?: number;
   humidity?: number;
+  /** Optional because records already in Firestore before WAQI support shipped don't have it. */
+  source?: DataSource;
 }
 
-/** A fixed or mobile air quality monitoring station. Firestore: `monitoringStations/{id}` */
+/**
+ * A fixed or mobile air quality monitoring station. Firestore: `monitoringStations/{id}`
+ *
+ * LOCATION-NAME STRATEGY (deliberate, verified 2026-07-19): `name`/`district`/
+ * `province`/`address` are always displayed in their original Thai form,
+ * regardless of the app's active language — never swapped for `nameEn` or
+ * machine-translated. Air4Thai only sometimes provides an English `nameEn`
+ * and never provides English `district`/`province`/`address` at all, so a
+ * per-field translation table would inevitably translate some fields and
+ * leave others in Thai for the same station — exactly the inconsistency the
+ * i18n system is supposed to prevent. `nameEn` is kept only as an extra
+ * search-matching field (see `utils/stationSearch.ts`), never rendered.
+ */
 export interface MonitoringStation {
   id: string;
   name: string;
@@ -53,6 +90,7 @@ export interface MonitoringStation {
   temperature?: number;
   severity: AQISeverityLevel;
   lastUpdated: string;
+  source?: DataSource;
 }
 
 /** An area followed by a user, summarized for dashboard cards. */

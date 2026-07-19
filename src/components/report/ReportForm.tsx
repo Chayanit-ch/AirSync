@@ -3,8 +3,9 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import { createReport } from "../../services/reports";
+import { uploadImage } from "../../services/cloudinary";
 import type { ReportType } from "../../types";
-import { ImageUploader } from "./ImageUploader";
+import { ImageUploader, type SelectedImage } from "./ImageUploader";
 
 /** Samut Sakhon town center — used when a report is submitted with a manually
  * typed location, since there's no geocoding service wired up yet to turn
@@ -22,13 +23,17 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
   const [type, setType] = useState<ReportType | "">("");
   const [customTypeDescription, setCustomTypeDescription] = useState("");
   const [description, setDescription] = useState("");
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<SelectedImage[]>([]);
   const [locationLabel, setLocationLabel] = useState("");
   const [coords, setCoords] = useState(DEFAULT_COORDS);
   const [email, setEmail] = useState("");
   const [isLocating, setIsLocating] = useState(false);
   const [locationNotice, setLocationNotice] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
+  // Separate from `isSubmitting` — uploading images to Cloudinary and
+  // writing the Firestore report are two distinct steps, and the user
+  // should be able to tell which one is currently running.
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<
     { kind: "success" | "error"; message: string } | null
@@ -86,7 +91,21 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
     e.preventDefault();
     setSubmitResult(null);
     if (!validate()) return;
-    if (authLoading || !currentUser || isSubmitting) return;
+    if (authLoading || !currentUser || isSubmitting || isUploadingImages) return;
+
+    let imageUrls: string[] = [];
+    if (images.length > 0) {
+      setIsUploadingImages(true);
+      try {
+        imageUrls = await Promise.all(images.map(({ file }) => uploadImage(file)));
+      } catch (error) {
+        console.error("Failed to upload report images", error);
+        setSubmitResult({ kind: "error", message: t("report.errorUploadFailed") });
+        setIsUploadingImages(false);
+        return; // Don't create a report with missing images.
+      }
+      setIsUploadingImages(false);
+    }
 
     setIsSubmitting(true);
     try {
@@ -98,6 +117,7 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
         longitude: coords.lng,
         locationLabel: locationLabel.trim(),
         contactEmail: email.trim() || null,
+        imageUrls,
       });
 
       setType("");
@@ -119,7 +139,7 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
     }
   }
 
-  const submitDisabled = authLoading || !currentUser || isSubmitting;
+  const submitDisabled = authLoading || !currentUser || isSubmitting || isUploadingImages;
 
   return (
     <form
@@ -195,12 +215,7 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
         )}
       </div>
 
-      <div>
-        <ImageUploader images={images} onChange={setImages} />
-        <p className="mt-1.5 text-xs text-gray-400">
-          {t("report.uploadComingSoon")}
-        </p>
-      </div>
+      <ImageUploader images={images} onChange={setImages} />
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-gray-700">
@@ -271,8 +286,12 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
         disabled={submitDisabled}
         className="bg-brand-600 hover:bg-brand-700 flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isSubmitting && <Loader2 size={18} className="animate-spin" />}
-        {isSubmitting ? t("common.submitting") : t("report.submitButton")}
+        {(isSubmitting || isUploadingImages) && <Loader2 size={18} className="animate-spin" />}
+        {isUploadingImages
+          ? t("report.uploadingImages")
+          : isSubmitting
+            ? t("common.submitting")
+            : t("report.submitButton")}
       </button>
     </form>
   );

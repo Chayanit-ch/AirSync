@@ -1,29 +1,66 @@
 import { Camera, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "../../hooks/useTranslation";
 
 const MAX_IMAGES = 3;
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
-interface ImageUploaderProps {
-  images: string[];
-  onChange: (images: string[]) => void;
+export interface SelectedImage {
+  file: File;
+  previewUrl: string;
 }
 
+interface ImageUploaderProps {
+  images: SelectedImage[];
+  onChange: (images: SelectedImage[]) => void;
+}
+
+/**
+ * Holds real `File` objects (not just their blob-URL previews) so
+ * `ReportForm` has something to actually upload to Cloudinary — the
+ * previous version only ever kept `URL.createObjectURL()` strings and threw
+ * the `File` away, which is why uploads were never wired up for real.
+ */
 export function ImageUploader({ images, onChange }: ImageUploaderProps) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [rejectionError, setRejectionError] = useState<string | null>(null);
+
+  // Revoke every preview blob URL on unmount so drafted-but-never-submitted
+  // reports don't leak object URLs for the lifetime of the tab.
+  useEffect(() => {
+    return () => {
+      for (const image of images) URL.revokeObjectURL(image.previewUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function addFiles(files: FileList | null) {
     if (!files) return;
+    setRejectionError(null);
+
     const remaining = MAX_IMAGES - images.length;
-    const next = Array.from(files)
-      .slice(0, remaining)
-      .map((file) => URL.createObjectURL(file));
-    if (next.length > 0) onChange([...images, ...next]);
+    const candidates = Array.from(files).slice(0, remaining);
+    const accepted: SelectedImage[] = [];
+
+    for (const file of candidates) {
+      if (!file.type.startsWith("image/")) {
+        setRejectionError(t("report.errorImageType"));
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        setRejectionError(t("report.errorImageSize"));
+        continue;
+      }
+      accepted.push({ file, previewUrl: URL.createObjectURL(file) });
+    }
+
+    if (accepted.length > 0) onChange([...images, ...accepted]);
   }
 
   function removeImage(index: number) {
+    URL.revokeObjectURL(images[index].previewUrl);
     onChange(images.filter((_, i) => i !== index));
   }
 
@@ -62,20 +99,28 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
             accept="image/*"
             multiple
             className="hidden"
-            onChange={(e) => addFiles(e.target.files)}
+            onChange={(e) => {
+              addFiles(e.target.files);
+              // Allow re-selecting the same rejected file after fixing it.
+              e.target.value = "";
+            }}
           />
         </label>
       )}
 
+      {rejectionError && (
+        <p className="mt-1.5 text-xs text-red-500">{rejectionError}</p>
+      )}
+
       {images.length > 0 && (
         <div className="mt-3 grid grid-cols-3 gap-2">
-          {images.map((src, i) => (
+          {images.map((image, i) => (
             <div
-              key={src}
+              key={image.previewUrl}
               className="relative aspect-square overflow-hidden rounded-lg border border-gray-200"
             >
               <img
-                src={src}
+                src={image.previewUrl}
                 alt={t("report.attachedImageAlt", { index: i + 1 })}
                 className="h-full w-full object-cover"
               />

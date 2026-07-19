@@ -23,7 +23,7 @@ export function AlertsPage() {
   }, [filter, searchQuery]);
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4 p-4 lg:p-6">
       <h1 className="text-xl font-bold text-gray-900">{t("alerts.pageTitle")}</h1>
 
       <NewsSearchBar value={searchQuery} onChange={setSearchQuery} />
@@ -35,7 +35,7 @@ export function AlertsPage() {
         <h2 className="border-brand-600 mb-3 border-l-4 pl-2.5 text-lg font-bold text-gray-800">
           {t("alerts.latest")}
         </h2>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-3">
           {visibleArticles.map((article) => (
             <ArticleListItem key={article.id} article={article} />
           ))}

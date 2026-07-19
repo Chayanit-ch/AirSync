@@ -33,10 +33,10 @@ export const currentUser: UserProfile = {
 // -- Monitoring stations (Samut Sakhon pilot area) -----------------------------
 
 function buildStation(
-  input: Omit<MonitoringStation, "currentAqi" | "severity">,
+  input: Omit<MonitoringStation, "currentAqi" | "severity" | "source">,
 ): MonitoringStation {
   const currentAqi = pm25ToAqi(input.currentPm25);
-  return { ...input, currentAqi, severity: getAqiSeverity(currentAqi) };
+  return { ...input, currentAqi, severity: getAqiSeverity(currentAqi), source: "mock" };
 }
 
 export const monitoringStations: MonitoringStation[] = [

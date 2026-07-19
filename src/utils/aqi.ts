@@ -27,18 +27,25 @@ export function pm25ToAqi(pm25: number): number {
   return Math.round(aqi);
 }
 
+/** Full 6-tier US EPA AQI scale — thresholds match `BREAKPOINTS`' `aqiHigh` values above exactly. */
 export function getAqiSeverity(aqi: number): AQISeverityLevel {
   if (aqi <= 50) return "good";
   if (aqi <= 100) return "moderate";
   if (aqi <= 150) return "sensitive";
-  return "unhealthy";
+  if (aqi <= 200) return "unhealthy";
+  if (aqi <= 300) return "veryUnhealthy";
+  return "hazardous";
 }
 
+/**
+ * Styling only — every severity level's display label and health
+ * recommendation lives in `dict.common.severity` / `dict.common.severityRecommendation`
+ * (see `useTranslation()`), never here. This used to hold `labelTh`/`labelEn`/
+ * `recommendationTh`/`recommendationEn` pairs as a second, ad-hoc i18n
+ * mechanism alongside the real one — removed so there's exactly one place
+ * severity text can come from.
+ */
 interface SeverityMeta {
-  labelTh: string;
-  labelEn: string;
-  recommendationTh: string;
-  recommendationEn: string;
   textClass: string;
   bgClass: string;
   softBgClass: string;
@@ -48,10 +55,6 @@ interface SeverityMeta {
 
 export const AQI_SEVERITY_META: Record<AQISeverityLevel, SeverityMeta> = {
   good: {
-    labelTh: "อากาศดี",
-    labelEn: "Good",
-    recommendationTh: "คุณภาพอากาศดี เหมาะสำหรับกิจกรรมกลางแจ้ง",
-    recommendationEn: "Air quality is good — great for outdoor activities.",
     textClass: "text-aqi-good",
     bgClass: "bg-aqi-good",
     softBgClass: "bg-aqi-good-bg",
@@ -59,10 +62,6 @@ export const AQI_SEVERITY_META: Record<AQISeverityLevel, SeverityMeta> = {
     dotClass: "bg-aqi-good",
   },
   moderate: {
-    labelTh: "ปานกลาง",
-    labelEn: "Moderate",
-    recommendationTh: "กลุ่มเสี่ยงควรลดกิจกรรมกลางแจ้งที่ใช้แรงมาก",
-    recommendationEn: "Sensitive groups should limit strenuous outdoor activity.",
     textClass: "text-aqi-moderate",
     bgClass: "bg-aqi-moderate",
     softBgClass: "bg-aqi-moderate-bg",
@@ -70,10 +69,6 @@ export const AQI_SEVERITY_META: Record<AQISeverityLevel, SeverityMeta> = {
     dotClass: "bg-aqi-moderate",
   },
   sensitive: {
-    labelTh: "เริ่มมีผลต่อสุขภาพ",
-    labelEn: "Unhealthy for Sensitive Groups",
-    recommendationTh: "กลุ่มเสี่ยงควรสวมหน้ากากอนามัยเมื่ออยู่กลางแจ้ง",
-    recommendationEn: "Sensitive groups should wear a mask outdoors.",
     textClass: "text-aqi-sensitive",
     bgClass: "bg-aqi-sensitive",
     softBgClass: "bg-aqi-sensitive-bg",
@@ -81,14 +76,24 @@ export const AQI_SEVERITY_META: Record<AQISeverityLevel, SeverityMeta> = {
     dotClass: "bg-aqi-sensitive",
   },
   unhealthy: {
-    labelTh: "มีผลเสียต่อสุขภาพ",
-    labelEn: "Unhealthy",
-    recommendationTh: "สวมหน้ากากอนามัย และหลีกเลี่ยงกิจกรรมกลางแจ้ง",
-    recommendationEn: "Wear a mask and avoid outdoor activity.",
     textClass: "text-aqi-unhealthy",
     bgClass: "bg-aqi-unhealthy",
     softBgClass: "bg-aqi-unhealthy-bg",
     borderClass: "border-aqi-unhealthy",
     dotClass: "bg-aqi-unhealthy",
+  },
+  veryUnhealthy: {
+    textClass: "text-aqi-very-unhealthy",
+    bgClass: "bg-aqi-very-unhealthy",
+    softBgClass: "bg-aqi-very-unhealthy-bg",
+    borderClass: "border-aqi-very-unhealthy",
+    dotClass: "bg-aqi-very-unhealthy",
+  },
+  hazardous: {
+    textClass: "text-aqi-hazardous",
+    bgClass: "bg-aqi-hazardous",
+    softBgClass: "bg-aqi-hazardous-bg",
+    borderClass: "border-aqi-hazardous",
+    dotClass: "bg-aqi-hazardous",
   },
 };

@@ -21,13 +21,13 @@ function FollowedAreasSkeleton() {
 
 export function FollowedAreasSection() {
   const { currentUser, userProfile, loading: authLoading } = useAuth();
-  const { stations } = useAllStations();
+  const { stations, isLoading: stationsLoading } = useAllStations();
   const { t } = useTranslation();
 
   const followedAreaIds = userProfile?.followedAreaIds ?? [];
-  const { areas, isLoading } = useFollowedAreaSummaries(followedAreaIds, stations);
+  const { areas } = useFollowedAreaSummaries(followedAreaIds, stations);
 
-  if (authLoading || isLoading) {
+  if (authLoading || stationsLoading) {
     return <FollowedAreasSkeleton />;
   }
 

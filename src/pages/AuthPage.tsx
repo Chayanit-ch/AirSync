@@ -98,7 +98,7 @@ export function AuthPage() {
   }
 
   return (
-    <div className="flex min-h-full flex-col justify-center gap-6 p-6">
+    <div className="mx-auto flex h-full w-full max-w-[480px] flex-col justify-center gap-6 overflow-y-auto p-6">
       <div className="flex flex-col items-center gap-1.5">
         <div className="flex items-center gap-1.5">
           <Wind size={30} className="text-brand-600" strokeWidth={2.5} />

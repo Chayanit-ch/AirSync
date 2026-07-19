@@ -16,7 +16,7 @@ export function ProfilePage() {
   const { currentUser, userProfile, isLoggingOutRef } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { stations } = useAllStations();
+  const { stations, isLoading: stationsLoading } = useAllStations();
 
   async function handleLogout() {
     isLoggingOutRef.current = true;
@@ -31,40 +31,43 @@ export function ProfilePage() {
   }
 
   const followedAreaIds = userProfile?.followedAreaIds ?? [];
-  // Same query as Home's FollowedAreasSection, so the two pages can never
-  // show different numbers for the same followed areas.
-  const { areas: followedAreaCards, isLoading: areasLoading } =
-    useFollowedAreaSummaries(followedAreaIds, stations);
+  // Same live `stations` source as the Map (via `resolveStationReading`), so
+  // this can never disagree with what the Map shows for the same station.
+  const { areas: followedAreaCards } = useFollowedAreaSummaries(followedAreaIds, stations);
   const { reports, isLoading: reportsLoading } = useMyReports();
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <ProfileHeader
-        displayName={currentUser?.displayName || mockUser.displayName}
-        email={currentUser?.email || mockUser.email}
-        photoURL={currentUser?.photoURL}
-        guardianLevel={userProfile?.guardianLevel ?? mockUser.guardianLevel}
-        onLogout={handleLogout}
-      />
-      <PM25StatsCard followedAreaIds={followedAreaIds} />
-      {areasLoading ? (
-        <div className="grid grid-cols-2 gap-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-19 animate-pulse rounded-xl border-l-4 border-gray-100 bg-gray-100 p-3 shadow-sm"
-            />
-          ))}
-        </div>
-      ) : followedAreaCards.length > 0 ? (
-        <FollowedAreasGrid areas={followedAreaCards} />
-      ) : (
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 text-center text-sm text-gray-400 shadow-sm">
-          {t("profile.noFollowedAreasHint")}
-        </div>
-      )}
-      <ReportHistorySection reports={reports} isLoading={reportsLoading} />
-      <AlertPreferencesCard stations={stations} />
+    <div className="flex flex-col gap-4 p-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:p-6">
+      <div className="flex flex-col gap-4">
+        <ProfileHeader
+          displayName={currentUser?.displayName || mockUser.displayName}
+          email={currentUser?.email || mockUser.email}
+          photoURL={currentUser?.photoURL}
+          guardianLevel={userProfile?.guardianLevel ?? mockUser.guardianLevel}
+          onLogout={handleLogout}
+        />
+        <AlertPreferencesCard stations={stations} />
+      </div>
+      <div className="flex flex-col gap-4">
+        <PM25StatsCard followedAreaIds={followedAreaIds} />
+        {stationsLoading ? (
+          <div className="grid grid-cols-2 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-19 animate-pulse rounded-xl border-l-4 border-gray-100 bg-gray-100 p-3 shadow-sm"
+              />
+            ))}
+          </div>
+        ) : followedAreaCards.length > 0 ? (
+          <FollowedAreasGrid areas={followedAreaCards} />
+        ) : (
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 text-center text-sm text-gray-400 shadow-sm">
+            {t("profile.noFollowedAreasHint")}
+          </div>
+        )}
+        <ReportHistorySection reports={reports} isLoading={reportsLoading} />
+      </div>
     </div>
   );
 }

@@ -36,3 +36,21 @@ export function findNearestStation(
 
   return best;
 }
+
+/**
+ * Drops any `candidates` station within `thresholdKm` of a station already in
+ * `existing` — WAQI sometimes republishes the exact same physical Air4Thai
+ * station under its own id, and this app always prefers Air4Thai (the
+ * official source) when both cover the same spot, so the WAQI duplicate is
+ * hidden rather than shown as a second, stacked marker for one real location.
+ */
+export function dedupeWaqiStations(
+  existing: MonitoringStation[],
+  candidates: MonitoringStation[],
+  thresholdKm = 1.5,
+): MonitoringStation[] {
+  return candidates.filter(
+    (candidate) =>
+      !existing.some((station) => haversineDistanceKm(station.location, candidate.location) <= thresholdKm),
+  );
+}

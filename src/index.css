@@ -33,7 +33,7 @@
   --color-leaf-600: #059669;
   --color-leaf-700: #047857;
 
-  /* AQI severity colors */
+  /* AQI severity colors — full 6-tier US EPA scale */
   --color-aqi-good: #22c55e;
   --color-aqi-good-bg: #dcfce7;
   --color-aqi-moderate: #eab308;
@@ -42,6 +42,10 @@
   --color-aqi-sensitive-bg: #ffedd5;
   --color-aqi-unhealthy: #dc2626;
   --color-aqi-unhealthy-bg: #fee2e2;
+  --color-aqi-very-unhealthy: #9333ea;
+  --color-aqi-very-unhealthy-bg: #f3e8ff;
+  --color-aqi-hazardous: #7f1d1d;
+  --color-aqi-hazardous-bg: #fecaca;
 }
 
 html,
@@ -57,15 +61,20 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/*
+ * Desktop responsive layout (2026-07-20): the "mobile phone frame" look
+ * (480px max-width, centered, drop shadow) used to be hard-coded here on
+ * `#root`, which is why the app couldn't ever be wider than a phone even on
+ * a desktop browser. That frame now lives on a Tailwind-responsive wrapper
+ * inside each top-level route (see PageLayout.tsx / AuthPage.tsx) — `lg:`
+ * and up, those wrappers drop the max-width so the sidebar layout can use
+ * the full viewport. `#root` itself only supplies the outer height/overflow
+ * boundary now, unchanged on every breakpoint.
+ */
 #root {
-  max-width: 480px;
-  margin: 0 auto;
   height: 100dvh;
   background-color: #f3f4f6;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.04);
   position: relative;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
 }
 

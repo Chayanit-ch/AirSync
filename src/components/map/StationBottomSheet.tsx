@@ -19,8 +19,9 @@ export function StationBottomSheet({
   );
 
   return (
-    <div className="rounded-t-2xl border border-gray-100 bg-white px-4 pt-2 pb-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-      <div className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-gray-200" />
+    <div className="h-full overflow-y-auto rounded-t-2xl border border-gray-100 bg-white px-4 pt-2 pb-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] lg:rounded-none lg:rounded-l-2xl lg:border-r-0 lg:shadow-[-4px_0_20px_rgba(0,0,0,0.08)]">
+      {/* Drag handle — a bottom-sheet affordance, hidden on the desktop docked panel where it doesn't mean anything. */}
+      <div className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-gray-200 lg:hidden" />
 
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -81,6 +82,10 @@ export function StationBottomSheet({
           <div className="col-span-2">
             <p className="text-xs text-gray-400">{t("map.stationId")}</p>
             <p className="font-medium text-gray-700">{station.id}</p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-xs text-gray-400">{t("map.dataSource")}</p>
+            <p className="font-medium text-gray-700">{station.source ?? t("common.noData")}</p>
           </div>
         </div>
       )}

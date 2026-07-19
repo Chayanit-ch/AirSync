@@ -38,6 +38,8 @@ export interface CreateReportInput {
   longitude: number;
   locationLabel: string;
   contactEmail: string | null;
+  /** Real Cloudinary `secure_url`s — already-uploaded by the time this is called (see `ReportForm`'s `uploadImage` step); never a local blob URL. */
+  imageUrls: string[];
 }
 
 /**
@@ -45,7 +47,7 @@ export interface CreateReportInput {
  * `auth.currentUser` here — never accepted from the caller — so a spoofed
  * value can't be passed in, matching the Firestore rule that requires
  * `request.resource.data.reportedBy == request.auth.uid`. `status` is always
- * "pending" and `imageUrls` always `[]`, since Storage isn't enabled yet.
+ * "pending".
  */
 export async function createReport(data: CreateReportInput): Promise<void> {
   const uid = auth.currentUser?.uid;
@@ -63,7 +65,7 @@ export async function createReport(data: CreateReportInput): Promise<void> {
     // explicitly `null` rather than omitted when type !== "other".
     customTypeDescription: data.type === "other" ? (data.customTypeDescription ?? null) : null,
     description: data.description,
-    imageUrls: [],
+    imageUrls: data.imageUrls,
     latitude: data.latitude,
     longitude: data.longitude,
     locationLabel: data.locationLabel,

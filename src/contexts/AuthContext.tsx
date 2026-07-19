@@ -12,8 +12,11 @@ import {
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "../firebase";
-import { ensureUserDocument } from "../services/userProfile";
+import { ensureUserDocument, unfollowArea } from "../services/userProfile";
 import type { UserProfile } from "../types";
+
+/** Pre-nationwide-rollout `followedAreaIds` used slugs like "area-mueang" instead of real Air4Thai stationIDs. */
+const LEGACY_AREA_ID_PREFIX = "area-";
 
 interface AuthContextValue {
   currentUser: User | null;
@@ -129,6 +132,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return unsubscribe;
   }, [currentUser]);
+
+  // Self-heal pre-rollout test data: since real user data collection hadn't
+  // started when the nationwide rollout shipped, any leftover legacy
+  // "area-*" slugs in followedAreaIds are just dropped here via the same
+  // arrayRemove-based unfollowArea everything else uses — no migration
+  // script, no full-document overwrite. Idempotent (removing an
+  // already-removed id from the array is a harmless no-op), so this can't
+  // loop even though it re-runs every time `userProfile` updates.
+  useEffect(() => {
+    if (!currentUser || !userProfile) return;
+    const legacyIds = userProfile.followedAreaIds?.filter((id) =>
+      id.startsWith(LEGACY_AREA_ID_PREFIX),
+    );
+    if (!legacyIds || legacyIds.length === 0) return;
+
+    console.warn(
+      "Removing legacy (pre-nationwide-rollout) followedAreaIds from test account:",
+      legacyIds,
+    );
+    for (const legacyId of legacyIds) {
+      void unfollowArea(currentUser.uid, legacyId);
+    }
+  }, [currentUser, userProfile]);
 
   const loading = !authResolved || !profileResolved;
 

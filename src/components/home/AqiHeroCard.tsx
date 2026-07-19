@@ -2,13 +2,14 @@ import { LocateFixed, MapPinOff } from "lucide-react";
 import type { AreaAirQualitySummary } from "../../types";
 import type { UserLocationStatus } from "../../hooks/useUserLocation";
 import { useTranslation } from "../../hooks/useTranslation";
-import { AQI_SEVERITY_META } from "../../utils/aqi";
 
 const HERO_GRADIENT: Record<AreaAirQualitySummary["severity"], string> = {
   good: "from-emerald-500 to-emerald-600",
   moderate: "from-amber-500 to-amber-600",
   sensitive: "from-orange-500 to-orange-600",
   unhealthy: "from-red-600 to-red-700",
+  veryUnhealthy: "from-purple-600 to-purple-700",
+  hazardous: "from-red-900 to-red-950",
 };
 
 interface AqiHeroCardProps {
@@ -28,10 +29,9 @@ export function AqiHeroCard({
   locationStatus,
   onRetryLocation,
 }: AqiHeroCardProps) {
-  const { t, language } = useTranslation();
-  const meta = AQI_SEVERITY_META[area.severity];
-  const severityLabel = language === "en" ? meta.labelEn : meta.labelTh;
-  const recommendation = language === "en" ? meta.recommendationEn : meta.recommendationTh;
+  const { t, dict } = useTranslation();
+  const severityLabel = dict.common.severity[area.severity];
+  const recommendation = dict.common.severityRecommendation[area.severity];
   const showLocationRetry =
     (locationStatus === "denied" || locationStatus === "unsupported") && onRetryLocation;
 

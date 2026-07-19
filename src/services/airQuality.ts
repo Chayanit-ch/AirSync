@@ -11,7 +11,16 @@ import {
 import { auth, db } from "../firebase";
 import { monitoringStations as mockMonitoringStations } from "../data/mockData";
 import { pm25ToAqi, getAqiSeverity } from "../utils/aqi";
-import type { AirQualityRecord, MonitoringStation } from "../types";
+import type { AirQualityRecord, GeoPoint, MonitoringStation } from "../types";
+
+/**
+ * Beyond this, a station is too far away to honestly call "your area" — used
+ * both to decide when the hero card should label an Air4Thai reading
+ * "out of range" (see `useNearestStationHero`) and to decide when it's worth
+ * querying WAQI as a supplemental source instead of just showing that distant
+ * Air4Thai reading.
+ */
+export const NEARBY_STATION_RANGE_KM = 25;
 
 /**
  * Mueang Samut Sakhon's real Air4Thai stationID — used as the guest/no-
@@ -101,6 +110,7 @@ function generateSyntheticStationHistory(
       timestamp: date.toISOString(),
       aqi: pm25ToAqi(pm25),
       pm25: Math.round(pm25 * 10) / 10,
+      source: "mock",
     });
   }
 
@@ -261,6 +271,7 @@ const DEFAULT_STATION_FALLBACK: MonitoringStation = {
   currentPm25: GENERIC_MOCK_PM25,
   severity: getAqiSeverity(pm25ToAqi(GENERIC_MOCK_PM25)),
   lastUpdated: new Date().toISOString(),
+  source: "mock",
 };
 
 /**
@@ -298,4 +309,72 @@ export function resolveStationReading(
     },
     isLive: false,
   };
+}
+
+const WAQI_PROXY_URL = "/api/waqi";
+const WAQI_TIMEOUT_MS = 8000;
+
+interface WaqiGeoProxyResponse {
+  ok: boolean;
+  station?: MonitoringStation | null;
+}
+
+interface WaqiBoundsProxyResponse {
+  ok: boolean;
+  stations?: MonitoringStation[];
+}
+
+async function fetchWaqiProxy<T>(path: string): Promise<T | null> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), WAQI_TIMEOUT_MS);
+    let response: Response;
+    try {
+      response = await fetch(path, { signal: controller.signal });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    if (!response.ok) throw new Error(`/api/waqi responded with HTTP ${response.status}`);
+    return (await response.json()) as T;
+  } catch (error) {
+    console.warn("WAQI supplemental request failed.", error);
+    return null;
+  }
+}
+
+/**
+ * Queries WAQI for the single nearest station to `point` — used only as a
+ * fallback when the nearest real Air4Thai station is further than
+ * `NEARBY_STATION_RANGE_KM` away (see `useNearestStationHero`). Returns
+ * `null` on any failure (network, WAQI down, no nearby WAQI station either)
+ * so the caller can fall through to its existing out-of-range/mock behavior
+ * — this must never throw or crash the hero card.
+ */
+export async function getWaqiNearestStation(point: GeoPoint): Promise<MonitoringStation | null> {
+  const data = await fetchWaqiProxy<WaqiGeoProxyResponse>(
+    `${WAQI_PROXY_URL}?lat=${point.lat}&lng=${point.lng}`,
+  );
+  if (!data?.ok || !data.station) {
+    console.warn(`No WAQI station available near (${point.lat}, ${point.lng}).`);
+    return null;
+  }
+  return data.station;
+}
+
+/**
+ * Queries WAQI for stations inside a map viewport — used only to fill
+ * regions the Map's Air4Thai markers leave empty. Returns `[]` on any
+ * failure, never throws.
+ */
+export async function getWaqiStationsInBounds(bounds: {
+  south: number;
+  west: number;
+  north: number;
+  east: number;
+}): Promise<MonitoringStation[]> {
+  const boundsParam = `${bounds.south},${bounds.west},${bounds.north},${bounds.east}`;
+  const data = await fetchWaqiProxy<WaqiBoundsProxyResponse>(
+    `${WAQI_PROXY_URL}?bounds=${boundsParam}`,
+  );
+  return data?.ok && data.stations ? data.stations : [];
 }

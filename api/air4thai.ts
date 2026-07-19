@@ -39,12 +39,14 @@ const CACHE_TTL_MS = 12 * 60 * 1000;
  * zero dependencies outside its own file. Keep the two in sync manually if
  * the AQI breakpoints ever change (unlikely).
  */
-type AqiSeverity = "good" | "moderate" | "sensitive" | "unhealthy";
+type AqiSeverity = "good" | "moderate" | "sensitive" | "unhealthy" | "veryUnhealthy" | "hazardous";
 function getAqiSeverity(aqi: number): AqiSeverity {
   if (aqi <= 50) return "good";
   if (aqi <= 100) return "moderate";
   if (aqi <= 150) return "sensitive";
-  return "unhealthy";
+  if (aqi <= 200) return "unhealthy";
+  if (aqi <= 300) return "veryUnhealthy";
+  return "hazardous";
 }
 
 interface Air4ThaiParam {
@@ -82,6 +84,7 @@ interface NormalizedRecord {
   aqi: number;
   pm25: number;
   pm10?: number;
+  source: "air4thai";
 }
 
 interface NormalizedStation {
@@ -96,6 +99,7 @@ interface NormalizedStation {
   currentPm25: number;
   severity: ReturnType<typeof getAqiSeverity>;
   lastUpdated: string;
+  source: "air4thai";
 }
 
 interface CacheEntry {
@@ -185,6 +189,7 @@ function normalize(raw: Air4ThaiResponse): CacheEntry {
       aqi,
       pm25,
       pm10: parseNumOrUndefined(station.AQILast.PM10?.value),
+      source: "air4thai",
     });
 
     stations.push({
@@ -199,6 +204,7 @@ function normalize(raw: Air4ThaiResponse): CacheEntry {
       currentPm25: pm25,
       severity: getAqiSeverity(aqi),
       lastUpdated: timestamp,
+      source: "air4thai",
     });
   }
 
