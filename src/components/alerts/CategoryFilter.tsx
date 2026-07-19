@@ -1,9 +1,11 @@
+import { useTranslation } from "../../hooks/useTranslation";
+
 export type ArticleFilter = "all" | "pm25" | "health";
 
-const FILTERS: { id: ArticleFilter; label: string }[] = [
-  { id: "all", label: "เนื้อหาทั้งหมด" },
-  { id: "pm25", label: "PM 2.5" },
-  { id: "health", label: "สุขภาพ" },
+const FILTERS: { id: ArticleFilter; key: "filterAll" | "filterPm25" | "filterHealth" }[] = [
+  { id: "all", key: "filterAll" },
+  { id: "pm25", key: "filterPm25" },
+  { id: "health", key: "filterHealth" },
 ];
 
 interface CategoryFilterProps {
@@ -12,6 +14,8 @@ interface CategoryFilterProps {
 }
 
 export function CategoryFilter({ active, onChange }: CategoryFilterProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex gap-2 overflow-x-auto">
       {FILTERS.map((filter) => (
@@ -25,7 +29,7 @@ export function CategoryFilter({ active, onChange }: CategoryFilterProps) {
               : "border border-gray-200 bg-white text-gray-600"
           }`}
         >
-          {filter.label}
+          {t(`alerts.${filter.key}`)}
         </button>
       ))}
     </div>

@@ -1,5 +1,6 @@
 import { Layers, Locate, Minus, Plus } from "lucide-react";
 import { useMap } from "react-leaflet";
+import { useTranslation } from "../../hooks/useTranslation";
 
 interface MapControlsProps {
   onToggleLayers: () => void;
@@ -7,6 +8,7 @@ interface MapControlsProps {
 
 export function MapControls({ onToggleLayers }: MapControlsProps) {
   const map = useMap();
+  const { t } = useTranslation();
 
   const handleLocate = () => {
     map.locate({ setView: true, maxZoom: 15 });
@@ -17,7 +19,7 @@ export function MapControls({ onToggleLayers }: MapControlsProps) {
       <button
         type="button"
         onClick={onToggleLayers}
-        aria-label="ชั้นข้อมูล"
+        aria-label={t("map.layersLabel")}
         className="rounded-lg border border-gray-200 bg-white p-2.5 text-gray-600 shadow-md active:bg-gray-50"
       >
         <Layers size={18} />
@@ -25,7 +27,7 @@ export function MapControls({ onToggleLayers }: MapControlsProps) {
       <button
         type="button"
         onClick={handleLocate}
-        aria-label="ตำแหน่งของฉัน"
+        aria-label={t("map.myLocationLabel")}
         className="rounded-lg border border-gray-200 bg-white p-2.5 text-gray-600 shadow-md active:bg-gray-50"
       >
         <Locate size={18} />
@@ -34,7 +36,7 @@ export function MapControls({ onToggleLayers }: MapControlsProps) {
         <button
           type="button"
           onClick={() => map.zoomIn()}
-          aria-label="ซูมเข้า"
+          aria-label={t("map.zoomInLabel")}
           className="border-b border-gray-100 p-2.5 text-gray-600 active:bg-gray-50"
         >
           <Plus size={18} />
@@ -42,7 +44,7 @@ export function MapControls({ onToggleLayers }: MapControlsProps) {
         <button
           type="button"
           onClick={() => map.zoomOut()}
-          aria-label="ซูมออก"
+          aria-label={t("map.zoomOutLabel")}
           className="p-2.5 text-gray-600 active:bg-gray-50"
         >
           <Minus size={18} />

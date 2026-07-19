@@ -1,7 +1,8 @@
 import { CheckCircle2, ChevronDown, CircleAlert, LocateFixed, Loader2 } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { createReport, REPORT_TYPE_LABELS_TH } from "../../services/reports";
+import { useTranslation } from "../../hooks/useTranslation";
+import { createReport } from "../../services/reports";
 import type { ReportType } from "../../types";
 import { ImageUploader } from "./ImageUploader";
 
@@ -16,6 +17,7 @@ type FormErrors = Partial<
 
 export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
   const { currentUser, loading: authLoading } = useAuth();
+  const { t, dict } = useTranslation();
 
   const [type, setType] = useState<ReportType | "">("");
   const [customTypeDescription, setCustomTypeDescription] = useState("");
@@ -42,7 +44,7 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
     setLocationNotice(null);
 
     if (!navigator.geolocation) {
-      setLocationNotice("เบราว์เซอร์นี้ไม่รองรับการระบุตำแหน่ง กรุณากรอกสถานที่ด้วยตนเอง");
+      setLocationNotice(t("report.geoUnsupported"));
       return;
     }
 
@@ -51,12 +53,17 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
       (position) => {
         const { latitude, longitude } = position.coords;
         setCoords({ lat: latitude, lng: longitude });
-        setLocationLabel(`ตำแหน่งปัจจุบัน (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`);
+        setLocationLabel(
+          t("report.currentLocationLabel", {
+            lat: latitude.toFixed(4),
+            lng: longitude.toFixed(4),
+          }),
+        );
         setIsLocating(false);
       },
       () => {
         // Permission denied or unavailable — leave the manual text input usable.
-        setLocationNotice("ไม่สามารถเข้าถึงตำแหน่งได้ กรุณากรอกสถานที่เกิดเหตุด้วยตนเอง");
+        setLocationNotice(t("report.geoDenied"));
         setIsLocating(false);
       },
       { timeout: 10000 },
@@ -65,12 +72,12 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
 
   function validate(): boolean {
     const nextErrors: FormErrors = {};
-    if (!type) nextErrors.type = "กรุณาเลือกประเภทเหตุการณ์";
+    if (!type) nextErrors.type = t("report.errorSelectType");
     if (type === "other" && !customTypeDescription.trim()) {
-      nextErrors.customTypeDescription = "กรุณาระบุประเภทเหตุการณ์";
+      nextErrors.customTypeDescription = t("report.errorSpecifyType");
     }
-    if (!description.trim()) nextErrors.description = "กรุณากรอกรายละเอียดเหตุการณ์";
-    if (!locationLabel.trim()) nextErrors.locationLabel = "กรุณาระบุสถานที่เกิดเหตุ";
+    if (!description.trim()) nextErrors.description = t("report.errorDescription");
+    if (!locationLabel.trim()) nextErrors.locationLabel = t("report.errorLocation");
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   }
@@ -102,13 +109,11 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
       setEmail("");
       setLocationNotice(null);
       setErrors({});
-      setSubmitResult({ kind: "success", message: "ส่งรายงานสำเร็จ ขอบคุณที่ช่วยแจ้งเหตุ" });
+      setSubmitResult({ kind: "success", message: t("report.submitSuccess") });
       onSubmitted?.();
     } catch (error) {
-      setSubmitResult({
-        kind: "error",
-        message: error instanceof Error ? error.message : "ส่งรายงานไม่สำเร็จ กรุณาลองใหม่อีกครั้ง",
-      });
+      console.error("Failed to submit report", error);
+      setSubmitResult({ kind: "error", message: t("report.submitError") });
     } finally {
       setIsSubmitting(false);
     }
@@ -121,11 +126,11 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
       onSubmit={handleSubmit}
       className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
     >
-      <h2 className="text-lg font-bold text-gray-800">ข้อมูล</h2>
+      <h2 className="text-lg font-bold text-gray-800">{t("report.formTitle")}</h2>
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-gray-700">
-          ประเภทเหตุการณ์
+          {t("report.incidentType")}
         </label>
         <div className="relative">
           <select
@@ -136,9 +141,9 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
             }`}
           >
             <option value="" disabled>
-              เลือกประเภทเหตุการณ์
+              {t("report.selectIncidentType")}
             </option>
-            {Object.entries(REPORT_TYPE_LABELS_TH).map(([value, label]) => (
+            {Object.entries(dict.report.types).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>
@@ -155,13 +160,13 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
       {type === "other" && (
         <div>
           <label className="mb-1.5 block text-sm font-medium text-gray-700">
-            ระบุประเภทเหตุการณ์
+            {t("report.specifyType")}
           </label>
           <input
             type="text"
             value={customTypeDescription}
             onChange={(e) => setCustomTypeDescription(e.target.value)}
-            placeholder="เช่น กลิ่นสารเคมี, ฝุ่นจากเหมืองหิน..."
+            placeholder={t("report.specifyTypePlaceholder")}
             className={`w-full rounded-xl border px-3.5 py-3 text-sm text-gray-700 outline-none placeholder:text-gray-400 focus:border-brand-500 ${
               errors.customTypeDescription ? "border-red-300" : "border-gray-200"
             }`}
@@ -174,13 +179,13 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-gray-700">
-          รายละเอียด
+          {t("report.description")}
         </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={4}
-          placeholder="อธิบายรายละเอียดเหตุการณ์ที่เกิดขึ้น....."
+          placeholder={t("report.descriptionPlaceholder")}
           className={`w-full resize-none rounded-xl border px-3.5 py-3 text-sm text-gray-700 outline-none placeholder:text-gray-400 focus:border-brand-500 ${
             errors.description ? "border-red-300" : "border-gray-200"
           }`}
@@ -193,20 +198,20 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
       <div>
         <ImageUploader images={images} onChange={setImages} />
         <p className="mt-1.5 text-xs text-gray-400">
-          การอัปโหลดรูปภาพจะพร้อมใช้งานเร็วๆ นี้ — รูปที่แนบในตอนนี้จะยังไม่ถูกบันทึก
+          {t("report.uploadComingSoon")}
         </p>
       </div>
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-gray-700">
-          สถานที่เกิดเหตุ
+          {t("report.locationLabel")}
         </label>
         <div className="flex gap-2">
           <input
             type="text"
             value={locationLabel}
             onChange={(e) => setLocationLabel(e.target.value)}
-            placeholder="ค้นหาจากตำแหน่ง..."
+            placeholder={t("report.locationPlaceholder")}
             className={`w-full rounded-xl border px-3.5 py-3 text-sm text-gray-700 outline-none placeholder:text-gray-400 focus:border-brand-500 ${
               errors.locationLabel ? "border-red-300" : "border-gray-200"
             }`}
@@ -215,7 +220,7 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
             type="button"
             onClick={handleLocate}
             disabled={isLocating}
-            aria-label="ใช้ตำแหน่งปัจจุบัน"
+            aria-label={t("report.useCurrentLocation")}
             className={`flex shrink-0 items-center justify-center rounded-xl bg-teal-500 px-4 text-white transition-colors hover:bg-teal-600 disabled:opacity-60 ${
               isLocating ? "animate-pulse" : ""
             }`}
@@ -233,13 +238,13 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-gray-700">
-          ข้อมูลติดต่อ (ไม่บังคับ)
+          {t("report.contactInfo")}
         </label>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="อีเมล..."
+          placeholder={t("report.emailPlaceholder")}
           className="focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3.5 py-3 text-sm text-gray-700 outline-none placeholder:text-gray-400"
         />
       </div>
@@ -267,7 +272,7 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
         className="bg-brand-600 hover:bg-brand-700 flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting && <Loader2 size={18} className="animate-spin" />}
-        {isSubmitting ? "กำลังส่ง..." : "ส่งรายงาน"}
+        {isSubmitting ? t("common.submitting") : t("report.submitButton")}
       </button>
     </form>
   );

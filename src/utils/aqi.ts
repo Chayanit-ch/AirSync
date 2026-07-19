@@ -38,6 +38,7 @@ interface SeverityMeta {
   labelTh: string;
   labelEn: string;
   recommendationTh: string;
+  recommendationEn: string;
   textClass: string;
   bgClass: string;
   softBgClass: string;
@@ -50,6 +51,7 @@ export const AQI_SEVERITY_META: Record<AQISeverityLevel, SeverityMeta> = {
     labelTh: "อากาศดี",
     labelEn: "Good",
     recommendationTh: "คุณภาพอากาศดี เหมาะสำหรับกิจกรรมกลางแจ้ง",
+    recommendationEn: "Air quality is good — great for outdoor activities.",
     textClass: "text-aqi-good",
     bgClass: "bg-aqi-good",
     softBgClass: "bg-aqi-good-bg",
@@ -60,6 +62,7 @@ export const AQI_SEVERITY_META: Record<AQISeverityLevel, SeverityMeta> = {
     labelTh: "ปานกลาง",
     labelEn: "Moderate",
     recommendationTh: "กลุ่มเสี่ยงควรลดกิจกรรมกลางแจ้งที่ใช้แรงมาก",
+    recommendationEn: "Sensitive groups should limit strenuous outdoor activity.",
     textClass: "text-aqi-moderate",
     bgClass: "bg-aqi-moderate",
     softBgClass: "bg-aqi-moderate-bg",
@@ -70,6 +73,7 @@ export const AQI_SEVERITY_META: Record<AQISeverityLevel, SeverityMeta> = {
     labelTh: "เริ่มมีผลต่อสุขภาพ",
     labelEn: "Unhealthy for Sensitive Groups",
     recommendationTh: "กลุ่มเสี่ยงควรสวมหน้ากากอนามัยเมื่ออยู่กลางแจ้ง",
+    recommendationEn: "Sensitive groups should wear a mask outdoors.",
     textClass: "text-aqi-sensitive",
     bgClass: "bg-aqi-sensitive",
     softBgClass: "bg-aqi-sensitive-bg",
@@ -80,6 +84,7 @@ export const AQI_SEVERITY_META: Record<AQISeverityLevel, SeverityMeta> = {
     labelTh: "มีผลเสียต่อสุขภาพ",
     labelEn: "Unhealthy",
     recommendationTh: "สวมหน้ากากอนามัย และหลีกเลี่ยงกิจกรรมกลางแจ้ง",
+    recommendationEn: "Wear a mask and avoid outdoor activity.",
     textClass: "text-aqi-unhealthy",
     bgClass: "bg-aqi-unhealthy",
     softBgClass: "bg-aqi-unhealthy-bg",

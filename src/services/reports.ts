@@ -11,28 +11,22 @@ import {
 import { auth, db } from "../firebase";
 import type { Report, ReportType } from "../types";
 
-export const REPORT_TYPE_LABELS_TH: Record<ReportType, string> = {
-  burning: "การเผาในที่โล่ง",
-  smoke_vehicle: "รถควันดำ",
-  factory: "มลพิษจากโรงงานอุตสาหกรรม",
-  construction: "ฝุ่นจากการก่อสร้าง/ขุดเจาะ",
-  garbage_burning: "การเผาขยะ",
-  unknown_smell: "กลิ่นหรือควันไม่ทราบแหล่งที่มา",
-  other: "อื่นๆ",
-};
-
 /**
  * The label to display for a report's type — for `type === "other"` this is
- * the user's own `customTypeDescription`, never the generic "อื่นๆ" fallback
+ * the user's own `customTypeDescription`, never the generic "Other" fallback
  * label, so every report list/card/badge shows what the user actually typed.
+ * `typeLabels` should come from the active `useTranslation()` dictionary
+ * (`dict.report.types`) so this stays in the current language instead of a
+ * second hard-coded (Thai-only) label table.
  */
 export function getReportTypeLabel(
   report: Pick<Report, "type" | "customTypeDescription">,
+  typeLabels: Record<ReportType, string>,
 ): string {
   if (report.type === "other") {
-    return report.customTypeDescription?.trim() || REPORT_TYPE_LABELS_TH.other;
+    return report.customTypeDescription?.trim() || typeLabels.other;
   }
-  return REPORT_TYPE_LABELS_TH[report.type];
+  return typeLabels[report.type];
 }
 
 export interface CreateReportInput {
@@ -56,7 +50,10 @@ export interface CreateReportInput {
 export async function createReport(data: CreateReportInput): Promise<void> {
   const uid = auth.currentUser?.uid;
   if (!uid) {
-    throw new Error("ต้องเข้าสู่ระบบก่อนจึงจะส่งรายงานได้");
+    // Internal-only guard — ReportForm already disables submission while
+    // signed out, so the UI never surfaces this message directly; it's just
+    // never left untranslated in the (unreachable-via-UI) fallback path.
+    throw new Error("Report submission requires a signed-in user");
   }
 
   await addDoc(collection(db, "reports"), {

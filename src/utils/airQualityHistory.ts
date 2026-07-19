@@ -1,10 +1,11 @@
 import type { AirQualityRecord, HistoricalAQIData, HistoricalPeriod } from "../types";
 
-const WEEKDAY_LABELS_TH = ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."];
-const MONTH_LABELS_TH = [
-  "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
-  "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
-];
+/** Chart bucket labels for weekday/month names, and the "Week N" template — sourced from the active `useTranslation()` dictionary by the caller so this stays in the current language instead of a hard-coded (Thai-only) label set. */
+export interface BucketLabels {
+  weekdays: readonly string[];
+  months: readonly string[];
+  weekLabel: (n: number) => string;
+}
 
 interface Bucket {
   label: string;
@@ -24,31 +25,31 @@ function startOfDay(date: Date): Date {
   return d;
 }
 
-function buildDailyBuckets(now: Date): Bucket[] {
+function buildDailyBuckets(now: Date, labels: BucketLabels): Bucket[] {
   const buckets: Bucket[] = [];
   for (let i = 4; i >= 0; i--) {
     const day = new Date(now);
     day.setDate(day.getDate() - i);
-    buckets.push({ label: WEEKDAY_LABELS_TH[day.getDay()], timestamp: day.toISOString(), aqi: [], pm25: [] });
+    buckets.push({ label: labels.weekdays[day.getDay()], timestamp: day.toISOString(), aqi: [], pm25: [] });
   }
   return buckets;
 }
 
-function buildWeeklyBuckets(now: Date): Bucket[] {
+function buildWeeklyBuckets(now: Date, labels: BucketLabels): Bucket[] {
   const buckets: Bucket[] = [];
   for (let i = 3; i >= 0; i--) {
     const weekStart = new Date(now);
     weekStart.setDate(weekStart.getDate() - i * 7 - 6);
-    buckets.push({ label: `สัปดาห์ ${4 - i}`, timestamp: weekStart.toISOString(), aqi: [], pm25: [] });
+    buckets.push({ label: labels.weekLabel(4 - i), timestamp: weekStart.toISOString(), aqi: [], pm25: [] });
   }
   return buckets;
 }
 
-function buildMonthlyBuckets(now: Date): Bucket[] {
+function buildMonthlyBuckets(now: Date, labels: BucketLabels): Bucket[] {
   const buckets: Bucket[] = [];
   for (let i = 3; i >= 0; i--) {
     const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    buckets.push({ label: MONTH_LABELS_TH[monthDate.getMonth()], timestamp: monthDate.toISOString(), aqi: [], pm25: [] });
+    buckets.push({ label: labels.months[monthDate.getMonth()], timestamp: monthDate.toISOString(), aqi: [], pm25: [] });
   }
   return buckets;
 }
@@ -62,16 +63,17 @@ function buildMonthlyBuckets(now: Date): Bucket[] {
 export function bucketAirQualityRecords(
   records: AirQualityRecord[],
   period: HistoricalPeriod,
+  labels: BucketLabels,
 ): HistoricalAQIData[] {
   if (records.length === 0) return [];
 
   const now = startOfDay(new Date());
   const buckets =
     period === "daily"
-      ? buildDailyBuckets(now)
+      ? buildDailyBuckets(now, labels)
       : period === "weekly"
-        ? buildWeeklyBuckets(now)
-        : buildMonthlyBuckets(now);
+        ? buildWeeklyBuckets(now, labels)
+        : buildMonthlyBuckets(now, labels);
 
   for (const record of records) {
     const recordDate = new Date(record.timestamp);

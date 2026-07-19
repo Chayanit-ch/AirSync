@@ -1,12 +1,10 @@
 import { ChevronRight, MapPinPlus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useAllStations } from "../../hooks/useAllStations";
 import { useFollowedAreaSummaries } from "../../hooks/useFollowedAreaSummaries";
-import { followedAreas as guestDefaultAreas } from "../../data/mockData";
+import { useTranslation } from "../../hooks/useTranslation";
 import { FollowedAreasGrid } from "./FollowedAreasGrid";
-
-/** Samut Sakhon pilot areas shown to signed-out visitors so the Home page never renders empty. */
-const GUEST_AREA_IDS = guestDefaultAreas.map((area) => area.id);
 
 function FollowedAreasSkeleton() {
   return (
@@ -23,23 +21,20 @@ function FollowedAreasSkeleton() {
 
 export function FollowedAreasSection() {
   const { currentUser, userProfile, loading: authLoading } = useAuth();
+  const { stations } = useAllStations();
+  const { t } = useTranslation();
 
-  const followedAreaIds = currentUser
-    ? (userProfile?.followedAreaIds ?? [])
-    : GUEST_AREA_IDS;
-
-  const { areas, isLoading } = useFollowedAreaSummaries(followedAreaIds);
+  const followedAreaIds = userProfile?.followedAreaIds ?? [];
+  const { areas, isLoading } = useFollowedAreaSummaries(followedAreaIds, stations);
 
   if (authLoading || isLoading) {
     return <FollowedAreasSkeleton />;
   }
 
-  const isNewUserWithNoAreas = !!currentUser && followedAreaIds.length === 0;
-
-  if (isNewUserWithNoAreas) {
+  if (followedAreaIds.length === 0) {
     return (
       <Link
-        to="/profile"
+        to={currentUser ? "/profile" : "/login"}
         className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4 text-left transition-colors hover:bg-gray-100"
       >
         <div className="flex items-center gap-3">
@@ -48,10 +43,10 @@ export function FollowedAreasSection() {
           </span>
           <div>
             <p className="text-sm font-semibold text-gray-800">
-              ยังไม่มีพื้นที่ที่ติดตาม
+              {t("home.noFollowedAreas")}
             </p>
             <p className="text-xs text-gray-400">
-              แตะเพื่อเพิ่มพื้นที่ในหน้าโปรไฟล์
+              {currentUser ? t("home.addAreaInProfile") : t("home.loginToFollow")}
             </p>
           </div>
         </div>

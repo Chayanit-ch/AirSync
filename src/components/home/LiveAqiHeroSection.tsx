@@ -1,4 +1,4 @@
-import { useLiveHeroArea } from "../../hooks/useLiveHeroArea";
+import { useNearestStationHero } from "../../hooks/useNearestStationHero";
 import { AqiHeroCard } from "./AqiHeroCard";
 
 function HeroSkeleton() {
@@ -7,13 +7,22 @@ function HeroSkeleton() {
   );
 }
 
-/** Wraps `AqiHeroCard` with live Air4Thai data instead of the static mock `featuredArea`. */
+/** Wraps `AqiHeroCard` with the nearest real station to the user, replacing the old static "Mueang Samut Sakhon" mock. */
 export function LiveAqiHeroSection() {
-  const { area, isLoading } = useLiveHeroArea();
+  const { area, isLoading, distanceKm, outOfRange, locationStatus, retryLocation } =
+    useNearestStationHero();
 
   if (isLoading || !area) {
     return <HeroSkeleton />;
   }
 
-  return <AqiHeroCard area={area} />;
+  return (
+    <AqiHeroCard
+      area={area}
+      distanceKm={distanceKm}
+      outOfRange={outOfRange}
+      locationStatus={locationStatus}
+      onRetryLocation={retryLocation}
+    />
+  );
 }

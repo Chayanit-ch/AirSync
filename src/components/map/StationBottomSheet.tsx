@@ -1,19 +1,22 @@
-import { Clock, ShieldCheck } from "lucide-react";
+import { ChevronDown, ChevronUp, Clock, ShieldCheck } from "lucide-react";
+import { useState } from "react";
 import type { MonitoringStation } from "../../types";
+import { useTranslation } from "../../hooks/useTranslation";
 import { AQI_SEVERITY_META } from "../../utils/aqi";
-
-function timeAgoTh(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const hours = Math.max(1, Math.round(diffMs / (1000 * 60 * 60)));
-  return `${hours} ชั่วโมงที่แล้ว`;
-}
 
 export function StationBottomSheet({
   station,
 }: {
   station: MonitoringStation;
 }) {
+  const { t } = useTranslation();
+  const [isExpanded, setIsExpanded] = useState(false);
   const meta = AQI_SEVERITY_META[station.severity];
+
+  const hoursAgo = Math.max(
+    1,
+    Math.round((Date.now() - new Date(station.lastUpdated).getTime()) / (1000 * 60 * 60)),
+  );
 
   return (
     <div className="rounded-t-2xl border border-gray-100 bg-white px-4 pt-2 pb-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
@@ -41,30 +44,63 @@ export function StationBottomSheet({
           </p>
         </div>
         <div className="rounded-xl bg-gray-100 p-3">
-          <p className="text-xs text-gray-500">อุณหภูมิ</p>
+          <p className="text-xs text-gray-500">{t("common.temperature")}</p>
           <p className="text-lg font-bold text-gray-700">
-            {station.temperature != null ? `${station.temperature} องศา` : "ไม่มีข้อมูล"}
+            {station.temperature != null
+              ? `${station.temperature} ${t("common.degrees")}`
+              : t("common.noData")}
           </p>
         </div>
       </div>
 
       <div className="mt-3 flex items-center gap-1.5 text-sm text-brand-600">
         <Clock size={15} />
-        <span>อัปเดตล่าสุด {timeAgoTh(station.lastUpdated)}</span>
+        <span>{t("map.lastUpdated", { time: t("map.hoursAgo", { hours: hoursAgo }) })}</span>
       </div>
+
+      {isExpanded && (
+        <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl bg-gray-50 p-3 text-sm">
+          <div>
+            <p className="text-xs text-gray-400">{t("map.province")}</p>
+            <p className="font-medium text-gray-700">{station.province || t("common.noData")}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400">{t("map.district")}</p>
+            <p className="font-medium text-gray-700">{station.district || t("common.noData")}</p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-xs text-gray-400">{t("map.address")}</p>
+            <p className="font-medium text-gray-700">{station.address || t("common.noData")}</p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-xs text-gray-400">{t("map.coordinates")}</p>
+            <p className="font-medium text-gray-700">
+              {station.location.lat.toFixed(4)}, {station.location.lng.toFixed(4)}
+            </p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-xs text-gray-400">{t("map.stationId")}</p>
+            <p className="font-medium text-gray-700">{station.id}</p>
+          </div>
+        </div>
+      )}
 
       <div className="mt-3 grid grid-cols-2 gap-3">
         <button
           type="button"
-          className="border-brand-600 text-brand-600 rounded-xl border py-2.5 text-sm font-semibold"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="border-brand-600 text-brand-600 flex items-center justify-center gap-1.5 rounded-xl border py-2.5 text-sm font-semibold"
         >
-          รายละเอียดเพิ่มเติม
+          {t("map.moreDetails")}
+          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
         <button
           type="button"
-          className="bg-brand-600 rounded-xl py-2.5 text-sm font-semibold text-white"
+          disabled
+          title={t("map.forecastComingSoon")}
+          className="bg-brand-600 rounded-xl py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
-          ดูพยากรณ์ล่วงหน้า
+          {t("map.viewForecast")}
         </button>
       </div>
     </div>

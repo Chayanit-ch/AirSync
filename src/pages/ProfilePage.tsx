@@ -4,15 +4,19 @@ import { PM25StatsCard } from "../components/profile/PM25StatsCard";
 import { ReportHistorySection } from "../components/profile/ReportHistorySection";
 import { AlertPreferencesCard } from "../components/profile/AlertPreferencesCard";
 import { FollowedAreasGrid } from "../components/home/FollowedAreasGrid";
-import { currentUser as mockUser, MOCK_RESIDENTIAL_AREA_LABEL } from "../data/mockData";
+import { currentUser as mockUser } from "../data/mockData";
 import { useAuth } from "../contexts/AuthContext";
+import { useAllStations } from "../hooks/useAllStations";
 import { useFollowedAreaSummaries } from "../hooks/useFollowedAreaSummaries";
 import { useMyReports } from "../hooks/useMyReports";
+import { useTranslation } from "../hooks/useTranslation";
 import { logOut } from "../services/auth";
 
 export function ProfilePage() {
   const { currentUser, userProfile, isLoggingOutRef } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { stations } = useAllStations();
 
   async function handleLogout() {
     isLoggingOutRef.current = true;
@@ -30,7 +34,7 @@ export function ProfilePage() {
   // Same query as Home's FollowedAreasSection, so the two pages can never
   // show different numbers for the same followed areas.
   const { areas: followedAreaCards, isLoading: areasLoading } =
-    useFollowedAreaSummaries(followedAreaIds);
+    useFollowedAreaSummaries(followedAreaIds, stations);
   const { reports, isLoading: reportsLoading } = useMyReports();
 
   return (
@@ -40,7 +44,6 @@ export function ProfilePage() {
         email={currentUser?.email || mockUser.email}
         photoURL={currentUser?.photoURL}
         guardianLevel={userProfile?.guardianLevel ?? mockUser.guardianLevel}
-        residentialArea={MOCK_RESIDENTIAL_AREA_LABEL}
         onLogout={handleLogout}
       />
       <PM25StatsCard followedAreaIds={followedAreaIds} />
@@ -57,11 +60,11 @@ export function ProfilePage() {
         <FollowedAreasGrid areas={followedAreaCards} />
       ) : (
         <div className="rounded-2xl border border-gray-100 bg-white p-4 text-center text-sm text-gray-400 shadow-sm">
-          ยังไม่มีพื้นที่ที่ติดตาม — เพิ่มได้ในส่วนตั้งค่าการแจ้งเตือนด้านล่าง
+          {t("profile.noFollowedAreasHint")}
         </div>
       )}
       <ReportHistorySection reports={reports} isLoading={reportsLoading} />
-      <AlertPreferencesCard />
+      <AlertPreferencesCard stations={stations} />
     </div>
   );
 }

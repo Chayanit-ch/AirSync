@@ -1,19 +1,22 @@
 import { Bell, Home, Map, PlusCircle, User } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "../../hooks/useTranslation";
 
 const NAV_ITEMS = [
-  { to: "/", label: "Home", icon: Home, end: true },
-  { to: "/map", label: "Map", icon: Map, end: false },
-  { to: "/report", label: "Report", icon: PlusCircle, end: false },
-  { to: "/alerts", label: "Alerts", icon: Bell, end: false },
-  { to: "/profile", label: "Profile", icon: User, end: false },
-];
+  { to: "/", key: "home", icon: Home, end: true },
+  { to: "/map", key: "map", icon: Map, end: false },
+  { to: "/report", key: "report", icon: PlusCircle, end: false },
+  { to: "/alerts", key: "alerts", icon: Bell, end: false },
+  { to: "/profile", key: "profile", icon: User, end: false },
+] as const;
 
 export function BottomNav() {
+  const { t } = useTranslation();
+
   return (
     <nav className="z-30 shrink-0 border-t border-gray-100 bg-white pb-[env(safe-area-inset-bottom)]">
       <div className="flex items-stretch justify-between px-1">
-        {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+        {NAV_ITEMS.map(({ to, key, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
@@ -25,7 +28,7 @@ export function BottomNav() {
             }
           >
             <Icon size={22} strokeWidth={2.1} />
-            {label}
+            {t(`nav.${key}`)}
           </NavLink>
         ))}
       </div>

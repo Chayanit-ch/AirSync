@@ -1,7 +1,8 @@
 import { MapPin } from "lucide-react";
 import type { Report, ReportType } from "../../types";
 import { getReportTypeLabel } from "../../services/reports";
-import { REPORT_STATUS_LABELS } from "../../data/mockData";
+import { useTranslation } from "../../hooks/useTranslation";
+import { formatLocalizedDate } from "../../utils/date";
 
 const INCIDENT_TAG_STYLE: Record<ReportType, string> = {
   burning: "bg-orange-100 text-orange-700",
@@ -25,21 +26,12 @@ const STATUS_TEXT_STYLE: Record<Report["status"], string> = {
   resolved: "text-emerald-600",
 };
 
-const MONTHS_TH = [
-  "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
-  "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
-];
-
-function formatThaiDate(date: Date): string {
-  const beYear = (date.getFullYear() + 543) % 100;
-  return `${date.getDate()} ${MONTHS_TH[date.getMonth()]} ${beYear}`;
-}
-
 export function ProfileReportItem({ report }: { report: Report }) {
+  const { language, dict } = useTranslation();
   // `createdAt` reads back as null for a brief moment right after submit,
   // before Firestore resolves the serverTimestamp() — fall back to "now".
   const createdAtDate = report.createdAt?.toDate?.() ?? new Date();
-  const title = getReportTypeLabel(report);
+  const title = getReportTypeLabel(report, dict.report.types);
 
   return (
     <div className="rounded-xl border border-gray-100 p-3">
@@ -49,7 +41,9 @@ export function ProfileReportItem({ report }: { report: Report }) {
         >
           {title}
         </span>
-        <span className="text-xs text-gray-400">{formatThaiDate(createdAtDate)}</span>
+        <span className="text-xs text-gray-400">
+          {formatLocalizedDate(createdAtDate, language, dict.common.months)}
+        </span>
       </div>
       <p className="mt-2 font-semibold text-gray-800">{title}</p>
       <p className="mt-1 flex items-center gap-1 text-xs text-gray-400">
@@ -59,7 +53,7 @@ export function ProfileReportItem({ report }: { report: Report }) {
       <div className="mt-2 flex items-center gap-1.5 text-xs">
         <span className={`h-2 w-2 rounded-full ${STATUS_DOT_STYLE[report.status]}`} />
         <span className={`font-medium ${STATUS_TEXT_STYLE[report.status]}`}>
-          {REPORT_STATUS_LABELS[report.status]}
+          {dict.report.status[report.status]}
         </span>
       </div>
     </div>

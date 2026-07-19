@@ -9,15 +9,17 @@ import {
 } from "recharts";
 import type { AirQualityRecord, HistoricalPeriod } from "../../types";
 import { getAreaAirQualityHistory } from "../../services/airQuality";
+import { useTranslation } from "../../hooks/useTranslation";
 import { bucketAirQualityRecords } from "../../utils/airQualityHistory";
 
-const PERIODS: { id: HistoricalPeriod; label: string }[] = [
-  { id: "daily", label: "รายวัน" },
-  { id: "weekly", label: "รายสัปดาห์" },
-  { id: "monthly", label: "รายเดือน" },
+const PERIODS: { id: HistoricalPeriod; key: "periodDaily" | "periodWeekly" | "periodMonthly" }[] = [
+  { id: "daily", key: "periodDaily" },
+  { id: "weekly", key: "periodWeekly" },
+  { id: "monthly", key: "periodMonthly" },
 ];
 
 export function PM25StatsCard({ followedAreaIds }: { followedAreaIds: string[] }) {
+  const { t, dict } = useTranslation();
   const [period, setPeriod] = useState<HistoricalPeriod>("daily");
   const [records, setRecords] = useState<AirQualityRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,8 +45,14 @@ export function PM25StatsCard({ followedAreaIds }: { followedAreaIds: string[] }
   }, [followedAreaIdsKey]);
 
   const data = useMemo(
-    () => bucketAirQualityRecords(records, period),
-    [records, period],
+    () =>
+      bucketAirQualityRecords(records, period, {
+        weekdays: dict.common.weekdays,
+        months: dict.common.months,
+        weekLabel: (n) => t("profile.weekLabel", { n }),
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [records, period, dict],
   );
 
   return (
@@ -52,10 +60,10 @@ export function PM25StatsCard({ followedAreaIds }: { followedAreaIds: string[] }
       <div className="flex items-start justify-between gap-2">
         <div>
           <h2 className="text-lg font-bold text-gray-800">
-            สถิติฝุ่น PM2.5 ย้อนหลัง
+            {t("profile.pm25History")}
           </h2>
           <p className="mt-0.5 text-xs text-gray-400">
-            เปรียบเทียบข้อมูลในพื้นที่ที่คุณติดตาม
+            {t("profile.pm25HistorySubtitle")}
           </p>
         </div>
         <div className="flex shrink-0 items-center rounded-full border border-gray-200 bg-gray-50 p-0.5 text-xs font-semibold">
@@ -70,7 +78,7 @@ export function PM25StatsCard({ followedAreaIds }: { followedAreaIds: string[] }
                   : "text-gray-400"
               }`}
             >
-              {p.label}
+              {t(`profile.${p.key}`)}
             </button>
           ))}
         </div>
@@ -79,11 +87,11 @@ export function PM25StatsCard({ followedAreaIds }: { followedAreaIds: string[] }
       <div className="mt-4 h-40 w-full">
         {isLoading ? (
           <div className="flex h-full items-center justify-center text-sm text-gray-400">
-            กำลังโหลดข้อมูล...
+            {t("common.loading")}
           </div>
         ) : data.length === 0 ? (
           <div className="flex h-full items-center justify-center text-sm text-gray-400">
-            ยังไม่มีพื้นที่ที่ติดตาม
+            {t("home.noFollowedAreas")}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">

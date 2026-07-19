@@ -9,6 +9,15 @@
 // frontend (https://air4thai.pcd.go.th/webV3/) — this is the exact URL it
 // calls itself, not a guessed/legacy one:
 //   https://air4thai.com/forweb/getAQI_JSON.php
+//
+// NATIONWIDE ROLLOUT (2026-07-19): this used to filter the ~174 stations
+// Air4Thai returns down to 2 hard-coded Samut Sakhon stations via a
+// `STATION_TO_AREA_ID` table, with the app's other 3 "areas" always mocked.
+// That filtering is gone — every station with a fresh, valid reading is now
+// returned, nationwide, as both a `records` entry (`areaId` = the station's
+// own `stationID`, e.g. "27t") and a `stations` entry. The frontend now
+// finds relevant stations itself (nearest-to-user, search, or a followed
+// `stationID`) instead of this endpoint deciding in advance which 2 matter.
 import https from "node:https";
 
 const AIR4THAI_URL = "https://air4thai.com/forweb/getAQI_JSON.php";
@@ -37,23 +46,6 @@ function getAqiSeverity(aqi: number): AqiSeverity {
   if (aqi <= 150) return "sensitive";
   return "unhealthy";
 }
-
-/**
- * Air4Thai stationID -> this app's areaId. Only the stations that actually
- * sit inside the app's Samut Sakhon pilot areas are mapped; there is no
- * pre-existing mapping anywhere else in the codebase (checked mockData.ts —
- * its `allAreas`/`monitoringStations` are hand-authored mock data with no
- * link to real Air4Thai station IDs), so this is the first one.
- *
- * Only 2 of the app's 5 areas have a real nearby Air4Thai ground station as
- * of this integration — "area-ban-phaeo", "area-krathum-baen", and
- * "area-bang-nam-chued" have none, so `records` below simply won't include
- * them and the frontend's existing mock fallback covers those areas.
- */
-const STATION_TO_AREA_ID: Record<string, string> = {
-  "27t": "area-mueang", // โรงเรียนสมุทรสาครวิทยาลัย — Maha Chai, Mueang district
-  "14t": "area-om-noi", // แขวงการทางสมุทรสาคร — Om Noi subdistrict, Krathum Baen district
-};
 
 interface Air4ThaiParam {
   color_id: string;
@@ -130,9 +122,29 @@ function toIsoTimestamp(date: string, time: string): string {
   return `${date}T${time}:00+07:00`;
 }
 
+/**
+ * Air4Thai's `areaTH` free-text field is inconsistently formatted (verified
+ * against the live nationwide feed 2026-07-19) — usually
+ * "<subdistrict/road> <district>, <province>", where the district is
+ * prefixed "อ." (amphoe) outside Bangkok or "เขต" (khet) inside Bangkok, and
+ * the province is whatever comes after the last comma — but some entries
+ * keep a stray "จ." prefix on the province, some Bangkok entries omit the
+ * ", <province>" suffix entirely, and a handful are just a bare province
+ * name with no comma at all (no district info available for that station).
+ */
 function extractDistrict(areaTH: string): string {
-  const match = areaTH.match(/อ\.([^\s,]+)/);
-  return match ? match[1] : areaTH;
+  const amphoeMatch = areaTH.match(/อ\.([^\s,]+)/);
+  if (amphoeMatch) return amphoeMatch[1];
+  const khetMatch = areaTH.match(/เขต([^\s,]+)/);
+  if (khetMatch) return `เขต${khetMatch[1]}`;
+  return areaTH;
+}
+
+function extractProvince(areaTH: string): string {
+  const parts = areaTH.split(",");
+  const candidate =
+    parts.length > 1 ? parts[parts.length - 1].trim() : areaTH.includes("เขต") ? "กรุงเทพฯ" : areaTH;
+  return candidate.replace(/^จ\.\s*/, "");
 }
 
 /**
@@ -161,37 +173,33 @@ function normalize(raw: Air4ThaiResponse): CacheEntry {
 
     const lat = Number(station.lat);
     const lng = Number(station.long);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
 
-    const areaId = STATION_TO_AREA_ID[station.stationID];
-    if (areaId) {
-      records.push({
-        id: `${areaId}-live-${station.stationID}`,
-        areaId,
-        stationId: station.stationID,
-        timestamp,
-        aqi,
-        pm25,
-        pm10: parseNumOrUndefined(station.AQILast.PM10?.value),
-      });
-    }
+    // areaId = the station's own stationID (e.g. "27t") — nationwide, one
+    // record per real station, not filtered down to a hard-coded subset.
+    records.push({
+      id: `${station.stationID}-live`,
+      areaId: station.stationID,
+      stationId: station.stationID,
+      timestamp,
+      aqi,
+      pm25,
+      pm10: parseNumOrUndefined(station.AQILast.PM10?.value),
+    });
 
-    // Station markers are scoped to the app's Samut Sakhon pilot region —
-    // this is a small, single-province app, not a nationwide map.
-    if (station.areaTH.includes("สมุทรสาคร") && Number.isFinite(lat) && Number.isFinite(lng)) {
-      stations.push({
-        id: station.stationID,
-        name: station.nameTH.trim(),
-        nameEn: station.nameEN,
-        address: station.areaTH,
-        district: extractDistrict(station.areaTH),
-        province: "สมุทรสาคร",
-        location: { lat, lng },
-        currentAqi: aqi,
-        currentPm25: pm25,
-        severity: getAqiSeverity(aqi),
-        lastUpdated: timestamp,
-      });
-    }
+    stations.push({
+      id: station.stationID,
+      name: station.nameTH.trim(),
+      nameEn: station.nameEN,
+      address: station.areaTH,
+      district: extractDistrict(station.areaTH),
+      province: extractProvince(station.areaTH),
+      location: { lat, lng },
+      currentAqi: aqi,
+      currentPm25: pm25,
+      severity: getAqiSeverity(aqi),
+      lastUpdated: timestamp,
+    });
   }
 
   return { fetchedAtMs, records, stations };

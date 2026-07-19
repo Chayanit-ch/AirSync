@@ -3,11 +3,13 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { currentUser as mockUser } from "../../data/mockData";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTranslation } from "../../hooks/useTranslation";
 import { logOut } from "../../services/auth";
 import { UserAvatar } from "../common/UserAvatar";
 
 export function ProfileDropdown() {
   const { currentUser, isLoggingOutRef } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -38,7 +40,7 @@ export function ProfileDropdown() {
         to="/login"
         className="bg-brand-600 hover:bg-brand-700 rounded-full px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white transition-colors"
       >
-        เข้าสู่ระบบ
+        {t("common.login")}
       </Link>
     );
   }
@@ -71,7 +73,7 @@ export function ProfileDropdown() {
         onClick={() => setIsOpen((prev) => !prev)}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        aria-label="เมนูผู้ใช้"
+        aria-label={t("profile.userMenu")}
         className="block rounded-full"
       >
         <UserAvatar photoURL={currentUser.photoURL} displayName={displayName} size="sm" />
@@ -100,7 +102,7 @@ export function ProfileDropdown() {
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               <UserIcon size={17} />
-              โปรไฟล์ของฉัน
+              {t("profile.myProfile")}
             </button>
             <button
               type="button"
@@ -109,7 +111,7 @@ export function ProfileDropdown() {
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               <Bell size={17} />
-              ตั้งค่าการแจ้งเตือน
+              {t("profile.notificationSettings")}
             </button>
           </div>
 
@@ -123,7 +125,7 @@ export function ProfileDropdown() {
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-600 hover:bg-red-50"
             >
               <LogOut size={17} />
-              ออกจากระบบ
+              {t("common.logout")}
             </button>
           </div>
         </div>

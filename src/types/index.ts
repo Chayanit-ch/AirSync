@@ -15,9 +15,16 @@ export interface GeoPoint {
 
 /**
  * A single timestamped air quality reading. Firestore: `airQualityRecords/{id}`.
- * `areaId` links the record to an `AreaAirQualitySummary`/followed-area id —
- * that's what per-user history queries filter on. `stationId` is optional
- * since area-level aggregates aren't always tied to one physical station.
+ *
+ * NATIONWIDE ROLLOUT (2026-07-19): `areaId` now holds a real Air4Thai
+ * `stationID` (e.g. "27t"), nationwide — not a custom slug like the old
+ * "area-mueang". Before this the app only recognized 5 hard-coded Samut
+ * Sakhon areas; no migration was performed since real user data collection
+ * hadn't started. The field name is unchanged (still what per-user history
+ * queries filter on) to avoid a Firestore schema change, but its meaning is
+ * now "which station" rather than "which of our 5 areas". `stationId` is
+ * kept as a separate, always-equal-to-`areaId` field for the live (non-
+ * Firestore) records returned by `/api/air4thai` — see `services/airQuality.ts`.
  */
 export interface AirQualityRecord {
   id: string;
@@ -169,6 +176,14 @@ export interface UserProfile {
   photoURL: string;
   role: UserRole;
   guardianLevel: number;
+  /**
+   * NATIONWIDE ROLLOUT (2026-07-19): now stores real Air4Thai `stationID`s
+   * (e.g. "27t") that the user follows, nationwide — not the old 5
+   * hard-coded Samut Sakhon area slugs (e.g. "area-mueang"). No migration
+   * was performed since real user data collection hadn't started yet; still
+   * only ever written via `arrayUnion`/`arrayRemove` (see `followArea`/
+   * `unfollowArea` in `services/userProfile.ts`), never overwritten whole.
+   */
   followedAreaIds: string[];
   notificationSettings: NotificationSettings;
   createdAt: Timestamp;

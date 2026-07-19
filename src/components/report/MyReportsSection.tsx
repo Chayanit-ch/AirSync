@@ -1,4 +1,5 @@
 import type { Report } from "../../types";
+import { useTranslation } from "../../hooks/useTranslation";
 import { ReportHistoryCard } from "./ReportHistoryCard";
 
 function ReportCardSkeleton() {
@@ -13,10 +14,12 @@ interface MyReportsSectionProps {
 }
 
 export function MyReportsSection({ reports, isLoading }: MyReportsSectionProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-gray-800">รายงานของฉัน</h2>
+        <h2 className="text-lg font-bold text-gray-800">{t("report.myReports")}</h2>
       </div>
       <div className="flex flex-col gap-3">
         {isLoading ? (
@@ -26,7 +29,7 @@ export function MyReportsSection({ reports, isLoading }: MyReportsSectionProps) 
           </>
         ) : reports.length === 0 ? (
           <div className="rounded-2xl border border-gray-100 bg-white p-4 text-center text-sm text-gray-400 shadow-sm">
-            คุณยังไม่เคยส่งรายงาน — เริ่มแจ้งเหตุการณ์แรกของคุณด้านบน
+            {t("report.noReportsYetLong")}
           </div>
         ) : (
           reports.map((report) => (

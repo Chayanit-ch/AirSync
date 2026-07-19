@@ -8,13 +8,24 @@ import {
   setDoc,
   where,
 } from "firebase/firestore";
-import { db } from "../firebase";
-import {
-  airQualityRecords as mockAirQualityRecords,
-  allAreas,
-  monitoringStations as mockMonitoringStations,
-} from "../data/mockData";
+import { auth, db } from "../firebase";
+import { monitoringStations as mockMonitoringStations } from "../data/mockData";
+import { pm25ToAqi, getAqiSeverity } from "../utils/aqi";
 import type { AirQualityRecord, MonitoringStation } from "../types";
+
+/**
+ * Mueang Samut Sakhon's real Air4Thai stationID — used as the guest/no-
+ * permission default for the Home hero card. Kept as a plain constant (not
+ * a "known area") now that any of the 174 nationwide stations is a valid
+ * target — see `useNearestStationHero`.
+ */
+export const DEFAULT_STATION_ID = "27t";
+
+/** Neutral placeholder reading used only when a specific requested station
+ * has no live data available at all this session (see `resolveStationReading`
+ * and `generateSyntheticStationHistory` below) — moderate/AQI ~75, so it
+ * never reads as falsely "clean" or falsely "hazardous". */
+const GENERIC_MOCK_PM25 = 24;
 
 /** Firestore's `in` operator only accepts up to 10 values per query. */
 const FIRESTORE_IN_QUERY_LIMIT = 10;
@@ -28,11 +39,11 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 async function queryAirQualityRecords(
-  areaIds: string[],
+  stationIds: string[],
   maxPerChunk = 400,
 ): Promise<AirQualityRecord[]> {
   const results = await Promise.all(
-    chunk(areaIds, FIRESTORE_IN_QUERY_LIMIT).map(async (idsChunk) => {
+    chunk(stationIds, FIRESTORE_IN_QUERY_LIMIT).map(async (idsChunk) => {
       const recordsQuery = query(
         collection(db, "airQualityRecords"),
         where("areaId", "in", idsChunk),
@@ -48,31 +59,78 @@ async function queryAirQualityRecords(
   return results.flat();
 }
 
+/** Cheap deterministic string hash so each station's synthetic history looks
+ * distinct but stable across reloads, without a random seed library. */
+function hashStationId(stationId: string): number {
+  let seed = 0;
+  for (let i = 0; i < stationId.length; i++) {
+    seed = (seed * 31 + stationId.charCodeAt(i)) % 997;
+  }
+  return seed;
+}
+
 /**
- * Returns historical air-quality records for the areas a user follows.
- * Always queried fresh, filtered by areaId — never persisted per-user, so
- * there's no personal statistics array anywhere that a stale write could
- * ever overwrite.
+ * Synthesizes a plausible-looking 120-day PM2.5 history for a single station
+ * that has no real `airQualityRecords` yet — nationwide equivalent of the
+ * old per-area mock history, generalized to any Air4Thai `stationID` instead
+ * of 5 hard-coded areas (there's no way to have real pre-seeded history for
+ * a station nobody has followed yet). Always paired with a `console.warn` by
+ * the caller — never a silent substitution.
+ */
+function generateSyntheticStationHistory(
+  stationId: string,
+  days = 120,
+): AirQualityRecord[] {
+  const seed = hashStationId(stationId);
+  const baselinePm25 = GENERIC_MOCK_PM25 + (seed % 40); // spread baselines ~24-64 across stations
+  const records: AirQualityRecord[] = [];
+  const today = new Date();
+  today.setHours(6, 0, 0, 0);
+
+  for (let daysAgo = 0; daysAgo < days; daysAgo++) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - daysAgo);
+
+    const wave =
+      Math.sin((daysAgo + seed) / 5) * 0.15 + Math.sin((daysAgo + seed) / 30) * 0.2;
+    const pm25 = Math.max(3, baselinePm25 * (1 + wave));
+
+    records.push({
+      id: `${stationId}-mock-history-${daysAgo}`,
+      areaId: stationId,
+      timestamp: date.toISOString(),
+      aqi: pm25ToAqi(pm25),
+      pm25: Math.round(pm25 * 10) / 10,
+    });
+  }
+
+  return records;
+}
+
+/**
+ * Returns historical air-quality records for the stations a user follows.
+ * Always queried fresh, filtered by `areaId` (= stationID, see types.ts) —
+ * never persisted per-user, so there's no personal statistics array anywhere
+ * that a stale write could ever overwrite.
  *
- * Merges real Firestore data with mock data PER AREA rather than
- * all-or-nothing: now that `getLiveAirQuality` upserts real records as
- * users open the Home page, some areas (the ones Air4Thai actually covers)
- * accumulate real history while others never will. Returning only real data
- * the moment ANY area has some would silently blank out every other area's
- * card/chart — exactly the kind of hidden failure this app is trying to
- * stop doing.
+ * Merges real Firestore data with synthetic data PER STATION rather than
+ * all-or-nothing: some stations (the ones `upsertLiveRecords` has already
+ * seeded) accumulate real history while brand-new ones never followed before
+ * won't have any yet. Returning only real data the moment ANY station has
+ * some would silently blank out every other station's card/chart — exactly
+ * the kind of hidden failure this app is trying to stop doing.
  */
 export async function getAreaAirQualityHistory(
-  areaIds: string[],
+  stationIds: string[],
 ): Promise<AirQualityRecord[]> {
-  if (areaIds.length === 0) return [];
+  if (stationIds.length === 0) return [];
 
   // TODO: Composite index must be created first.
   // See the previously provided Firebase index URL.
   // Otherwise this query will silently fall back forever.
   let realRecords: AirQualityRecord[] = [];
   try {
-    realRecords = await queryAirQualityRecords(areaIds);
+    realRecords = await queryAirQualityRecords(stationIds);
   } catch (error) {
     console.error(
       "Failed to query airQualityRecords, falling back to mock data",
@@ -80,17 +138,17 @@ export async function getAreaAirQualityHistory(
     );
   }
 
-  const areaIdsWithRealData = new Set(realRecords.map((record) => record.areaId));
-  const areaIdsNeedingMock = areaIds.filter((id) => !areaIdsWithRealData.has(id));
+  const stationIdsWithRealData = new Set(realRecords.map((record) => record.areaId));
+  const stationIdsNeedingMock = stationIds.filter((id) => !stationIdsWithRealData.has(id));
 
-  if (areaIdsNeedingMock.length > 0) {
+  if (stationIdsNeedingMock.length > 0) {
     console.warn(
-      `Using mock history data for area(s) [${areaIdsNeedingMock.join(", ")}] — no real airQualityRecords for them yet.`,
+      `Using mock history data for station(s) [${stationIdsNeedingMock.join(", ")}] — no real airQualityRecords for them yet.`,
     );
   }
 
-  const mockRecords = mockAirQualityRecords.filter((record) =>
-    areaIdsNeedingMock.includes(record.areaId),
+  const mockRecords = stationIdsNeedingMock.flatMap((id) =>
+    generateSyntheticStationHistory(id),
   );
 
   return [...realRecords, ...mockRecords];
@@ -106,36 +164,22 @@ interface Air4ThaiProxyResponse {
   error?: string;
 }
 
-export interface LiveAirQualityRecord extends AirQualityRecord {
-  /** false when this specific area had no real Air4Thai coverage (or the whole fetch failed) and fell back to mock. */
-  isLive: boolean;
-}
-
 export interface LiveAirQualityResult {
-  records: LiveAirQualityRecord[];
+  /** One entry per currently-reporting real station, nationwide. Empty if the whole fetch failed. */
+  records: AirQualityRecord[];
+  /** Nationwide live stations, or the small legacy Samut Sakhon mock set if the whole fetch failed. */
   stations: MonitoringStation[];
-  /** Whole-fetch-level: true only if the Air4Thai request itself succeeded (even if some areas still had no station). */
+  /** True only if the `/api/air4thai` request itself succeeded. */
   isLive: boolean;
-}
-
-function latestMockRecordPerArea(): AirQualityRecord[] {
-  const latestByArea = new Map<string, AirQualityRecord>();
-  for (const record of mockAirQualityRecords) {
-    const existing = latestByArea.get(record.areaId);
-    if (!existing || record.timestamp > existing.timestamp) {
-      latestByArea.set(record.areaId, record);
-    }
-  }
-  return [...latestByArea.values()];
 }
 
 /**
  * Fire-and-forget upsert of freshly-fetched live records into Firestore's
  * `airQualityRecords` collection, so history accumulates naturally as real
  * users open the app — deliberately no cron job / scheduled function (not
- * available on Vercel's free tier without extra setup, and not worth the
- * time under the deployment deadline). Deterministic per-hour doc IDs make
- * repeated writes a natural upsert instead of piling up duplicates.
+ * available on Vercel's free tier without extra setup). Deterministic
+ * per-hour doc IDs make repeated writes a natural upsert instead of piling
+ * up duplicates.
  */
 async function upsertLiveRecords(records: AirQualityRecord[]): Promise<void> {
   await Promise.all(
@@ -151,26 +195,21 @@ async function upsertLiveRecords(records: AirQualityRecord[]): Promise<void> {
   );
 }
 
-const KNOWN_AREA_IDS = allAreas.map((area) => area.id);
-
 /**
- * Live, current-moment air quality for the Home hero card and Map station
- * markers — always fetched fresh through the `/api/air4thai` Vercel proxy,
+ * Live, current-moment air quality nationwide — for the Home hero card
+ * (nearest-station search), the Map's station markers, and Profile's station
+ * search, always fetched fresh through the `/api/air4thai` Vercel proxy,
  * never Firestore (that's what `getAreaAirQualityHistory` above is for).
  *
- * Only some of the app's areas have a real nearby Air4Thai station (see the
- * mapping in `api/air4thai.ts`), so this always returns one record per known
- * area — real where Air4Thai covers it, mock otherwise — with each record
- * individually flagged `isLive`. Every area that falls back to mock (whether
- * because the whole fetch failed, or Air4Thai just has no station there)
- * gets a loud `console.warn` naming it. Per the no-more-silent-fallbacks
- * rule, this must never fail quietly the way the Firestore queries once did.
+ * Unlike the old 5-hard-coded-areas version, this returns whatever Air4Thai
+ * actually has fresh data for right now (real stations only) — callers that
+ * need a *specific* station (a followed one, or the guest default) use
+ * `resolveStationReading` below to fall back honestly if that one specific
+ * station isn't in this batch. If the fetch itself fails entirely, this
+ * falls back to a small hard-coded Samut Sakhon mock station set with a loud
+ * `console.warn` — never silently.
  */
 export async function getLiveAirQuality(): Promise<LiveAirQualityResult> {
-  let liveRecords: AirQualityRecord[] = [];
-  let stations: MonitoringStation[] = mockMonitoringStations;
-  let fetchSucceeded = false;
-
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), AIR4THAI_TIMEOUT_MS);
@@ -189,35 +228,74 @@ export async function getLiveAirQuality(): Promise<LiveAirQualityResult> {
       throw new Error(data.error ?? "/api/air4thai returned an invalid payload");
     }
 
-    liveRecords = data.records;
-    stations = data.stations;
-    fetchSucceeded = true;
-
     // Don't block rendering on the Firestore write — the caller already has
-    // everything it needs.
-    void upsertLiveRecords(liveRecords);
+    // everything it needs. Skipped entirely for signed-out visitors: Firestore
+    // rules reject unauthenticated writes to this collection, and now that
+    // this covers ~170 nationwide stations (not 2), attempting it for every
+    // guest page load would fire ~170 doomed writes and log ~170
+    // "Missing or insufficient permissions" errors per load for nothing.
+    if (auth.currentUser) {
+      void upsertLiveRecords(data.records);
+    }
+
+    return { records: data.records, stations: data.stations, isLive: true };
   } catch (error) {
     console.warn("Using mock data because Air4Thai is unavailable.", error);
+    return { records: [], stations: mockMonitoringStations, isLive: false };
+  }
+}
+
+/** Last-resort placeholder for Mueang Samut Sakhon (station `27t`) — the
+ * app's original, real, named pilot station — reused so the guest/no-
+ * permission default reading always has a real-looking name even if this
+ * one specific station is momentarily missing from the live batch. */
+const DEFAULT_STATION_FALLBACK: MonitoringStation = {
+  id: DEFAULT_STATION_ID,
+  name: "โรงเรียนสมุทรสาครวิทยาลัย",
+  nameEn: "Samut Sakhon Witthayalai School",
+  address: "อ.เมือง จ.สมุทรสาคร",
+  district: "เมือง",
+  province: "สมุทรสาคร",
+  location: { lat: 13.5475, lng: 100.2745 },
+  currentAqi: pm25ToAqi(GENERIC_MOCK_PM25),
+  currentPm25: GENERIC_MOCK_PM25,
+  severity: getAqiSeverity(pm25ToAqi(GENERIC_MOCK_PM25)),
+  lastUpdated: new Date().toISOString(),
+};
+
+/**
+ * Resolves one specific station's current reading out of an already-fetched
+ * `stations` list. Real if that station is currently reporting; otherwise a
+ * clearly-flagged synthetic reading with a loud `console.warn` naming the
+ * station — used by the hero card's guest/no-permission default and by
+ * followed-station summaries, both of which need one named station's data
+ * rather than "whichever stations happen to be live right now".
+ */
+export function resolveStationReading(
+  stationId: string,
+  stations: MonitoringStation[],
+): { station: MonitoringStation; isLive: boolean } {
+  const found = stations.find((s) => s.id === stationId);
+  if (found) return { station: found, isLive: true };
+
+  console.warn(
+    `No live reading for station "${stationId}" this session — using placeholder data.`,
+  );
+
+  if (stationId === DEFAULT_STATION_ID) {
+    return { station: DEFAULT_STATION_FALLBACK, isLive: false };
   }
 
-  const liveByArea = new Map(liveRecords.map((r) => [r.areaId, r]));
-  const mockByArea = new Map(latestMockRecordPerArea().map((r) => [r.areaId, r]));
-
-  const records: LiveAirQualityRecord[] = KNOWN_AREA_IDS.flatMap((areaId): LiveAirQualityRecord[] => {
-    const live = liveByArea.get(areaId);
-    if (live) return [{ ...live, isLive: true }];
-
-    if (fetchSucceeded) {
-      // Could be a genuinely unmapped area, or a mapped station whose
-      // reading was too stale to trust (filtered server-side) — either way,
-      // this area has no usable live reading right now.
-      console.warn(
-        `Using mock data for area "${areaId}" — no fresh Air4Thai reading available for it right now.`,
-      );
-    }
-    const mock = mockByArea.get(areaId);
-    return mock ? [{ ...mock, isLive: false }] : [];
-  });
-
-  return { records, stations, isLive: fetchSucceeded };
+  return {
+    station: {
+      ...DEFAULT_STATION_FALLBACK,
+      id: stationId,
+      name: stationId,
+      nameEn: stationId,
+      address: "",
+      district: "",
+      province: "",
+    },
+    isLive: false,
+  };
 }

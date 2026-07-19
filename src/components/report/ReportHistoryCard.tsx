@@ -1,6 +1,8 @@
 import { Calendar, Clock } from "lucide-react";
 import type { Report } from "../../types";
 import { getReportTypeLabel } from "../../services/reports";
+import { useTranslation } from "../../hooks/useTranslation";
+import { formatLocalizedDate, formatLocalizedTime } from "../../utils/date";
 import { StatusBadge } from "../shared/StatusBadge";
 
 const STATUS_BORDER: Record<Report["status"], string> = {
@@ -9,25 +11,14 @@ const STATUS_BORDER: Record<Report["status"], string> = {
   resolved: "border-emerald-400",
 };
 
-const MONTHS_TH = [
-  "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
-  "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
-];
-
-function formatThaiDateTime(date: Date): { date: string; time: string } {
-  const beYear = (date.getFullYear() + 543) % 100;
-  return {
-    date: `${date.getDate()} ${MONTHS_TH[date.getMonth()]} ${beYear}`,
-    time: date.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
-  };
-}
-
 export function ReportHistoryCard({ report }: { report: Report }) {
+  const { t, language, dict } = useTranslation();
   // `createdAt` reads back as null for a brief moment right after submit,
   // before Firestore resolves the serverTimestamp() — fall back to "now".
   const createdAtDate = report.createdAt?.toDate?.() ?? new Date();
-  const { date, time } = formatThaiDateTime(createdAtDate);
-  const title = getReportTypeLabel(report);
+  const date = formatLocalizedDate(createdAtDate, language, dict.common.months);
+  const time = formatLocalizedTime(createdAtDate, language);
+  const title = getReportTypeLabel(report, dict.report.types);
   const image = report.imageUrls[0];
 
   return (
@@ -58,7 +49,7 @@ export function ReportHistoryCard({ report }: { report: Report }) {
           </span>
           <span className="flex items-center gap-1">
             <Clock size={13} />
-            เวลา {time} น.
+            {t("report.timeSuffix", { time })}
           </span>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { Camera, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { useTranslation } from "../../hooks/useTranslation";
 
 const MAX_IMAGES = 3;
 
@@ -9,6 +10,7 @@ interface ImageUploaderProps {
 }
 
 export function ImageUploader({ images, onChange }: ImageUploaderProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -27,7 +29,7 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
 
   return (
     <div>
-      <p className="mb-1.5 text-sm font-medium text-gray-700">แนบรูปภาพ</p>
+      <p className="mb-1.5 text-sm font-medium text-gray-700">{t("report.attachImages")}</p>
 
       {images.length < MAX_IMAGES && (
         <label
@@ -49,10 +51,10 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
         >
           <Camera size={28} className="text-brand-500" />
           <p className="text-brand-600 text-sm font-medium">
-            แตะเพื่ออัปโหลดหรือนำรูปภาพมาวาง
+            {t("report.uploadHint")}
           </p>
           <p className="text-xs text-gray-400">
-            สูงสุด 3 รูปภาพ (ขนาดไม่เกิน 100MB ต่อรูป)
+            {t("report.uploadLimit")}
           </p>
           <input
             ref={inputRef}
@@ -74,13 +76,13 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
             >
               <img
                 src={src}
-                alt={`รูปที่แนบ ${i + 1}`}
+                alt={t("report.attachedImageAlt", { index: i + 1 })}
                 className="h-full w-full object-cover"
               />
               <button
                 type="button"
                 onClick={() => removeImage(i)}
-                aria-label="ลบรูปภาพ"
+                aria-label={t("report.removeImage")}
                 className="absolute top-1 right-1 rounded-full bg-black/60 p-1 text-white"
               >
                 <X size={12} />

@@ -1,39 +1,18 @@
 import { Timestamp } from "firebase/firestore";
 import type {
-  AirQualityRecord,
   Alert,
-  AreaAirQualitySummary,
   HistoricalAQIData,
-  IncidentType,
   KnowledgeArticle,
   MonitoringStation,
   PollutionReport,
-  ReportStatus,
   UserProfile,
 } from "../types";
 import { getAqiSeverity, pm25ToAqi } from "../utils/aqi";
 
 /** Centralized mock data for AirSync. Swap for Firestore reads later without touching components. */
 
-export const INCIDENT_TYPE_LABELS: Record<IncidentType, string> = {
-  open_burning: "การเผาในที่โล่ง",
-  black_smoke_vehicle: "รถควันดำ",
-  industrial_emissions: "มลพิษจากโรงงานอุตสาหกรรม",
-  other: "อื่นๆ",
-};
-
-export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
-  under_review: "กำลังตรวจสอบ",
-  pending: "รอดำเนินการ",
-  in_progress: "กำลังดำเนินการ",
-  resolved: "แก้ไขแล้ว",
-};
-
 // -- Current user (mocked "logged out" preview / fallback only; the real,
 // logged-in session is always sourced from Firestore via AuthContext) --------
-
-/** Not part of the Firestore UserProfile schema — purely a static UI label. */
-export const MOCK_RESIDENTIAL_AREA_LABEL = "สมุทรสาคร";
 
 export const currentUser: UserProfile = {
   uid: "user-001",
@@ -139,59 +118,6 @@ export const heatmapPoints: [number, number, number][] = monitoringStations.map(
   (s) => [s.location.lat, s.location.lng, Math.min(s.currentAqi / 250, 1)],
 );
 
-// -- Followed area summaries (Home dashboard + Profile) ------------------------
-
-export const followedAreas: AreaAirQualitySummary[] = [
-  {
-    id: "area-ban-phaeo",
-    areaName: "บ้านแพ้ว",
-    avgAqi: 205,
-    avgPm25: 129.5,
-    severity: getAqiSeverity(205),
-  },
-  {
-    id: "area-mueang",
-    areaName: "เมืองสมุทรสาคร",
-    avgAqi: 87,
-    avgPm25: 28.4,
-    severity: getAqiSeverity(87),
-  },
-  {
-    id: "area-krathum-baen",
-    areaName: "กระทุ่มแบน",
-    avgAqi: 135,
-    avgPm25: 48.6,
-    severity: getAqiSeverity(135),
-  },
-  {
-    id: "area-om-noi",
-    areaName: "อ้อมน้อย",
-    avgAqi: 45,
-    avgPm25: 8.6,
-    severity: getAqiSeverity(45),
-  },
-];
-
-/** The area currently featured in the Home page hero card. */
-export const featuredArea = followedAreas[0];
-
-/**
- * All known areas a user could follow (superset of `followedAreas`, which is
- * just the Home page's curated preview). Used to look up area names from the
- * ids stored in a user's `followedAreaIds`, and to offer not-yet-followed
- * areas in the "add area" picker.
- */
-export const allAreas: AreaAirQualitySummary[] = [
-  ...followedAreas,
-  {
-    id: "area-bang-nam-chued",
-    areaName: "บางน้ำจืด",
-    avgAqi: pm25ToAqi(38),
-    avgPm25: 38,
-    severity: getAqiSeverity(pm25ToAqi(38)),
-  },
-];
-
 // -- 24h AQI trend (Home page chart) -------------------------------------------
 
 export const trend24h: HistoricalAQIData[] = [
@@ -210,43 +136,6 @@ export const trend24h: HistoricalAQIData[] = [
 // queried fresh and filtered by a user's followedAreaIds — never stored as
 // a per-user array, so there's nothing here for a stale write to clobber.
 // Temporary stand-in until Air4Thai ingestion seeds the real collection.
-
-const MOCK_HISTORY_DAYS = 120;
-
-function generateAreaHistory(
-  area: AreaAirQualitySummary,
-  days: number,
-): AirQualityRecord[] {
-  const records: AirQualityRecord[] = [];
-  const today = new Date();
-  today.setHours(6, 0, 0, 0);
-
-  for (let daysAgo = 0; daysAgo < days; daysAgo++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - daysAgo);
-
-    // Deterministic pseudo-variation around the area's baseline PM2.5, so the
-    // mock series looks like a real fluctuating trend without needing a
-    // random seed library.
-    const wave =
-      Math.sin(daysAgo / 5) * 0.15 + Math.sin(daysAgo / 30 + area.avgPm25) * 0.2;
-    const pm25 = Math.max(3, area.avgPm25 * (1 + wave));
-
-    records.push({
-      id: `${area.id}-history-${daysAgo}`,
-      areaId: area.id,
-      timestamp: date.toISOString(),
-      aqi: pm25ToAqi(pm25),
-      pm25: Math.round(pm25 * 10) / 10,
-    });
-  }
-
-  return records;
-}
-
-export const airQualityRecords: AirQualityRecord[] = allAreas.flatMap((area) =>
-  generateAreaHistory(area, MOCK_HISTORY_DAYS),
-);
 
 // -- Pollution reports (Report page + Profile page) ----------------------------
 

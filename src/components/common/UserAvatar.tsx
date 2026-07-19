@@ -1,5 +1,6 @@
 import { User as UserIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "../../hooks/useTranslation";
 
 export interface UserAvatarProps {
   photoURL?: string | null;
@@ -40,6 +41,7 @@ function getInitials(displayName?: string | null): string {
  * URL), not just a missing one, via the img's `onError`.
  */
 export function UserAvatar({ photoURL, displayName, size = "md" }: UserAvatarProps) {
+  const { t } = useTranslation();
   const [imageFailed, setImageFailed] = useState(false);
 
   // A changed photoURL (new sign-in, different account) deserves a fresh
@@ -49,7 +51,7 @@ export function UserAvatar({ photoURL, displayName, size = "md" }: UserAvatarPro
   }, [photoURL]);
 
   const sizeClasses = SIZE_CLASSES[size];
-  const label = displayName?.trim() || "โปรไฟล์ผู้ใช้";
+  const label = displayName?.trim() || t("common.userProfile");
 
   if (photoURL && !imageFailed) {
     return (

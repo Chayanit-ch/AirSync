@@ -1,17 +1,21 @@
 import { Menu, Wind } from "lucide-react";
-import { useLanguage } from "../../context/LanguageContext";
+import { useLanguage } from "../../contexts/LanguageContext";
+import { useTranslation } from "../../hooks/useTranslation";
 import { ProfileDropdown } from "./ProfileDropdown";
 
 export function TopBar() {
   const { language, setLanguage } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <header className="z-30 flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 bg-white px-4 py-3">
       <div className="flex items-center gap-2.5">
         <button
           type="button"
-          aria-label="เปิดเมนู"
-          className="text-brand-700 -ml-1 rounded-lg p-1.5 hover:bg-gray-50 active:bg-gray-100"
+          disabled
+          title={t("common.comingSoon")}
+          aria-label={t("topbar.openMenu")}
+          className="text-brand-700 -ml-1 rounded-lg p-1.5 hover:bg-gray-50 active:bg-gray-100 disabled:opacity-40"
         >
           <Menu size={22} strokeWidth={2.25} />
         </button>

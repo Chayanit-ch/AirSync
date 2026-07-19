@@ -1,4 +1,5 @@
 import type { KnowledgeArticle } from "../../types";
+import { useTranslation } from "../../hooks/useTranslation";
 import { ARTICLE_CATEGORY_META } from "../../utils/article";
 
 export function FeaturedArticleCard({
@@ -6,6 +7,7 @@ export function FeaturedArticleCard({
 }: {
   article: KnowledgeArticle;
 }) {
+  const { t, dict } = useTranslation();
   const meta = ARTICLE_CATEGORY_META[article.category];
 
   return (
@@ -20,10 +22,10 @@ export function FeaturedArticleCard({
           <span
             className={`rounded-full px-2.5 py-1 text-xs font-semibold ${meta.pillClass}`}
           >
-            {meta.label}
+            {dict.alerts.categories[article.category]}
           </span>
           <span className="text-xs text-gray-400">
-            อ่าน {article.readTimeMinutes} นาที
+            {t("alerts.readTime", { minutes: article.readTimeMinutes })}
           </span>
         </div>
         <h2 className="mt-2 text-lg leading-snug font-bold text-gray-900">

@@ -5,10 +5,12 @@ import { FeaturedArticleCard } from "../components/alerts/FeaturedArticleCard";
 import { ArticleListItem } from "../components/alerts/ArticleListItem";
 import { NewsletterCard } from "../components/alerts/NewsletterCard";
 import { featuredArticle, knowledgeArticles } from "../data/mockData";
+import { useTranslation } from "../hooks/useTranslation";
 
 export function AlertsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<ArticleFilter>("all");
+  const { t } = useTranslation();
 
   const visibleArticles = useMemo(() => {
     return knowledgeArticles.filter((article) => {
@@ -22,7 +24,7 @@ export function AlertsPage() {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <h1 className="text-xl font-bold text-gray-900">การแจ้งเตือนข่าว</h1>
+      <h1 className="text-xl font-bold text-gray-900">{t("alerts.pageTitle")}</h1>
 
       <NewsSearchBar value={searchQuery} onChange={setSearchQuery} />
       <CategoryFilter active={filter} onChange={setFilter} />
@@ -31,7 +33,7 @@ export function AlertsPage() {
 
       <div>
         <h2 className="border-brand-600 mb-3 border-l-4 pl-2.5 text-lg font-bold text-gray-800">
-          ข้อมูลล่าสุด
+          {t("alerts.latest")}
         </h2>
         <div className="flex flex-col gap-3">
           {visibleArticles.map((article) => (

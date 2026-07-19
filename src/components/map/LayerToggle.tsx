@@ -1,9 +1,11 @@
+import { useTranslation } from "../../hooks/useTranslation";
+
 export type MapLayerMode = "pm25" | "aqi" | "heatmap";
 
-const LAYERS: { id: MapLayerMode; label: string }[] = [
-  { id: "pm25", label: "ค่าฝุ่น PM2.5" },
-  { id: "aqi", label: "ดัชนี AQI" },
-  { id: "heatmap", label: "ความร้อน" },
+const LAYERS: { id: MapLayerMode; key: "layerPm25" | "layerAqi" | "layerHeatmap" }[] = [
+  { id: "pm25", key: "layerPm25" },
+  { id: "aqi", key: "layerAqi" },
+  { id: "heatmap", key: "layerHeatmap" },
 ];
 
 interface LayerToggleProps {
@@ -12,6 +14,8 @@ interface LayerToggleProps {
 }
 
 export function LayerToggle({ active, onChange }: LayerToggleProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex gap-2 overflow-x-auto">
       {LAYERS.map((layer) => (
@@ -25,7 +29,7 @@ export function LayerToggle({ active, onChange }: LayerToggleProps) {
               : "bg-white text-gray-600"
           }`}
         >
-          {layer.label}
+          {t(`map.${layer.key}`)}
         </button>
       ))}
     </div>

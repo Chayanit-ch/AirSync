@@ -11,16 +11,18 @@ import {
   YAxis,
 } from "recharts";
 import type { HistoricalAQIData } from "../../types";
+import { useTranslation } from "../../hooks/useTranslation";
 
 type ChartMode = "line" | "bar";
 
 export function AqiTrendChart({ data }: { data: HistoricalAQIData[] }) {
   const [mode, setMode] = useState<ChartMode>("line");
+  const { t } = useTranslation();
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between">
-        <h2 className="font-bold text-gray-800">แนวโน้ม AQI (24 ชั่วโมง)</h2>
+        <h2 className="font-bold text-gray-800">{t("home.trendTitle")}</h2>
         <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 p-0.5 text-xs font-semibold">
           <button
             type="button"
@@ -31,7 +33,7 @@ export function AqiTrendChart({ data }: { data: HistoricalAQIData[] }) {
                 : "text-gray-400"
             }`}
           >
-            เส้น
+            {t("home.trendLine")}
           </button>
           <button
             type="button"
@@ -42,7 +44,7 @@ export function AqiTrendChart({ data }: { data: HistoricalAQIData[] }) {
                 : "text-gray-400"
             }`}
           >
-            แท่ง
+            {t("home.trendBar")}
           </button>
         </div>
       </div>
@@ -68,7 +70,7 @@ export function AqiTrendChart({ data }: { data: HistoricalAQIData[] }) {
               />
               <Tooltip
                 formatter={(value) => [`${value}`, "AQI"]}
-                labelFormatter={(label) => `เวลา ${label}`}
+                labelFormatter={(label) => t("home.trendTimeLabel", { label })}
               />
               <Line
                 type="monotone"
@@ -98,7 +100,7 @@ export function AqiTrendChart({ data }: { data: HistoricalAQIData[] }) {
               />
               <Tooltip
                 formatter={(value) => [`${value}`, "AQI"]}
-                labelFormatter={(label) => `เวลา ${label}`}
+                labelFormatter={(label) => t("home.trendTimeLabel", { label })}
               />
               <Bar dataKey="aqi" fill="#2563eb" radius={[4, 4, 0, 0]} />
             </BarChart>

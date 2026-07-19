@@ -1,6 +1,7 @@
 import { Maximize2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { monitoringStations } from "../../data/mockData";
+import { useTranslation } from "../../hooks/useTranslation";
 import { AQI_SEVERITY_META } from "../../utils/aqi";
 
 const BLOB_POSITIONS = [
@@ -13,13 +14,15 @@ const BLOB_POSITIONS = [
 ];
 
 export function HeatmapPreviewCard() {
+  const { t } = useTranslation();
+
   return (
     <Link
       to="/map"
       className="block rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
     >
       <div className="flex items-center justify-between">
-        <h2 className="font-bold text-gray-800">จุดเสี่ยงเกิดมลพิษ</h2>
+        <h2 className="font-bold text-gray-800">{t("home.riskHotspots")}</h2>
         <Maximize2 size={18} className="text-gray-400" />
       </div>
 

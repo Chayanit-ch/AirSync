@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { PageLayout } from "./components/layout/PageLayout";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
-import { LanguageProvider } from "./context/LanguageContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { HomePage } from "./pages/HomePage";
 import { MapPage } from "./pages/MapPage";

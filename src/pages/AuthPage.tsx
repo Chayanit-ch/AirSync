@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2, Lock, Mail, User as UserIcon, Wind } from "lucide-react";
-import { signInWithEmail, signInWithGoogle, signUpWithEmail } from "../services/auth";
+import { AuthError, signInWithEmail, signInWithGoogle, signUpWithEmail } from "../services/auth";
 import { GoogleIcon } from "../components/shared/GoogleIcon";
 import { useAuth } from "../contexts/AuthContext";
+import { useTranslation } from "../hooks/useTranslation";
 
 type AuthMode = "login" | "signup";
 
@@ -12,6 +13,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function AuthPage() {
   const navigate = useNavigate();
   const { currentUser, refreshCurrentUser } = useAuth();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<AuthMode>("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -38,12 +40,12 @@ export function AuthPage() {
   }
 
   function validate(): string | null {
-    if (mode === "signup" && !name.trim()) return "กรุณากรอกชื่อ";
-    if (!email.trim()) return "กรุณากรอกอีเมล";
-    if (!EMAIL_PATTERN.test(email)) return "รูปแบบอีเมลไม่ถูกต้อง";
-    if (!password) return "กรุณากรอกรหัสผ่าน";
-    if (password.length < 6) return "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร";
-    if (mode === "signup" && password !== confirmPassword) return "รหัสผ่านไม่ตรงกัน";
+    if (mode === "signup" && !name.trim()) return t("auth.errorName");
+    if (!email.trim()) return t("auth.errorEmail");
+    if (!EMAIL_PATTERN.test(email)) return t("auth.errorEmailFormat");
+    if (!password) return t("auth.errorPassword");
+    if (password.length < 6) return t("auth.errorPasswordLength");
+    if (mode === "signup" && password !== confirmPassword) return t("auth.errorPasswordMatch");
     return null;
   }
 
@@ -71,7 +73,9 @@ export function AuthPage() {
       }
       // Navigation happens reactively via the currentUser effect above.
     } catch (err) {
-      setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      setError(
+        err instanceof AuthError ? t(`auth.errors.${err.translationKey}`) : t("auth.genericError"),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -85,7 +89,9 @@ export function AuthPage() {
       await signInWithGoogle();
       // Navigation happens reactively via the currentUser effect above.
     } catch (err) {
-      setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      setError(
+        err instanceof AuthError ? t(`auth.errors.${err.translationKey}`) : t("auth.genericError"),
+      );
     } finally {
       setIsGoogleLoading(false);
     }
@@ -100,7 +106,7 @@ export function AuthPage() {
             AirSync
           </span>
         </div>
-        <p className="text-sm text-gray-400">ระบบติดตามคุณภาพอากาศสมุทรสาคร</p>
+        <p className="text-sm text-gray-400">{t("auth.tagline")}</p>
       </div>
 
       <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 p-1 text-sm font-semibold">
@@ -111,7 +117,7 @@ export function AuthPage() {
             mode === "login" ? "bg-brand-600 text-white" : "text-gray-500"
           }`}
         >
-          เข้าสู่ระบบ
+          {t("auth.login")}
         </button>
         <button
           type="button"
@@ -120,7 +126,7 @@ export function AuthPage() {
             mode === "signup" ? "bg-brand-600 text-white" : "text-gray-500"
           }`}
         >
-          สมัครสมาชิก
+          {t("auth.signup")}
         </button>
       </div>
 
@@ -132,7 +138,7 @@ export function AuthPage() {
         {mode === "signup" && (
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">
-              ชื่อ
+              {t("auth.name")}
             </label>
             <div className="relative">
               <UserIcon
@@ -143,7 +149,7 @@ export function AuthPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 type="text"
-                placeholder="ชื่อ-นามสกุล"
+                placeholder={t("auth.namePlaceholder")}
                 className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-3 pr-3.5 pl-10 text-sm text-gray-700 outline-none placeholder:text-gray-400"
               />
             </div>
@@ -152,7 +158,7 @@ export function AuthPage() {
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-gray-700">
-            อีเมล
+            {t("auth.email")}
           </label>
           <div className="relative">
             <Mail
@@ -163,7 +169,7 @@ export function AuthPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
-              placeholder="อีเมล..."
+              placeholder={t("auth.emailPlaceholder")}
               className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-3 pr-3.5 pl-10 text-sm text-gray-700 outline-none placeholder:text-gray-400"
             />
           </div>
@@ -171,7 +177,7 @@ export function AuthPage() {
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-gray-700">
-            รหัสผ่าน
+            {t("auth.password")}
           </label>
           <div className="relative">
             <Lock
@@ -182,13 +188,13 @@ export function AuthPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type={showPassword ? "text" : "password"}
-              placeholder="รหัสผ่าน"
+              placeholder={t("auth.passwordPlaceholder")}
               className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-3 pr-10 pl-10 text-sm text-gray-700 outline-none placeholder:text-gray-400"
             />
             <button
               type="button"
               onClick={() => setShowPassword((s) => !s)}
-              aria-label={showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+              aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
               className="absolute top-1/2 right-3.5 -translate-y-1/2 text-gray-400"
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -199,7 +205,7 @@ export function AuthPage() {
         {mode === "signup" && (
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">
-              ยืนยันรหัสผ่าน
+              {t("auth.confirmPassword")}
             </label>
             <div className="relative">
               <Lock
@@ -210,7 +216,7 @@ export function AuthPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 type={showPassword ? "text" : "password"}
-                placeholder="ยืนยันรหัสผ่าน"
+                placeholder={t("auth.confirmPasswordPlaceholder")}
                 className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-3 pr-3.5 pl-10 text-sm text-gray-700 outline-none placeholder:text-gray-400"
               />
             </div>
@@ -229,13 +235,13 @@ export function AuthPage() {
           className="bg-brand-600 hover:bg-brand-700 flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold text-white shadow-sm transition-colors disabled:opacity-60"
         >
           {isSubmitting && <Loader2 size={18} className="animate-spin" />}
-          {mode === "signup" ? "สมัครสมาชิก" : "เข้าสู่ระบบ"}
+          {mode === "signup" ? t("auth.signup") : t("auth.login")}
         </button>
       </form>
 
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-gray-200" />
-        <span className="text-xs text-gray-400">หรือ</span>
+        <span className="text-xs text-gray-400">{t("auth.or")}</span>
         <div className="h-px flex-1 bg-gray-200" />
       </div>
 
@@ -250,7 +256,7 @@ export function AuthPage() {
         ) : (
           <GoogleIcon size={18} />
         )}
-        เข้าสู่ระบบด้วย Google
+        {t("auth.googleLogin")}
       </button>
     </div>
   );

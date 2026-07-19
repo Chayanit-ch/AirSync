@@ -1,30 +1,28 @@
-import { useEffect, useState } from "react";
-import type { AirQualityRecord, AreaAirQualitySummary } from "../types";
+import { useEffect, useMemo, useState } from "react";
+import type { AirQualityRecord, AreaAirQualitySummary, MonitoringStation } from "../types";
 import { getAreaAirQualityHistory } from "../services/airQuality";
-import { allAreas } from "../data/mockData";
 import { getAqiSeverity } from "../utils/aqi";
 
-export const areaNameById = new Map(allAreas.map((area) => [area.id, area.areaName]));
-
 function toLatestSummaries(
-  areaIds: string[],
+  stationIds: string[],
   records: AirQualityRecord[],
+  nameById: Map<string, string>,
 ): AreaAirQualitySummary[] {
-  const latestByArea = new Map<string, AirQualityRecord>();
+  const latestByStation = new Map<string, AirQualityRecord>();
   for (const record of records) {
-    const existing = latestByArea.get(record.areaId);
+    const existing = latestByStation.get(record.areaId);
     if (!existing || record.timestamp > existing.timestamp) {
-      latestByArea.set(record.areaId, record);
+      latestByStation.set(record.areaId, record);
     }
   }
 
-  return areaIds.flatMap((id) => {
-    const latest = latestByArea.get(id);
+  return stationIds.flatMap((id) => {
+    const latest = latestByStation.get(id);
     if (!latest) return [];
     return [
       {
         id,
-        areaName: areaNameById.get(id) ?? id,
+        areaName: nameById.get(id) ?? id,
         avgAqi: latest.aqi,
         avgPm25: latest.pm25,
         severity: getAqiSeverity(latest.aqi),
@@ -34,16 +32,25 @@ function toLatestSummaries(
 }
 
 /**
- * Derives the "4 area cards" summary for a set of followed area ids, always
- * via `getAreaAirQualityHistory` (the same query Profile's PM2.5 chart uses)
- * so Home and Profile can never disagree on the numbers. Shared instead of
- * duplicated so both pages stay wired to exactly one query.
+ * Derives the "followed stations" summary cards for a set of followed
+ * `stationID`s, always via `getAreaAirQualityHistory` (the same query
+ * Profile's PM2.5 chart uses) so Home and Profile can never disagree on the
+ * numbers. `stations` should come from a shared `useAllStations()` call at
+ * the page level (nationwide, real names) — passed in rather than imported
+ * from the old fixed 5-area mock list, since station names are no longer
+ * statically known. Name resolution is kept separate from the Firestore
+ * fetch (via `useMemo`, not the fetch effect) so a station list that
+ * resolves *after* the history query still updates the displayed names
+ * instead of being stuck on stale/empty names from the first render.
  */
-export function useFollowedAreaSummaries(followedAreaIds: string[]): {
+export function useFollowedAreaSummaries(
+  followedAreaIds: string[],
+  stations: MonitoringStation[],
+): {
   areas: AreaAirQualitySummary[];
   isLoading: boolean;
 } {
-  const [areas, setAreas] = useState<AreaAirQualitySummary[]>([]);
+  const [records, setRecords] = useState<AirQualityRecord[]>([]);
   const [isLoading, setIsLoading] = useState(followedAreaIds.length > 0);
   // Firestore snapshots (and the guest default list) can produce a new array
   // reference on every render even when the ids are unchanged — key the
@@ -52,7 +59,7 @@ export function useFollowedAreaSummaries(followedAreaIds: string[]): {
 
   useEffect(() => {
     if (followedAreaIds.length === 0) {
-      setAreas([]);
+      setRecords([]);
       setIsLoading(false);
       return;
     }
@@ -60,16 +67,28 @@ export function useFollowedAreaSummaries(followedAreaIds: string[]): {
     let cancelled = false;
     setIsLoading(true);
 
-    getAreaAirQualityHistory(followedAreaIds).then((records) => {
+    getAreaAirQualityHistory(followedAreaIds).then((result) => {
       if (cancelled) return;
-      setAreas(toLatestSummaries(followedAreaIds, records));
+      setRecords(result);
       setIsLoading(false);
     });
 
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [followedAreaIdsKey]);
+
+  const nameById = useMemo(
+    () => new Map(stations.map((station) => [station.id, station.name])),
+    [stations],
+  );
+
+  const areas = useMemo(
+    () => toLatestSummaries(followedAreaIds, records, nameById),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [followedAreaIdsKey, records, nameById],
+  );
 
   return { areas, isLoading };
 }
