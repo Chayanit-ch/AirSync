@@ -11,9 +11,10 @@ function ReportItemSkeleton() {
 interface ReportHistorySectionProps {
   reports: Report[];
   isLoading: boolean;
+  onSelectReport: (report: Report) => void;
 }
 
-export function ReportHistorySection({ reports, isLoading }: ReportHistorySectionProps) {
+export function ReportHistorySection({ reports, isLoading, onSelectReport }: ReportHistorySectionProps) {
   const { t } = useTranslation();
 
   return (
@@ -33,7 +34,13 @@ export function ReportHistorySection({ reports, isLoading }: ReportHistorySectio
             {t("report.noReportsYet")}
           </p>
         ) : (
-          reports.map((report) => <ProfileReportItem key={report.id} report={report} />)
+          reports.map((report) => (
+            <ProfileReportItem
+              key={report.id}
+              report={report}
+              onClick={() => onSelectReport(report)}
+            />
+          ))
         )}
       </div>
 

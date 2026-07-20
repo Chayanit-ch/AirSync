@@ -70,6 +70,9 @@ export const en: typeof th = {
     riskHotspots: "Pollution hotspots",
     communityMonitoring: "Community-reported monitoring",
     issueFound: "Issue reported",
+    communityLoginPrompt: "Log in to see nearby community reports",
+    communityLocationPrompt: "Enable location to see reports near you",
+    communityNoReports: "No community reports near you right now",
     trendTitle: "24-hour AQI trend",
     trendLine: "Line",
     trendBar: "Bar",
@@ -95,6 +98,7 @@ export const en: typeof th = {
     coordinates: "Coordinates",
     stationId: "Station ID",
     dataSource: "Data source",
+    noStationsNearby: "No monitoring stations found nearby",
   },
   report: {
     pageTitle: "Report pollution",
@@ -136,6 +140,10 @@ export const en: typeof th = {
     myReports: "My reports",
     noReportsYetLong: "You haven't submitted any reports yet — report your first incident above",
     timeSuffix: "at {time}",
+    submittedOn: "Submitted on",
+    coordinates: "Coordinates",
+    photos: "Photos",
+    viewDetails: "View details",
     types: {
       burning: "Open burning",
       smoke_vehicle: "Smoke-belching vehicle",
@@ -237,5 +245,21 @@ export const en: typeof th = {
     message:
       "There was a problem setting up your account. Try signing out and back in, or contact support.",
     retry: "Try again",
+  },
+  drawer: {
+    title: "Navigation menu",
+    about: "About AirSync",
+    contact: "Contact & feedback",
+  },
+  about: {
+    pageTitle: "About AirSync",
+    intro:
+      "AirSync tracks air quality nationwide across Thailand, showing real-time PM2.5 and Air Quality Index (AQI) readings near you — wherever you are in the country.",
+    dataSourcesTitle: "Data sources",
+    dataSourcesBody:
+      "Primary data comes from Air4Thai, the Pollution Control Department's official Thai government source. In areas without a nearby Air4Thai station, the app supplements with data from the World Air Quality Index (WAQI/aqicn.org) so those areas aren't left blank.",
+    communityTitle: "Community reporting",
+    communityBody:
+      "Anyone can report pollution they see — open burning, factory smoke, and more — with photos, directly in the app. These reports show up on the Home page so the community can keep watch on air quality together.",
   },
 };

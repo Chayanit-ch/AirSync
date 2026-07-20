@@ -3,7 +3,12 @@ import { useLanguage } from "../../contexts/LanguageContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import { ProfileDropdown } from "./ProfileDropdown";
 
-export function TopBar() {
+interface TopBarProps {
+  /** Desktop (`lg:`): toggles the sidebar's collapsed state. Mobile: opens the nav drawer. One handler — which effect is visible depends purely on which breakpoint's CSS is active (Sidebar is `hidden` below `lg:`, the drawer is `lg:hidden`). */
+  onMenuButtonClick: () => void;
+}
+
+export function TopBar({ onMenuButtonClick }: TopBarProps) {
   const { language, setLanguage } = useLanguage();
   const { t } = useTranslation();
 
@@ -12,10 +17,9 @@ export function TopBar() {
       <div className="flex items-center gap-2.5">
         <button
           type="button"
-          disabled
-          title={t("common.comingSoon")}
+          onClick={onMenuButtonClick}
           aria-label={t("topbar.openMenu")}
-          className="text-brand-700 -ml-1 rounded-lg p-1.5 hover:bg-gray-50 active:bg-gray-100 disabled:opacity-40"
+          className="text-brand-700 -ml-1 rounded-lg p-1.5 hover:bg-gray-50 active:bg-gray-100"
         >
           <Menu size={22} strokeWidth={2.25} />
         </button>

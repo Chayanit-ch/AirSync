@@ -3,15 +3,22 @@ import { useState } from "react";
 import type { MonitoringStation } from "../../types";
 import { useTranslation } from "../../hooks/useTranslation";
 import { AQI_SEVERITY_META } from "../../utils/aqi";
+import type { MapLayerMode } from "./LayerToggle";
 
 export function StationBottomSheet({
   station,
+  mode,
 }: {
   station: MonitoringStation;
+  /** Which metric the Map's layer toggle currently has active — the primary
+   * (severity-colored) box below shows AQI in `"aqi"` mode, PM2.5 otherwise
+   * (including `"heatmap"`, which doesn't have its own distinct metric). */
+  mode: MapLayerMode;
 }) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const meta = AQI_SEVERITY_META[station.severity];
+  const showAqiPrimary = mode === "aqi";
 
   const hoursAgo = Math.max(
     1,
@@ -38,20 +45,36 @@ export function StationBottomSheet({
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <div className={`rounded-xl border-l-4 p-3 ${meta.softBgClass} ${meta.borderClass}`}>
-          <p className="text-xs text-gray-500">PM 2.5</p>
-          <p className={`text-lg font-bold ${meta.textClass}`}>
-            {station.currentPm25.toFixed(1)} µg/m³
-          </p>
-        </div>
-        <div className="rounded-xl bg-gray-100 p-3">
-          <p className="text-xs text-gray-500">{t("common.temperature")}</p>
-          <p className="text-lg font-bold text-gray-700">
-            {station.temperature != null
-              ? `${station.temperature} ${t("common.degrees")}`
-              : t("common.noData")}
-          </p>
-        </div>
+        {showAqiPrimary ? (
+          <div className={`rounded-xl border-l-4 p-3 ${meta.softBgClass} ${meta.borderClass}`}>
+            <p className="text-xs text-gray-500">AQI</p>
+            <p className={`text-lg font-bold ${meta.textClass}`}>{station.currentAqi}</p>
+          </div>
+        ) : (
+          <div className={`rounded-xl border-l-4 p-3 ${meta.softBgClass} ${meta.borderClass}`}>
+            <p className="text-xs text-gray-500">PM 2.5</p>
+            <p className={`text-lg font-bold ${meta.textClass}`}>
+              {station.currentPm25.toFixed(1)} µg/m³
+            </p>
+          </div>
+        )}
+        {showAqiPrimary ? (
+          <div className="rounded-xl bg-gray-100 p-3">
+            <p className="text-xs text-gray-500">PM 2.5</p>
+            <p className="text-lg font-bold text-gray-700">
+              {station.currentPm25.toFixed(1)} µg/m³
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-xl bg-gray-100 p-3">
+            <p className="text-xs text-gray-500">{t("common.temperature")}</p>
+            <p className="text-lg font-bold text-gray-700">
+              {station.temperature != null
+                ? `${station.temperature} ${t("common.degrees")}`
+                : t("common.noData")}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="mt-3 flex items-center gap-1.5 text-sm text-brand-600">

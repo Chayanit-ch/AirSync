@@ -1,29 +1,22 @@
 import { ChevronLeft, ChevronRight, Wind } from "lucide-react";
-import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "../../hooks/useTranslation";
 import { NAV_ITEMS } from "./navItems";
 
-const STORAGE_KEY = "airsync-sidebar-collapsed";
-
-function readStoredCollapsed(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(STORAGE_KEY) === "true";
+interface SidebarProps {
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 }
 
 /**
  * Desktop-only (`lg:` and up) left navigation, replacing `BottomNav` on wide
  * screens — same `NAV_ITEMS` so the two can never list different pages.
- * Collapse state persists via `localStorage`, same pattern as
- * `LanguageContext`, so it survives reloads.
+ * Collapse state is owned by `PageLayout` (persisted via `localStorage`
+ * there) rather than locally, so `TopBar`'s hamburger button can drive the
+ * same state instead of only this sidebar's own footer button being able to.
  */
-export function Sidebar() {
+export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
   const { t } = useTranslation();
-  const [collapsed, setCollapsed] = useState(readStoredCollapsed);
-
-  useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, String(collapsed));
-  }, [collapsed]);
 
   return (
     <aside
@@ -65,7 +58,7 @@ export function Sidebar() {
 
       <button
         type="button"
-        onClick={() => setCollapsed((prev) => !prev)}
+        onClick={onToggleCollapsed}
         aria-label={collapsed ? t("common.expandSidebar") : t("common.collapseSidebar")}
         className={`flex items-center gap-2 border-t border-gray-100 px-3 py-3 text-sm text-gray-500 hover:bg-gray-50 ${
           collapsed ? "justify-center" : ""

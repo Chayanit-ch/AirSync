@@ -1,6 +1,7 @@
 import {
   addDoc,
   collection,
+  limit,
   onSnapshot,
   orderBy,
   query,
@@ -10,6 +11,9 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import type { Report, ReportType } from "../types";
+
+/** Firestore rules require an authenticated user to read `reports` at all — callers must never invoke `subscribeToRecentReports` while signed out. */
+const RECENT_REPORTS_LIMIT = 40;
 
 /**
  * The label to display for a report's type — for `type === "other"` this is
@@ -101,6 +105,40 @@ export function subscribeToMyReports(
     },
     (error) => {
       console.error("Failed to subscribe to reports", error);
+      onError?.(error);
+    },
+  );
+}
+
+/**
+ * Live-subscribes to the most recent reports from *any* user (not filtered
+ * by `reportedBy`, unlike `subscribeToMyReports` above) — the raw feed for
+ * Home's Community Monitoring section, which then filters client-side to
+ * whatever's actually near the current user (see `haversineDistanceKm` in
+ * `utils/geo.ts`, the same function the Map/hero nearest-station logic
+ * already uses). Firestore's `reports` collection only allows authenticated
+ * reads, so this must only ever be called while signed in — callers must
+ * check `currentUser` first and never call this as a guest.
+ */
+export function subscribeToRecentReports(
+  onChange: (reports: Report[]) => void,
+  onError?: (error: unknown) => void,
+): Unsubscribe {
+  const reportsQuery = query(
+    collection(db, "reports"),
+    orderBy("createdAt", "desc"),
+    limit(RECENT_REPORTS_LIMIT),
+  );
+
+  return onSnapshot(
+    reportsQuery,
+    (snapshot) => {
+      onChange(
+        snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }) as Report),
+      );
+    },
+    (error) => {
+      console.error("Failed to subscribe to recent reports", error);
       onError?.(error);
     },
   );

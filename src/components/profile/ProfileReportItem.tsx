@@ -26,7 +26,13 @@ const STATUS_TEXT_STYLE: Record<Report["status"], string> = {
   resolved: "text-emerald-600",
 };
 
-export function ProfileReportItem({ report }: { report: Report }) {
+export function ProfileReportItem({
+  report,
+  onClick,
+}: {
+  report: Report;
+  onClick?: () => void;
+}) {
   const { language, dict, t } = useTranslation();
   // `createdAt` reads back as null for a brief moment right after submit,
   // before Firestore resolves the serverTimestamp() — fall back to "now".
@@ -35,7 +41,11 @@ export function ProfileReportItem({ report }: { report: Report }) {
   const thumbnail = report.imageUrls[0];
 
   return (
-    <div className="flex gap-3 rounded-xl border border-gray-100 p-3">
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full gap-3 rounded-xl border border-gray-100 p-3 text-left"
+    >
       {thumbnail && (
         <img
           src={thumbnail}
@@ -66,6 +76,6 @@ export function ProfileReportItem({ report }: { report: Report }) {
           </span>
         </div>
       </div>
-    </div>
+    </button>
   );
 }

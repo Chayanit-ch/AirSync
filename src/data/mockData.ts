@@ -194,50 +194,6 @@ export const pollutionReports: PollutionReport[] = [
   },
 ];
 
-// -- Community monitoring table (Home page) ------------------------------------
-
-export const communityReports: PollutionReport[] = [
-  {
-    id: "community-001",
-    userId: "user-002",
-    incidentType: "open_burning",
-    title: "เผาขยะ",
-    description: "พบเผาขยะบริเวณวัด",
-    images: [],
-    location: { lat: 13.529, lng: 100.098, address: "วัดใจดี" },
-    reportedDate: "2026-07-15",
-    reportedTime: "16:05",
-    status: "resolved",
-    createdAt: "2026-07-15T16:05:00+07:00",
-  },
-  {
-    id: "community-002",
-    userId: "user-003",
-    incidentType: "industrial_emissions",
-    title: "โรงงาน",
-    description: "กลิ่นควันจากโรงงานผิดปกติ",
-    images: [],
-    location: { lat: 13.598, lng: 100.274, address: "ถนนพระราม 2" },
-    reportedDate: "2026-07-17",
-    reportedTime: "08:15",
-    status: "under_review",
-    createdAt: "2026-07-17T08:15:00+07:00",
-  },
-  {
-    id: "community-003",
-    userId: "user-004",
-    incidentType: "black_smoke_vehicle",
-    title: "รถควันดำ",
-    description: "รถบรรทุกปล่อยควันดำบริเวณตลาด",
-    images: [],
-    location: { lat: 13.5488, lng: 100.2751, address: "ตลาดมหาชัย" },
-    reportedDate: "2026-07-16",
-    reportedTime: "11:40",
-    status: "in_progress",
-    createdAt: "2026-07-16T11:40:00+07:00",
-  },
-];
-
 // -- Alerts (system notifications) ----------------------------------------------
 
 export const alerts: Alert[] = [

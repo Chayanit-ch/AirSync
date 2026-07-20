@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { MapPinOff } from "lucide-react";
 import { MapSearchBar } from "../components/map/MapSearchBar";
 import { LayerToggle, type MapLayerMode } from "../components/map/LayerToggle";
 import { MapControls } from "../components/map/MapControls";
@@ -9,6 +10,7 @@ import { HeatmapLayer } from "../components/map/HeatmapLayer";
 import { StationBottomSheet } from "../components/map/StationBottomSheet";
 import { useAllStations } from "../hooks/useAllStations";
 import { useUserLocation } from "../hooks/useUserLocation";
+import { useTranslation } from "../hooks/useTranslation";
 import { getWaqiStationsInBounds } from "../services/airQuality";
 import { dedupeWaqiStations, findNearestStation } from "../utils/geo";
 import { searchStations } from "../utils/stationSearch";
@@ -40,17 +42,29 @@ function RecenterOnLocation({ lat, lng }: { lat: number; lng: number }) {
  * WAQI for stations in that viewport as a supplemental source — Air4Thai
  * stays authoritative wherever it has coverage; WAQI only shows up where it
  * doesn't. Debounced so rapid panning doesn't fire a request per frame.
+ *
+ * Skips entirely while `stationsLoading` is true: on mount, `air4thaiStations`
+ * is briefly the small 6-station mock fallback before the real ~170-station
+ * fetch resolves, and checking coverage against that stand-in list wastes a
+ * guaranteed-redundant WAQI call on every single Map page load (confirmed via
+ * live debugging — the mount effect used to fire twice, once per station list).
  */
 function WaqiViewportSupplement({
   air4thaiStations,
+  stationsLoading,
   onWaqiStations,
+  onEmptyViewportChange,
 }: {
   air4thaiStations: MonitoringStation[];
+  stationsLoading: boolean;
   onWaqiStations: (stations: MonitoringStation[]) => void;
+  onEmptyViewportChange: (isEmpty: boolean) => void;
 }) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const checkAndFetch = useCallback(async () => {
+    if (stationsLoading) return;
+
     const bounds = map.getBounds();
     const south = bounds.getSouth();
     const west = bounds.getWest();
@@ -67,13 +81,16 @@ function WaqiViewportSupplement({
 
     if (hasAir4ThaiInView) {
       onWaqiStations([]);
+      onEmptyViewportChange(false);
       return;
     }
 
     const waqiStations = await getWaqiStationsInBounds({ south, west, north, east });
-    onWaqiStations(dedupeWaqiStations(air4thaiStations, waqiStations));
+    const deduped = dedupeWaqiStations(air4thaiStations, waqiStations);
+    onWaqiStations(deduped);
+    onEmptyViewportChange(deduped.length === 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [air4thaiStations]);
+  }, [air4thaiStations, stationsLoading]);
 
   const scheduleCheck = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -86,7 +103,8 @@ function WaqiViewportSupplement({
   });
 
   // Initial viewport (mount) and whenever the Air4Thai station list itself
-  // changes (e.g. mock -> live swap) — re-checks without waiting for a pan.
+  // changes (mock -> live swap, or once loading finishes) — re-checks
+  // without waiting for a pan.
   useEffect(() => {
     scheduleCheck();
   }, [scheduleCheck]);
@@ -101,6 +119,7 @@ function WaqiViewportSupplement({
 }
 
 export function MapPage() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeLayer, setActiveLayer] = useState<MapLayerMode>("pm25");
   // Paint mock stations immediately so the map is never empty while the
@@ -110,6 +129,7 @@ export function MapPage() {
   const { stations: air4thaiStations, isLoading: stationsLoading } = useAllStations();
   const { coords, status: locationStatus } = useUserLocation();
   const [waqiStations, setWaqiStations] = useState<MonitoringStation[]>([]);
+  const [viewportHasNoStations, setViewportHasNoStations] = useState(false);
 
   const stations = useMemo(
     () => [...air4thaiStations, ...waqiStations],
@@ -166,7 +186,9 @@ export function MapPage() {
 
         <WaqiViewportSupplement
           air4thaiStations={air4thaiStations}
+          stationsLoading={stationsLoading}
           onWaqiStations={setWaqiStations}
+          onEmptyViewportChange={setViewportHasNoStations}
         />
 
         {/* AQI/PM2.5 both keep markers visible (differently colored/labeled —
@@ -198,13 +220,19 @@ export function MapPage() {
         <div className="pointer-events-auto">
           <LayerToggle active={activeLayer} onChange={setActiveLayer} />
         </div>
+        {viewportHasNoStations && (
+          <div className="pointer-events-auto flex items-center gap-1.5 rounded-xl bg-gray-900/80 px-3 py-2 text-xs font-medium text-white shadow-md">
+            <MapPinOff size={14} className="shrink-0" />
+            {t("map.noStationsNearby")}
+          </div>
+        )}
       </div>
 
       {/* Bottom sheet on mobile; docked right-side panel on desktop (more
           screen space to work with than a phone-width bottom sheet). */}
       {selectedStation && (
         <div className="absolute inset-x-0 bottom-0 z-400 lg:inset-x-auto lg:top-0 lg:right-0 lg:bottom-0 lg:w-96">
-          <StationBottomSheet station={selectedStation} />
+          <StationBottomSheet station={selectedStation} mode={activeLayer} />
         </div>
       )}
     </div>

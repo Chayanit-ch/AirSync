@@ -11,7 +11,13 @@ const STATUS_BORDER: Record<Report["status"], string> = {
   resolved: "border-emerald-400",
 };
 
-export function ReportHistoryCard({ report }: { report: Report }) {
+export function ReportHistoryCard({
+  report,
+  onClick,
+}: {
+  report: Report;
+  onClick?: () => void;
+}) {
   const { t, language, dict } = useTranslation();
   // `createdAt` reads back as null for a brief moment right after submit,
   // before Firestore resolves the serverTimestamp() — fall back to "now".
@@ -22,8 +28,10 @@ export function ReportHistoryCard({ report }: { report: Report }) {
   const image = report.imageUrls[0];
 
   return (
-    <div
-      className={`overflow-hidden rounded-2xl border border-l-4 border-gray-100 bg-white shadow-sm ${STATUS_BORDER[report.status]}`}
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full overflow-hidden rounded-2xl border border-l-4 border-gray-100 bg-white text-left shadow-sm ${STATUS_BORDER[report.status]}`}
     >
       {image && (
         <div className="relative h-32 w-full">
@@ -53,6 +61,6 @@ export function ReportHistoryCard({ report }: { report: Report }) {
           </span>
         </div>
       </div>
-    </div>
+    </button>
   );
 }

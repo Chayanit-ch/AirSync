@@ -1,9 +1,15 @@
-import type { PollutionReport } from "../../types";
+import type { Report } from "../../types";
 import { useTranslation } from "../../hooks/useTranslation";
+import { getReportTypeLabel } from "../../services/reports";
 import { StatusBadge } from "../shared/StatusBadge";
 
-export function CommunityTable({ reports }: { reports: PollutionReport[] }) {
-  const { t } = useTranslation();
+interface CommunityTableProps {
+  reports: Report[];
+  onSelectReport: (report: Report) => void;
+}
+
+export function CommunityTable({ reports, onSelectReport }: CommunityTableProps) {
+  const { t, dict } = useTranslation();
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white shadow-sm">
@@ -20,11 +26,17 @@ export function CommunityTable({ reports }: { reports: PollutionReport[] }) {
         </thead>
         <tbody>
           {reports.map((report) => (
-            <tr key={report.id} className="border-t border-gray-50">
+            <tr
+              key={report.id}
+              onClick={() => onSelectReport(report)}
+              className="cursor-pointer border-t border-gray-50 hover:bg-gray-50"
+            >
               <td className="px-4 py-3 font-medium text-gray-700">
-                {report.location.address}
+                {report.locationLabel}
               </td>
-              <td className="px-2 py-3 text-gray-500">{report.title}</td>
+              <td className="px-2 py-3 text-gray-500">
+                {getReportTypeLabel(report, dict.report.types)}
+              </td>
               <td className="px-4 py-3 text-right">
                 <StatusBadge status={report.status} />
               </td>

@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfileHeader } from "../components/profile/ProfileHeader";
 import { PM25StatsCard } from "../components/profile/PM25StatsCard";
 import { ReportHistorySection } from "../components/profile/ReportHistorySection";
 import { AlertPreferencesCard } from "../components/profile/AlertPreferencesCard";
 import { FollowedAreasGrid } from "../components/home/FollowedAreasGrid";
+import { ReportDetailModal } from "../components/report/ReportDetailModal";
 import { currentUser as mockUser } from "../data/mockData";
 import { useAuth } from "../contexts/AuthContext";
 import { useAllStations } from "../hooks/useAllStations";
@@ -11,12 +13,14 @@ import { useFollowedAreaSummaries } from "../hooks/useFollowedAreaSummaries";
 import { useMyReports } from "../hooks/useMyReports";
 import { useTranslation } from "../hooks/useTranslation";
 import { logOut } from "../services/auth";
+import type { Report } from "../types";
 
 export function ProfilePage() {
   const { currentUser, userProfile, isLoggingOutRef } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { stations, isLoading: stationsLoading } = useAllStations();
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
   async function handleLogout() {
     isLoggingOutRef.current = true;
@@ -66,8 +70,14 @@ export function ProfilePage() {
             {t("profile.noFollowedAreasHint")}
           </div>
         )}
-        <ReportHistorySection reports={reports} isLoading={reportsLoading} />
+        <ReportHistorySection
+          reports={reports}
+          isLoading={reportsLoading}
+          onSelectReport={setSelectedReport}
+        />
       </div>
+
+      <ReportDetailModal report={selectedReport} onClose={() => setSelectedReport(null)} />
     </div>
   );
 }

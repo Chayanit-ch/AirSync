@@ -3,8 +3,8 @@ import { QuickActions } from "../components/home/QuickActions";
 import { FollowedAreasSection } from "../components/home/FollowedAreasSection";
 import { AqiTrendChart } from "../components/home/AqiTrendChart";
 import { HeatmapPreviewCard } from "../components/home/HeatmapPreviewCard";
-import { CommunityTable } from "../components/home/CommunityTable";
-import { communityReports, trend24h } from "../data/mockData";
+import { CommunityMonitoringSection } from "../components/home/CommunityMonitoringSection";
+import { trend24h } from "../data/mockData";
 
 export function HomePage() {
   return (
@@ -21,7 +21,7 @@ export function HomePage() {
       <AqiTrendChart data={trend24h} />
       <HeatmapPreviewCard />
       <div className="lg:col-span-2">
-        <CommunityTable reports={communityReports} />
+        <CommunityMonitoringSection />
       </div>
     </div>
   );

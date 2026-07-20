@@ -11,9 +11,10 @@ function ReportCardSkeleton() {
 interface MyReportsSectionProps {
   reports: Report[];
   isLoading: boolean;
+  onSelectReport: (report: Report) => void;
 }
 
-export function MyReportsSection({ reports, isLoading }: MyReportsSectionProps) {
+export function MyReportsSection({ reports, isLoading, onSelectReport }: MyReportsSectionProps) {
   const { t } = useTranslation();
 
   return (
@@ -33,7 +34,11 @@ export function MyReportsSection({ reports, isLoading }: MyReportsSectionProps) 
           </div>
         ) : (
           reports.map((report) => (
-            <ReportHistoryCard key={report.id} report={report} />
+            <ReportHistoryCard
+              key={report.id}
+              report={report}
+              onClick={() => onSelectReport(report)}
+            />
           ))
         )}
       </div>
