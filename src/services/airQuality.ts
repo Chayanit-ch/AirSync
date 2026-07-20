@@ -316,6 +316,18 @@ const warnedMissingStationIds = new Set<string>();
  * followed-station summaries, both of which need one named station's data
  * rather than "whichever stations happen to be live right now".
  */
+/**
+ * IMPORTANT for callers: when `isLive` is `false` and `stationId !==
+ * DEFAULT_STATION_ID`, the returned `station.name`/`nameEn` is just the raw
+ * `stationId` — there's no real place name to synthesize one from for an
+ * arbitrary offline station. This function has no access to `useTranslation()`
+ * (it's a plain service function, not a hook), so it cannot render an honest
+ * localized "unavailable" label itself. Callers MUST check `isLive` before
+ * showing `station.name` as a real place name — see `useFollowedAreaSummaries`
+ * and `useNearestStationHero` for the pattern (a translated placeholder when
+ * `!isLive`). Rendering `station.name` unconditionally here is exactly the
+ * "raw station code shown as a place name" bug fixed 2026-07-21.
+ */
 export function resolveStationReading(
   stationId: string,
   stations: MonitoringStation[],

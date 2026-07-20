@@ -1,6 +1,6 @@
-import { useMemo } from "react";
 import type { AreaAirQualitySummary, MonitoringStation } from "../types";
 import { resolveStationReading } from "../services/airQuality";
+import { useTranslation } from "./useTranslation";
 
 /**
  * Derives the "followed stations" summary cards for a set of followed
@@ -16,6 +16,17 @@ import { resolveStationReading } from "../services/airQuality";
  * temporarily missing from the live batch gets the same honestly-flagged
  * synthetic fallback the hero card would show for it, instead of a third,
  * separate fallback behavior.
+ *
+ * Not memoized (this used to be a `useMemo`, dropped 2026-07-21): the id/name
+ * mixup regression traced back to this trusting `station.name` even when
+ * `resolveStationReading` reported `isLive: false` — for an offline followed
+ * station, that fallback object's `name` is literally the raw station ID
+ * (there's no real name to synthesize a real one from), and nothing here
+ * checked `isLive` before rendering it as if it were a place name. Now the
+ * offline case renders a translated "station unavailable" label instead.
+ * `resolveStationReading` already self-dedupes its console.warn per station
+ * per session, so memoizing here for warning-suppression is no longer
+ * needed — recomputing this small array every render is cheap.
  */
 export function useFollowedAreaSummaries(
   followedAreaIds: string[],
@@ -23,23 +34,18 @@ export function useFollowedAreaSummaries(
 ): {
   areas: AreaAirQualitySummary[];
 } {
-  const followedAreaIdsKey = followedAreaIds.join(",");
+  const { t } = useTranslation();
 
-  const areas = useMemo(
-    () =>
-      followedAreaIds.map((id): AreaAirQualitySummary => {
-        const { station } = resolveStationReading(id, stations);
-        return {
-          id,
-          areaName: station.name,
-          avgAqi: station.currentAqi,
-          avgPm25: station.currentPm25,
-          severity: station.severity,
-        };
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [followedAreaIdsKey, stations],
-  );
+  const areas = followedAreaIds.map((id): AreaAirQualitySummary => {
+    const { station, isLive } = resolveStationReading(id, stations);
+    return {
+      id,
+      areaName: isLive ? station.name : t("common.stationUnavailable", { id }),
+      avgAqi: station.currentAqi,
+      avgPm25: station.currentPm25,
+      severity: station.severity,
+    };
+  });
 
   return { areas };
 }

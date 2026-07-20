@@ -21,6 +21,7 @@ export const th = {
     userProfile: "โปรไฟล์ผู้ใช้",
     collapseSidebar: "ย่อเมนู",
     expandSidebar: "ขยายเมนู",
+    stationUnavailable: "สถานี {id} (ไม่มีข้อมูลขณะนี้)",
     months: [
       "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
       "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",

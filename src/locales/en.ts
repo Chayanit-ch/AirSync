@@ -24,6 +24,7 @@ export const en: typeof th = {
     userProfile: "User profile",
     collapseSidebar: "Collapse menu",
     expandSidebar: "Expand menu",
+    stationUnavailable: "Station {id} (no data right now)",
     months: [
       "Jan", "Feb", "Mar", "Apr", "May", "Jun",
       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",

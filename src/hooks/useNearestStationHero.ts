@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { AreaAirQualitySummary, GeoPoint, MonitoringStation } from "../types";
 import { useAllStations } from "./useAllStations";
+import { useTranslation } from "./useTranslation";
 import { useUserLocation, type UserLocationStatus } from "./useUserLocation";
 import {
   DEFAULT_STATION_ID,
@@ -60,6 +61,7 @@ export interface NearestStationHeroResult {
 export function useNearestStationHero(): NearestStationHeroResult {
   const { stations, isLoading: stationsLoading, isLive: stationsAreLive } = useAllStations();
   const { coords, status, retry } = useUserLocation();
+  const { t } = useTranslation();
 
   const nearestAir4Thai = coords ? findNearestStation(stations, coords) : null;
   const needsWaqi = !!nearestAir4Thai && nearestAir4Thai.distanceKm > NEARBY_STATION_RANGE_KM;
@@ -168,8 +170,18 @@ export function useNearestStationHero(): NearestStationHeroResult {
   // Permission denied/unsupported, or (very unlikely) an empty stations list
   // even while granted — fall back to the named default station honestly,
   // via the same never-silent resolver followed-station summaries use.
+  //
+  // isLive===false here means `resolveStationReading` couldn't find
+  // DEFAULT_STATION_ID in the live batch, so its `station.name` is just the
+  // raw station ID (there's no real name to fall back to) — rendering that
+  // straight was the "raw station code" regression. Substitute a translated
+  // "unavailable" label instead of trusting `.name` blindly.
+  const fallbackArea = toAreaSummary(defaultStationFallback.station);
+  if (!defaultStationFallback.isLive) {
+    fallbackArea.areaName = t("common.stationUnavailable", { id: DEFAULT_STATION_ID });
+  }
   return {
-    area: toAreaSummary(defaultStationFallback.station),
+    area: fallbackArea,
     isLoading: false,
     isLive: defaultStationFallback.isLive,
     distanceKm: null,

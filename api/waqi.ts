@@ -84,6 +84,30 @@ function parseAqiValue(raw: string | number | undefined): number | undefined {
   return n;
 }
 
+/**
+ * WAQI's raw station name is a free-text string shaped
+ * `"<site/area>, <city>, Thailand (<Thai description>)"` (verified against
+ * the live feed 2026-07-20, e.g. `"Lat Yai,Mueang,Samut Songkhram, Thailand
+ * (ต.ลาดใหญ่ อ.เมือง จ.สมุทรสงคราม)"`) — never meant to be shown to a user
+ * as-is. This app always displays place names in Thai regardless of UI
+ * language (see the `LOCATION-NAME STRATEGY` comment on `MonitoringStation`
+ * in `src/types/index.ts`), so `name` prefers the parenthesized Thai part;
+ * `nameEn`/`address` get the English part with the trailing ", Thailand"
+ * stripped. Falls back to the raw trimmed string for both if the shape
+ * doesn't match (e.g. WAQI ever changes format) — never silently blank.
+ */
+function parseWaqiStationName(raw: string): { name: string; nameEn: string } {
+  const match = raw.match(/^(.+?),?\s*Thailand\s*(?:\(([^)]*)\))?\s*$/i);
+  if (!match) return { name: raw, nameEn: raw };
+
+  const englishPart = match[1].trim().replace(/,\s*$/, "");
+  const thaiPart = match[2]?.trim();
+  return {
+    name: thaiPart || englishPart || raw,
+    nameEn: englishPart || raw,
+  };
+}
+
 interface WaqiGeoResponse {
   status: string;
   data?: {
@@ -104,17 +128,20 @@ function normalizeGeoStation(
   if (aqi === undefined) return null;
 
   const [geoLat, geoLng] = raw.data.city?.geo ?? [];
-  const name = raw.data.city?.name?.trim() || `WAQI station ${raw.data.idx ?? "?"}`;
+  const rawName = raw.data.city?.name?.trim() || `WAQI station ${raw.data.idx ?? "?"}`;
+  const { name, nameEn } = parseWaqiStationName(rawName);
 
   return {
     id: `waqi-${raw.data.idx}`,
     name,
-    nameEn: name,
+    nameEn,
     // WAQI's basic feed doesn't provide clean administrative divisions
     // (district/province) the way Air4Thai does — left blank rather than
     // guessed from free-text station names, so the UI's existing
     // "no data" fallback shows honestly instead of a fabricated value.
-    address: name,
+    // `address` gets the English descriptor (not the raw unparsed string)
+    // so it reads as a second line, not a duplicate of `name`.
+    address: nameEn,
     district: "",
     province: "",
     location: {
@@ -149,12 +176,13 @@ function normalizeBoundsStations(raw: WaqiBoundsResponse): NormalizedStation[] {
     if (aqi === undefined) continue; // also filters WAQI's "-" no-data sentinel
     if (!Number.isFinite(entry.lat) || !Number.isFinite(entry.lon)) continue;
 
-    const name = entry.station?.name?.trim() || `WAQI station ${entry.uid ?? "?"}`;
+    const rawName = entry.station?.name?.trim() || `WAQI station ${entry.uid ?? "?"}`;
+    const { name, nameEn } = parseWaqiStationName(rawName);
     stations.push({
       id: `waqi-${entry.uid}`,
       name,
-      nameEn: name,
-      address: name,
+      nameEn,
+      address: nameEn,
       district: "",
       province: "",
       location: { lat: entry.lat!, lng: entry.lon! },
