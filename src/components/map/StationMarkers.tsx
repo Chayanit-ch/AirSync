@@ -2,6 +2,7 @@ import { CircleMarker, Tooltip } from "react-leaflet";
 import type { MonitoringStation } from "../../types";
 import type { MapLayerMode } from "./LayerToggle";
 import { getAqiSeverity, pm25ToAqi } from "../../utils/aqi";
+import { SOURCE_STYLE, resolveSource } from "../../utils/dataSource";
 
 const SEVERITY_HEX: Record<MonitoringStation["severity"], string> = {
   good: "#22c55e",
@@ -45,6 +46,10 @@ export function StationMarkers({
           mode === "pm25"
             ? `${station.currentPm25.toFixed(1)}`
             : `${station.currentAqi}`;
+        // Border color/dash pattern encodes data source (see SourceLegend) —
+        // fillColor already encodes severity, so source needed its own
+        // visual channel rather than reusing color.
+        const sourceStyle = SOURCE_STYLE[resolveSource(station.source)];
 
         return (
           <CircleMarker
@@ -52,8 +57,9 @@ export function StationMarkers({
             center={[station.location.lat, station.location.lng]}
             radius={isSelected ? 12 : 9}
             pathOptions={{
-              color: "#ffffff",
-              weight: 2,
+              color: sourceStyle.color,
+              weight: isSelected ? 3 : 2.5,
+              dashArray: sourceStyle.dashArray,
               fillColor: SEVERITY_HEX[severity],
               fillOpacity: 0.9,
             }}

@@ -29,10 +29,12 @@ export interface GeoPoint {
 }
 
 /**
- * Which integration produced a reading — internal/diagnostic only (debugging,
- * logging), not a user-facing concept. Surfaced only in the Map's "more
- * details" expanded panel alongside other technical fields (station ID,
- * coordinates), never anywhere else in the UI.
+ * Which integration produced a reading. Surfaced in the UI for transparency
+ * (2026-07-20): drives the Map's marker border style (`utils/dataSource.ts`
+ * `SOURCE_STYLE`), the `SourceLegend`, the always-visible source line in
+ * `StationBottomSheet`, and the viewport `SourceDebugCounter` — added after a
+ * WAQI-coverage claim verified only via code/API calls didn't match what a
+ * real user saw panning the live map to the same spot.
  */
 export type DataSource = "air4thai" | "waqi" | "mock";
 

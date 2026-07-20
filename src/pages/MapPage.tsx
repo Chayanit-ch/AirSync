@@ -8,13 +8,23 @@ import { MapControls } from "../components/map/MapControls";
 import { StationMarkers } from "../components/map/StationMarkers";
 import { HeatmapLayer } from "../components/map/HeatmapLayer";
 import { StationBottomSheet } from "../components/map/StationBottomSheet";
+import { SourceLegend } from "../components/map/SourceLegend";
+import { SourceDebugCounter } from "../components/map/SourceDebugCounter";
 import { useAllStations } from "../hooks/useAllStations";
 import { useUserLocation } from "../hooks/useUserLocation";
 import { useTranslation } from "../hooks/useTranslation";
 import { getWaqiStationsInBounds } from "../services/airQuality";
 import { dedupeWaqiStations, findNearestStation } from "../utils/geo";
 import { searchStations } from "../utils/stationSearch";
-import type { MonitoringStation } from "../types";
+import { resolveSource } from "../utils/dataSource";
+import type { DataSource, MonitoringStation } from "../types";
+
+interface ViewportBounds {
+  south: number;
+  west: number;
+  north: number;
+  east: number;
+}
 
 /** Fallback center + zoom when location is denied/unsupported/still resolving — Mueang Samut Sakhon, the app's original pilot area. */
 const SAMUT_SAKHON_CENTER: [number, number] = [13.5475, 100.2745];
@@ -54,22 +64,26 @@ function WaqiViewportSupplement({
   stationsLoading,
   onWaqiStations,
   onEmptyViewportChange,
+  onBoundsChange,
 }: {
   air4thaiStations: MonitoringStation[];
   stationsLoading: boolean;
   onWaqiStations: (stations: MonitoringStation[]) => void;
   onEmptyViewportChange: (isEmpty: boolean) => void;
+  /** Reported every time the viewport is (re)checked — powers `SourceDebugCounter` so it updates on the same pan/zoom cadence as the WAQI supplement check itself, no separate map-event listener needed. */
+  onBoundsChange: (bounds: ViewportBounds) => void;
 }) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const checkAndFetch = useCallback(async () => {
-    if (stationsLoading) return;
-
     const bounds = map.getBounds();
     const south = bounds.getSouth();
     const west = bounds.getWest();
     const north = bounds.getNorth();
     const east = bounds.getEast();
+    onBoundsChange({ south, west, north, east });
+
+    if (stationsLoading) return;
 
     const hasAir4ThaiInView = air4thaiStations.some(
       (station) =>
@@ -130,11 +144,34 @@ export function MapPage() {
   const { coords, status: locationStatus } = useUserLocation();
   const [waqiStations, setWaqiStations] = useState<MonitoringStation[]>([]);
   const [viewportHasNoStations, setViewportHasNoStations] = useState(false);
+  const [viewportBounds, setViewportBounds] = useState<ViewportBounds | null>(null);
+  const [showSourceDebugCounter, setShowSourceDebugCounter] = useState(false);
 
   const stations = useMemo(
     () => [...air4thaiStations, ...waqiStations],
     [air4thaiStations, waqiStations],
   );
+
+  // Per-source station counts inside the *current* viewport — the ground
+  // truth for "is WAQI actually showing up here", independent of any prior
+  // claim about the code. See SourceDebugCounter.
+  const viewportSourceCounts = useMemo(() => {
+    const counts: Record<DataSource, number> = { air4thai: 0, waqi: 0, mock: 0 };
+    if (!viewportBounds) return counts;
+    for (const station of stations) {
+      const { lat, lng } = station.location;
+      if (
+        lat < viewportBounds.south ||
+        lat > viewportBounds.north ||
+        lng < viewportBounds.west ||
+        lng > viewportBounds.east
+      ) {
+        continue;
+      }
+      counts[resolveSource(station.source)] += 1;
+    }
+    return counts;
+  }, [stations, viewportBounds]);
 
   const [selectedStation, setSelectedStation] = useState<MonitoringStation | null>(null);
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
@@ -189,6 +226,7 @@ export function MapPage() {
           stationsLoading={stationsLoading}
           onWaqiStations={setWaqiStations}
           onEmptyViewportChange={setViewportHasNoStations}
+          onBoundsChange={setViewportBounds}
         />
 
         {/* AQI/PM2.5 both keep markers visible (differently colored/labeled —
@@ -219,6 +257,16 @@ export function MapPage() {
         </div>
         <div className="pointer-events-auto">
           <LayerToggle active={activeLayer} onChange={setActiveLayer} />
+        </div>
+        <div className="pointer-events-auto">
+          <SourceLegend />
+        </div>
+        <div className="pointer-events-auto">
+          <SourceDebugCounter
+            counts={viewportSourceCounts}
+            visible={showSourceDebugCounter}
+            onToggleVisible={() => setShowSourceDebugCounter((prev) => !prev)}
+          />
         </div>
         {viewportHasNoStations && (
           <div className="pointer-events-auto flex items-center gap-1.5 rounded-xl bg-gray-900/80 px-3 py-2 text-xs font-medium text-white shadow-md">

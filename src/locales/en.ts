@@ -99,6 +99,19 @@ export const en: typeof th = {
     stationId: "Station ID",
     dataSource: "Data source",
     noStationsNearby: "No monitoring stations found nearby",
+    source: {
+      air4thai: "Air4Thai",
+      waqi: "WAQI",
+      mock: "Mock",
+    },
+    sourceDetail: {
+      air4thai: "Source: Pollution Control Department (Air4Thai)",
+      waqi: "Source: World Air Quality Index (WAQI)",
+      mock: "Simulated demo data — not a real station reading",
+    },
+    legendTitle: "Data source",
+    debugToggleShow: "Show source counter",
+    debugToggleHide: "Hide source counter",
   },
   report: {
     pageTitle: "Report pollution",

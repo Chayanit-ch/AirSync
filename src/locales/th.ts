@@ -96,6 +96,19 @@ export const th = {
     stationId: "รหัสสถานี",
     dataSource: "แหล่งข้อมูล",
     noStationsNearby: "ไม่พบสถานีตรวจวัดในบริเวณนี้",
+    source: {
+      air4thai: "Air4Thai",
+      waqi: "WAQI",
+      mock: "จำลอง",
+    },
+    sourceDetail: {
+      air4thai: "ข้อมูลจาก: กรมควบคุมมลพิษ (Air4Thai)",
+      waqi: "ข้อมูลจาก: ดัชนีคุณภาพอากาศโลก (WAQI)",
+      mock: "ข้อมูลจำลองเพื่อสาธิต ไม่ใช่ค่าจริงจากสถานีตรวจวัด",
+    },
+    legendTitle: "แหล่งข้อมูล",
+    debugToggleShow: "แสดงตัวนับแหล่งข้อมูล",
+    debugToggleHide: "ซ่อนตัวนับแหล่งข้อมูล",
   },
   report: {
     pageTitle: "รายงานมลพิษ",

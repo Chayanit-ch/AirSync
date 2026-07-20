@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { MonitoringStation } from "../../types";
 import { useTranslation } from "../../hooks/useTranslation";
 import { AQI_SEVERITY_META } from "../../utils/aqi";
+import { resolveSource } from "../../utils/dataSource";
 import type { MapLayerMode } from "./LayerToggle";
 
 export function StationBottomSheet({
@@ -19,6 +20,7 @@ export function StationBottomSheet({
   const [isExpanded, setIsExpanded] = useState(false);
   const meta = AQI_SEVERITY_META[station.severity];
   const showAqiPrimary = mode === "aqi";
+  const source = resolveSource(station.source);
 
   const hoursAgo = Math.max(
     1,
@@ -36,6 +38,9 @@ export function StationBottomSheet({
             {station.name}
           </h3>
           <p className="truncate text-xs text-gray-400">{station.address}</p>
+          <p className="mt-0.5 truncate text-[11px] font-medium text-gray-400">
+            {t(`map.sourceDetail.${source}`)}
+          </p>
         </div>
         <span
           className={`flex shrink-0 items-center justify-center rounded-full p-1.5 ${meta.softBgClass}`}
@@ -108,7 +113,7 @@ export function StationBottomSheet({
           </div>
           <div className="col-span-2">
             <p className="text-xs text-gray-400">{t("map.dataSource")}</p>
-            <p className="font-medium text-gray-700">{station.source ?? t("common.noData")}</p>
+            <p className="font-medium text-gray-700">{t(`map.source.${source}`)}</p>
           </div>
         </div>
       )}
