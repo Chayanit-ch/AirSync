@@ -1,17 +1,20 @@
 import { Bell, Plus, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { MonitoringStation } from "../../types";
+import type { MonitoringStation, RiskGroup } from "../../types";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import {
   followArea,
   unfollowArea,
   updateNotificationSettings,
+  updateRiskGroup,
 } from "../../services/userProfile";
+import { resolveRiskGroup } from "../../utils/recommendation";
 import { searchStations } from "../../utils/stationSearch";
 import { ToggleSwitch } from "../shared/ToggleSwitch";
 
 const MAX_SEARCH_RESULTS = 8;
+const RISK_GROUPS: RiskGroup[] = ["general", "children", "elderly", "respiratory", "outdoor_worker"];
 
 export function AlertPreferencesCard({ stations }: { stations: MonitoringStation[] }) {
   const { currentUser, userProfile, loading } = useAuth();
@@ -22,9 +25,11 @@ export function AlertPreferencesCard({ stations }: { stations: MonitoringStation
   const [pendingSetting, setPendingSetting] = useState<
     "pushEnabled" | "dailySummaryEnabled" | null
   >(null);
+  const [isSavingRiskGroup, setIsSavingRiskGroup] = useState(false);
 
   const followedAreaIds = userProfile?.followedAreaIds ?? [];
   const notificationSettings = userProfile?.notificationSettings;
+  const riskGroup = resolveRiskGroup(userProfile?.riskGroup);
   const uid = currentUser?.uid;
 
   const stationById = useMemo(
@@ -83,6 +88,16 @@ export function AlertPreferencesCard({ stations }: { stations: MonitoringStation
     }
   }
 
+  async function handleRiskGroupChange(value: RiskGroup) {
+    if (!uid || controlsDisabled) return;
+    setIsSavingRiskGroup(true);
+    try {
+      await updateRiskGroup(uid, value);
+    } finally {
+      setIsSavingRiskGroup(false);
+    }
+  }
+
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-center gap-2">
@@ -131,10 +146,13 @@ export function AlertPreferencesCard({ stations }: { stations: MonitoringStation
             <Search size={16} className="shrink-0 text-gray-400" />
             <input
               type="text"
+              id="profile-station-search"
+              name="profile-station-search"
               autoFocus
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t("profile.searchStationPlaceholder")}
+              aria-label={t("profile.searchStationPlaceholder")}
               className="w-full text-sm text-gray-700 outline-none placeholder:text-gray-400"
             />
             <button
@@ -176,6 +194,27 @@ export function AlertPreferencesCard({ stations }: { stations: MonitoringStation
           </div>
         </div>
       )}
+
+      <div className="border-t border-gray-100 py-3">
+        <label htmlFor="profile-risk-group" className="mb-1.5 block text-sm text-gray-700">
+          {t("profile.riskGroupLabel")}
+        </label>
+        <select
+          id="profile-risk-group"
+          name="risk-group"
+          value={riskGroup}
+          disabled={controlsDisabled || isSavingRiskGroup}
+          onChange={(e) => handleRiskGroupChange(e.target.value as RiskGroup)}
+          className="focus:border-brand-500 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none disabled:opacity-60"
+        >
+          {RISK_GROUPS.map((group) => (
+            <option key={group} value={group}>
+              {t(`profile.riskGroups.${group}`)}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-gray-400">{t("profile.riskGroupHint")}</p>
+      </div>
 
       <div className="flex items-center justify-between border-t border-gray-100 py-3">
         <span className="text-sm text-gray-700">

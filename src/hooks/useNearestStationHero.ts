@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { AreaAirQualitySummary, GeoPoint, MonitoringStation } from "../types";
 import { useAllStations } from "./useAllStations";
 import { useUserLocation, type UserLocationStatus } from "./useUserLocation";
@@ -91,6 +91,16 @@ export function useNearestStationHero(): NearestStationHeroResult {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [needsWaqi, coords?.lat, coords?.lng]);
 
+  // Computed unconditionally (not inline in the fallback branch below) and
+  // memoized on `stations` so it doesn't re-run — and re-warn via
+  // `resolveStationReading`'s console.warn — on every render that merely
+  // reaches the permission-denied/unsupported branch; only when `stations`
+  // itself actually changes (mock -> live swap).
+  const defaultStationFallback = useMemo(
+    () => resolveStationReading(DEFAULT_STATION_ID, stations),
+    [stations],
+  );
+
   if (stationsLoading || status === "locating") {
     return {
       area: null,
@@ -158,11 +168,10 @@ export function useNearestStationHero(): NearestStationHeroResult {
   // Permission denied/unsupported, or (very unlikely) an empty stations list
   // even while granted — fall back to the named default station honestly,
   // via the same never-silent resolver followed-station summaries use.
-  const { station, isLive } = resolveStationReading(DEFAULT_STATION_ID, stations);
   return {
-    area: toAreaSummary(station),
+    area: toAreaSummary(defaultStationFallback.station),
     isLoading: false,
-    isLive,
+    isLive: defaultStationFallback.isLive,
     distanceKm: null,
     outOfRange: false,
     locationStatus: status,

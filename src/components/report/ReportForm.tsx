@@ -149,11 +149,13 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
       <h2 className="text-lg font-bold text-gray-800">{t("report.formTitle")}</h2>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label htmlFor="report-type" className="mb-1.5 block text-sm font-medium text-gray-700">
           {t("report.incidentType")}
         </label>
         <div className="relative">
           <select
+            id="report-type"
+            name="report-type"
             value={type}
             onChange={(e) => setType(e.target.value as ReportType | "")}
             className={`w-full appearance-none rounded-xl border bg-white px-3.5 py-3 text-sm text-gray-700 outline-none focus:border-brand-500 ${
@@ -179,11 +181,13 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
 
       {type === "other" && (
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+          <label htmlFor="report-custom-type" className="mb-1.5 block text-sm font-medium text-gray-700">
             {t("report.specifyType")}
           </label>
           <input
             type="text"
+            id="report-custom-type"
+            name="report-custom-type"
             value={customTypeDescription}
             onChange={(e) => setCustomTypeDescription(e.target.value)}
             placeholder={t("report.specifyTypePlaceholder")}
@@ -198,10 +202,12 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
       )}
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label htmlFor="report-description" className="mb-1.5 block text-sm font-medium text-gray-700">
           {t("report.description")}
         </label>
         <textarea
+          id="report-description"
+          name="report-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={4}
@@ -218,12 +224,14 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
       <ImageUploader images={images} onChange={setImages} />
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label htmlFor="report-location" className="mb-1.5 block text-sm font-medium text-gray-700">
           {t("report.locationLabel")}
         </label>
         <div className="flex gap-2">
           <input
             type="text"
+            id="report-location"
+            name="report-location"
             value={locationLabel}
             onChange={(e) => setLocationLabel(e.target.value)}
             placeholder={t("report.locationPlaceholder")}
@@ -252,11 +260,13 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label htmlFor="report-email" className="mb-1.5 block text-sm font-medium text-gray-700">
           {t("report.contactInfo")}
         </label>
         <input
           type="email"
+          id="report-email"
+          name="report-email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder={t("report.emailPlaceholder")}

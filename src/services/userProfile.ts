@@ -11,7 +11,7 @@ import {
   type FieldValue,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import type { NotificationSettings, UserProfile } from "../types";
+import type { NotificationSettings, RiskGroup, UserProfile } from "../types";
 
 /**
  * SAFE-WRITE RULES for `users/{uid}` (read this before adding a new function
@@ -117,6 +117,14 @@ export async function updateNotificationSettings(
     if (value !== undefined) fields[`notificationSettings.${key}`] = value;
   }
   await updateDoc(userDocRef(uid), fields);
+}
+
+/** Updates only the `riskGroup` field, used by the Profile settings selector to personalize Home's recommendation card. */
+export async function updateRiskGroup(uid: string, riskGroup: RiskGroup): Promise<void> {
+  await updateDoc(userDocRef(uid), {
+    riskGroup,
+    updatedAt: serverTimestamp(),
+  });
 }
 
 /** Adds a single area to followedAreaIds via arrayUnion — never rewrites the whole array. */

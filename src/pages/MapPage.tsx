@@ -47,15 +47,29 @@ function RecenterOnLocation({ lat, lng }: { lat: number; lng: number }) {
 }
 
 /**
- * Fills empty regions of the map: whenever the viewport settles (pan/zoom)
- * and none of the already-loaded Air4Thai stations fall inside it, queries
- * WAQI for stations in that viewport as a supplemental source — Air4Thai
- * stays authoritative wherever it has coverage; WAQI only shows up where it
- * doesn't. Debounced so rapid panning doesn't fire a request per frame.
+ * Fills empty regions of the map: whenever the viewport settles (pan/zoom),
+ * queries WAQI for stations in that viewport as a supplemental source, then
+ * drops any WAQI station within 1.5km of an Air4Thai station already known
+ * (`dedupeWaqiStations`) — Air4Thai stays authoritative wherever it has
+ * coverage; WAQI only shows up where it doesn't. Debounced so rapid panning
+ * doesn't fire a request per frame.
+ *
+ * ALWAYS fetches WAQI for the viewport now — this used to skip the WAQI
+ * fetch entirely whenever *any* Air4Thai station fell anywhere inside the
+ * viewport (`hasAir4ThaiInView`), which was fine at city zoom but broke down
+ * at country-wide zoom: with ~140 Air4Thai stations scattered nationwide,
+ * virtually every wide viewport contains at least one of them, so WAQI got
+ * skipped even for provinces Air4Thai doesn't cover at all (confirmed live:
+ * a whole-Thailand viewport showed "WAQI: 0" despite WAQI's own
+ * `/map/bounds` endpoint returning 62 real stations, 29 of them >1.5km from
+ * any Air4Thai station). WAQI's bounds endpoint has no bbox-size problem —
+ * verified directly with a whole-country bounding box (62 stations, ~1.7s,
+ * no truncation) — so per-station dedup on every fetch is correct here
+ * instead of a coarser viewport-level skip.
  *
  * Skips entirely while `stationsLoading` is true: on mount, `air4thaiStations`
  * is briefly the small 6-station mock fallback before the real ~170-station
- * fetch resolves, and checking coverage against that stand-in list wastes a
+ * fetch resolves, and deduping against that stand-in list wastes a
  * guaranteed-redundant WAQI call on every single Map page load (confirmed via
  * live debugging — the mount effect used to fire twice, once per station list).
  */
@@ -93,16 +107,10 @@ function WaqiViewportSupplement({
         station.location.lng <= east,
     );
 
-    if (hasAir4ThaiInView) {
-      onWaqiStations([]);
-      onEmptyViewportChange(false);
-      return;
-    }
-
     const waqiStations = await getWaqiStationsInBounds({ south, west, north, east });
     const deduped = dedupeWaqiStations(air4thaiStations, waqiStations);
     onWaqiStations(deduped);
-    onEmptyViewportChange(deduped.length === 0);
+    onEmptyViewportChange(!hasAir4ThaiInView && deduped.length === 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [air4thaiStations, stationsLoading]);
 

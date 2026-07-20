@@ -14,9 +14,12 @@ export function NewsSearchBar({ value, onChange }: NewsSearchBarProps) {
       <Search size={18} className="shrink-0 text-gray-400" />
       <input
         type="text"
+        id="news-search"
+        name="news-search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={t("alerts.searchPlaceholder")}
+        aria-label={t("alerts.searchPlaceholder")}
         className="w-full text-sm text-gray-700 outline-none placeholder:text-gray-400"
       />
     </div>

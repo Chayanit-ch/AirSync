@@ -206,6 +206,19 @@ async function upsertLiveRecords(records: AirQualityRecord[]): Promise<void> {
 }
 
 /**
+ * De-dupes concurrent `getLiveAirQuality()` calls into one in-flight request.
+ * `useAllStations()` is called independently by every page/section that
+ * needs station data (Map, Home's hero card, Home's followed-areas section,
+ * Profile), each with its own `useEffect` — without this, a page that mounts
+ * several of them at once (e.g. Home) fired that many *separate* `/api/air4thai`
+ * requests simultaneously. Cleared once the request settles (success or
+ * failure) so the next mount/navigation still gets a fresh fetch — this only
+ * collapses calls that were already in flight together, it's not a
+ * long-lived cache.
+ */
+let inFlightLiveAirQuality: Promise<LiveAirQualityResult> | null = null;
+
+/**
  * Live, current-moment air quality nationwide — for the Home hero card
  * (nearest-station search), the Map's station markers, and Profile's station
  * search, always fetched fresh through the `/api/air4thai` Vercel proxy,
@@ -219,7 +232,15 @@ async function upsertLiveRecords(records: AirQualityRecord[]): Promise<void> {
  * falls back to a small hard-coded Samut Sakhon mock station set with a loud
  * `console.warn` — never silently.
  */
-export async function getLiveAirQuality(): Promise<LiveAirQualityResult> {
+export function getLiveAirQuality(): Promise<LiveAirQualityResult> {
+  if (inFlightLiveAirQuality) return inFlightLiveAirQuality;
+  inFlightLiveAirQuality = fetchLiveAirQuality().finally(() => {
+    inFlightLiveAirQuality = null;
+  });
+  return inFlightLiveAirQuality;
+}
+
+async function fetchLiveAirQuality(): Promise<LiveAirQualityResult> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), AIR4THAI_TIMEOUT_MS);
@@ -275,10 +296,23 @@ const DEFAULT_STATION_FALLBACK: MonitoringStation = {
 };
 
 /**
+ * Stations already warned about this session (page load) — `resolveStationReading`
+ * is called from render paths (`useNearestStationHero`'s fallback branch,
+ * `useFollowedAreaSummaries`) that legitimately re-run several times for the
+ * same missing station (once with the initial mock station list, again once
+ * live data arrives, again from every page that shows that station), which
+ * turned one honest "no data for this station" fact into a wall of identical
+ * console lines. This caps it to once per station per session — still never
+ * silent, just not repeated once the fact is already on record.
+ */
+const warnedMissingStationIds = new Set<string>();
+
+/**
  * Resolves one specific station's current reading out of an already-fetched
  * `stations` list. Real if that station is currently reporting; otherwise a
- * clearly-flagged synthetic reading with a loud `console.warn` naming the
- * station — used by the hero card's guest/no-permission default and by
+ * clearly-flagged synthetic reading with a loud `console.warn` (once per
+ * station per session — see `warnedMissingStationIds`) naming the station —
+ * used by the hero card's guest/no-permission default and by
  * followed-station summaries, both of which need one named station's data
  * rather than "whichever stations happen to be live right now".
  */
@@ -289,9 +323,12 @@ export function resolveStationReading(
   const found = stations.find((s) => s.id === stationId);
   if (found) return { station: found, isLive: true };
 
-  console.warn(
-    `No live reading for station "${stationId}" this session — using placeholder data.`,
-  );
+  if (!warnedMissingStationIds.has(stationId)) {
+    warnedMissingStationIds.add(stationId);
+    console.warn(
+      `No live reading for station "${stationId}" this session — using placeholder data.`,
+    );
+  }
 
   if (stationId === DEFAULT_STATION_ID) {
     return { station: DEFAULT_STATION_FALLBACK, isLive: false };

@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import { logOut } from "../../services/auth";
 import { UserAvatar } from "../common/UserAvatar";
+import { VisuallyHidden } from "../shared/VisuallyHidden";
 
 const FEEDBACK_EMAIL = "baitoey8344@gmail.com";
 
@@ -55,11 +56,17 @@ export function MobileNavDrawer({ open, onClose }: MobileNavDrawerProps) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={t("drawer.title")}
+        aria-labelledby="mobile-nav-drawer-title"
         className={`absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-xl transition-transform duration-200 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
+        {/* The visible "AirSync" brand mark below isn't a description of
+            this dialog's purpose, so the accessible name is a separate
+            hidden heading instead of reusing it. */}
+        <VisuallyHidden as="h2" id="mobile-nav-drawer-title">
+          {t("drawer.title")}
+        </VisuallyHidden>
         <div className="flex items-center justify-between border-b border-gray-100 p-4">
           <div className="flex items-center gap-2">
             <Wind size={22} className="text-brand-600" strokeWidth={2.5} />

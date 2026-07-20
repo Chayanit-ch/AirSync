@@ -1,7 +1,8 @@
 import { LocateFixed, MapPinOff } from "lucide-react";
-import type { AreaAirQualitySummary } from "../../types";
+import type { AreaAirQualitySummary, RiskGroup } from "../../types";
 import type { UserLocationStatus } from "../../hooks/useUserLocation";
 import { useTranslation } from "../../hooks/useTranslation";
+import { getPersonalizedRecommendation, resolveRiskGroup } from "../../utils/recommendation";
 
 const HERO_GRADIENT: Record<AreaAirQualitySummary["severity"], string> = {
   good: "from-emerald-500 to-emerald-600",
@@ -20,6 +21,8 @@ interface AqiHeroCardProps {
   outOfRange?: boolean;
   locationStatus?: UserLocationStatus;
   onRetryLocation?: () => void;
+  /** The signed-in user's `UserProfile.riskGroup` — undefined for guests or profiles saved before this field existed, treated as `"general"` (see `resolveRiskGroup`). */
+  riskGroup?: RiskGroup;
 }
 
 export function AqiHeroCard({
@@ -28,10 +31,13 @@ export function AqiHeroCard({
   outOfRange = false,
   locationStatus,
   onRetryLocation,
+  riskGroup,
 }: AqiHeroCardProps) {
   const { t, dict } = useTranslation();
   const severityLabel = dict.common.severity[area.severity];
-  const recommendation = dict.common.severityRecommendation[area.severity];
+  const resolvedRiskGroup = resolveRiskGroup(riskGroup);
+  const recommendation = getPersonalizedRecommendation(dict, area.severity, resolvedRiskGroup);
+  const showRiskGroupCta = resolvedRiskGroup === "general";
   const showLocationRetry =
     (locationStatus === "denied" || locationStatus === "unsupported") && onRetryLocation;
 
@@ -75,18 +81,26 @@ export function AqiHeroCard({
           </button>
         )}
       </div>
-      <div className="flex divide-x divide-gray-100 bg-white">
-        <div className="flex-1 px-4 py-3">
+      <div className="flex flex-col divide-y divide-gray-100 bg-white">
+        <div className="px-4 py-3">
           <p className="text-xs text-gray-400">PM 2.5</p>
           <p className="mt-0.5 text-sm font-bold text-gray-800">
             {area.avgPm25.toFixed(1)} µg/m³
           </p>
         </div>
-        <div className="flex-1 px-4 py-3">
+        {/* Full-width, wrapping block — personalized recommendations run
+            longer than the old one-liner, so this can no longer share a
+            cramped half-width column with the PM2.5 stat. */}
+        <div className="px-4 py-3">
           <p className="text-xs text-gray-400">{t("home.recommendation")}</p>
-          <p className="mt-0.5 text-sm font-medium text-gray-700">
+          <p className="mt-0.5 text-sm leading-relaxed font-medium text-wrap text-gray-700">
             {recommendation}
           </p>
+          {showRiskGroupCta && (
+            <p className="text-brand-600 mt-2 text-xs font-medium text-wrap">
+              {t("home.riskGroupCta")}
+            </p>
+          )}
         </div>
       </div>
     </div>

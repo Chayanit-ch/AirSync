@@ -1,16 +1,18 @@
 import {
   addDoc,
   collection,
+  doc,
   limit,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
   where,
   type Unsubscribe,
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
-import type { Report, ReportType } from "../types";
+import type { Report, ReportType, StatusHistoryEntry } from "../types";
 
 /** Firestore rules require an authenticated user to read `reports` at all — callers must never invoke `subscribeToRecentReports` while signed out. */
 const RECENT_REPORTS_LIMIT = 40;
@@ -139,6 +141,66 @@ export function subscribeToRecentReports(
     },
     (error) => {
       console.error("Failed to subscribe to recent reports", error);
+      onError?.(error);
+    },
+  );
+}
+
+/**
+ * Authority/admin-only: changes a report's status. Updates only `status` +
+ * `updatedAt` on the report (dot-field `updateDoc`, never a whole-document
+ * overwrite) and appends one entry to `reports/{reportId}/statusHistory` so
+ * the reporting citizen can see their report is being acted on — see
+ * `subscribeToStatusHistory`. The caller (`ReportDetailModal`) is
+ * responsible for only rendering the control that invokes this for
+ * `userProfile.role === "authority" | "admin"`; this function itself doesn't
+ * re-check the role client-side because that check is not a security
+ * boundary — Firestore rules are (see the rules this feature requires,
+ * documented where the role gate is implemented).
+ */
+export async function updateReportStatus(
+  reportId: string,
+  status: Report["status"],
+  updatedByUid: string,
+): Promise<void> {
+  await updateDoc(doc(db, "reports", reportId), {
+    status,
+    updatedAt: serverTimestamp(),
+  });
+  await addDoc(collection(db, "reports", reportId, "statusHistory"), {
+    status,
+    updatedBy: updatedByUid,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Live-subscribes to a single report's status change log, oldest first (a
+ * timeline of what happened, read top-to-bottom) — rendered for every viewer
+ * of `ReportDetailModal`, not just authorities, so the reporting citizen can
+ * see their report is being tracked.
+ */
+export function subscribeToStatusHistory(
+  reportId: string,
+  onChange: (entries: StatusHistoryEntry[]) => void,
+  onError?: (error: unknown) => void,
+): Unsubscribe {
+  const historyQuery = query(
+    collection(db, "reports", reportId, "statusHistory"),
+    orderBy("updatedAt", "asc"),
+  );
+
+  return onSnapshot(
+    historyQuery,
+    (snapshot) => {
+      onChange(
+        snapshot.docs.map(
+          (docSnap) => ({ id: docSnap.id, ...docSnap.data() }) as StatusHistoryEntry,
+        ),
+      );
+    },
+    (error) => {
+      console.error("Failed to subscribe to report status history", error);
       onError?.(error);
     },
   );

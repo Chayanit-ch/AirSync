@@ -137,7 +137,7 @@ export function AuthPage() {
       >
         {mode === "signup" && (
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            <label htmlFor="auth-name" className="mb-1.5 block text-sm font-medium text-gray-700">
               {t("auth.name")}
             </label>
             <div className="relative">
@@ -146,6 +146,8 @@ export function AuthPage() {
                 className="absolute top-1/2 left-3.5 -translate-y-1/2 text-gray-400"
               />
               <input
+                id="auth-name"
+                name="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 type="text"
@@ -157,7 +159,7 @@ export function AuthPage() {
         )}
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+          <label htmlFor="auth-email" className="mb-1.5 block text-sm font-medium text-gray-700">
             {t("auth.email")}
           </label>
           <div className="relative">
@@ -166,6 +168,8 @@ export function AuthPage() {
               className="absolute top-1/2 left-3.5 -translate-y-1/2 text-gray-400"
             />
             <input
+              id="auth-email"
+              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
@@ -176,7 +180,7 @@ export function AuthPage() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+          <label htmlFor="auth-password" className="mb-1.5 block text-sm font-medium text-gray-700">
             {t("auth.password")}
           </label>
           <div className="relative">
@@ -185,6 +189,8 @@ export function AuthPage() {
               className="absolute top-1/2 left-3.5 -translate-y-1/2 text-gray-400"
             />
             <input
+              id="auth-password"
+              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               type={showPassword ? "text" : "password"}
@@ -204,7 +210,7 @@ export function AuthPage() {
 
         {mode === "signup" && (
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            <label htmlFor="auth-confirm-password" className="mb-1.5 block text-sm font-medium text-gray-700">
               {t("auth.confirmPassword")}
             </label>
             <div className="relative">
@@ -213,6 +219,8 @@ export function AuthPage() {
                 className="absolute top-1/2 left-3.5 -translate-y-1/2 text-gray-400"
               />
               <input
+                id="auth-confirm-password"
+                name="confirm-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 type={showPassword ? "text" : "password"}

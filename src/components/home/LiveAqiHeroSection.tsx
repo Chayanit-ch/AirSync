@@ -1,3 +1,4 @@
+import { useAuth } from "../../contexts/AuthContext";
 import { useNearestStationHero } from "../../hooks/useNearestStationHero";
 import { AqiHeroCard } from "./AqiHeroCard";
 
@@ -11,6 +12,7 @@ function HeroSkeleton() {
 export function LiveAqiHeroSection() {
   const { area, isLoading, distanceKm, outOfRange, locationStatus, retryLocation } =
     useNearestStationHero();
+  const { userProfile } = useAuth();
 
   if (isLoading || !area) {
     return <HeroSkeleton />;
@@ -23,6 +25,7 @@ export function LiveAqiHeroSection() {
       outOfRange={outOfRange}
       locationStatus={locationStatus}
       onRetryLocation={retryLocation}
+      riskGroup={userProfile?.riskGroup}
     />
   );
 }

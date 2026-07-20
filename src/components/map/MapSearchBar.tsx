@@ -14,9 +14,12 @@ export function MapSearchBar({ value, onChange }: MapSearchBarProps) {
       <Search size={18} className="shrink-0 text-gray-400" />
       <input
         type="text"
+        id="map-search"
+        name="map-search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={t("map.searchPlaceholder")}
+        aria-label={t("map.searchPlaceholder")}
         className="w-full text-sm text-gray-700 outline-none placeholder:text-gray-400"
       />
     </div>

@@ -163,6 +163,21 @@ export interface Report {
   updatedAt: Timestamp;
 }
 
+/**
+ * One status change on a report, live in Firestore:
+ * `reports/{reportId}/statusHistory/{entryId}`. Written only by
+ * `updateReportStatus` (authority/admin only, enforced by Firestore rules —
+ * see that function's comment) whenever a report's `status` changes, so
+ * citizens can see their report is actually being tracked. Never mutated
+ * after creation — an append-only log, not a "current state" doc.
+ */
+export interface StatusHistoryEntry {
+  id: string;
+  status: Report["status"];
+  updatedBy: string;
+  updatedAt: Timestamp;
+}
+
 export type AlertSeverity = AQISeverityLevel | "info";
 
 /** A system-generated alert/notification (threshold breach, report status change, etc). Firestore: `alerts/{id}` */
@@ -191,6 +206,9 @@ export interface KnowledgeArticle {
 }
 
 export type UserRole = "citizen" | "admin" | "authority";
+
+/** Drives the Home hero card's personalized recommendation matrix — see `utils/recommendation.ts`. */
+export type RiskGroup = "general" | "children" | "elderly" | "respiratory" | "outdoor_worker";
 
 export interface NotificationSettings {
   pushEnabled: boolean;
@@ -226,6 +244,8 @@ export interface UserProfile {
    */
   followedAreaIds: string[];
   notificationSettings: NotificationSettings;
+  /** Optional because profiles created before this field shipped don't have it — treat missing as `"general"`, see `resolveRiskGroup`. */
+  riskGroup?: RiskGroup;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
