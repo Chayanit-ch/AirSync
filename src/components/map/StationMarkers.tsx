@@ -73,7 +73,7 @@ export function StationMarkers({
             <Tooltip
               direction="top"
               offset={[0, -8]}
-              className="!rounded-md !border-0 !bg-gray-900/80 !px-1.5 !py-0.5 !text-[10px] !font-semibold !text-white !shadow-none"
+              className="rounded-md! border-0  bg-gray-900/80 px-1.5 py-0.5 text-[10px] font-semibold text-white shadow-none"
             >
               {mode === "pm25" ? `${label} µg/m³` : `AQI ${label}`}
             </Tooltip>
