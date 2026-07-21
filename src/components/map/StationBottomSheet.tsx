@@ -108,9 +108,11 @@ export function StationBottomSheet({
             : { transform: "translateY(0)", transition: "transform 200ms ease-out" }
         }
       >
-        {/* Drag handle — draggable and tappable on mobile to collapse the
+        {/* Drag handle — draggable (and tappable) on mobile to collapse the
             sheet to the peek bar above; purely decorative (no interaction
-            target) on the desktop docked panel. */}
+            target) on the desktop docked panel. Real devices found this
+            6px-tall bar too easy to miss/mis-tap on its own, so it's now a
+            secondary affordance alongside the explicit chevron button below. */}
         <div
           onClick={toggleSheetState}
           onPointerDown={handleHandlePointerDown}
@@ -133,11 +135,25 @@ export function StationBottomSheet({
               {t(`map.sourceDetail.${source}`)}
             </p>
           </div>
-          <span
-            className={`flex shrink-0 items-center justify-center rounded-full p-1.5 ${meta.softBgClass}`}
-          >
-            <ShieldCheck size={16} className={meta.textClass} />
-          </span>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <span
+              className={`flex shrink-0 items-center justify-center rounded-full p-1.5 ${meta.softBgClass}`}
+            >
+              <ShieldCheck size={16} className={meta.textClass} />
+            </span>
+            {/* Explicit, clearly-visible collapse button — top-right corner
+                of the sheet, mobile only. A real tap target (not a thin
+                drag bar) so users always have an obvious way to collapse
+                without relying on a drag gesture. */}
+            <button
+              type="button"
+              onClick={toggleSheetState}
+              aria-label={t("map.collapseStationDetails")}
+              className="flex shrink-0 items-center justify-center rounded-full bg-gray-100 p-1.5 text-gray-600 hover:bg-gray-200 lg:hidden"
+            >
+              <ChevronDown size={16} />
+            </button>
+          </div>
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-3">
