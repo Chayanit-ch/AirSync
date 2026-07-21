@@ -60,6 +60,7 @@ function buildDefaultUserDocument(
       pushEnabled: false,
       dailySummaryEnabled: false,
     },
+    hasCompletedOnboarding: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -123,6 +124,14 @@ export async function updateNotificationSettings(
 export async function updateRiskGroup(uid: string, riskGroup: RiskGroup): Promise<void> {
   await updateDoc(userDocRef(uid), {
     riskGroup,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/** Marks the first-run guided tour as done (completed or skipped) so it never auto-starts again — the "How to Use" replay button re-shows it without touching this field. */
+export async function completeOnboarding(uid: string): Promise<void> {
+  await updateDoc(userDocRef(uid), {
+    hasCompletedOnboarding: true,
     updatedAt: serverTimestamp(),
   });
 }

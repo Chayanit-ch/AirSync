@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { getLiveAirQuality } from "../services/airQuality";
 import { monitoringStations as mockMonitoringStations } from "../data/mockData";
-import type { MonitoringStation } from "../types";
+import type { MonitoringStation, StationMetadata } from "../types";
 
 interface UseAllStationsResult {
   stations: MonitoringStation[];
+  /** The FULL nationwide station catalog (live + currently-offline) — use this for search. */
+  allStations: StationMetadata[];
   isLoading: boolean;
   /** False if the live Air4Thai fetch failed and `stations` is the small mock fallback set. */
   isLive: boolean;
@@ -19,6 +21,7 @@ interface UseAllStationsResult {
 export function useAllStations(): UseAllStationsResult {
   const [state, setState] = useState<UseAllStationsResult>({
     stations: mockMonitoringStations,
+    allStations: mockMonitoringStations,
     isLoading: true,
     isLive: false,
   });
@@ -27,7 +30,12 @@ export function useAllStations(): UseAllStationsResult {
     let cancelled = false;
     getLiveAirQuality().then((result) => {
       if (cancelled) return;
-      setState({ stations: result.stations, isLoading: false, isLive: result.isLive });
+      setState({
+        stations: result.stations,
+        allStations: result.allStations,
+        isLoading: false,
+        isLive: result.isLive,
+      });
     });
     return () => {
       cancelled = true;

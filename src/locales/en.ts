@@ -148,6 +148,8 @@ export const en: typeof th = {
     legendTitle: "Data source",
     debugToggleShow: "Show source counter",
     debugToggleHide: "Hide source counter",
+    expandStationDetails: "Expand station details",
+    collapseStationDetails: "Collapse station details",
   },
   report: {
     pageTitle: "Report pollution",
@@ -265,6 +267,7 @@ export const en: typeof th = {
     pushNotifications: "Push notifications",
     dailySummary: "Daily summary",
     closeSearch: "Close search",
+    stationOffline: "No data available at the moment",
   },
   auth: {
     tagline: "Nationwide air quality tracking for Thailand",
@@ -312,6 +315,7 @@ export const en: typeof th = {
     title: "Navigation menu",
     about: "About AirSync",
     contact: "Contact & feedback",
+    howToUse: "How to use AirSync",
   },
   about: {
     pageTitle: "About AirSync",
@@ -323,5 +327,35 @@ export const en: typeof th = {
     communityTitle: "Community reporting",
     communityBody:
       "Anyone can report pollution they see — open burning, factory smoke, and more — with photos, directly in the app. These reports show up on the Home page so the community can keep watch on air quality together.",
+  },
+  onboarding: {
+    next: "Next",
+    skip: "Skip",
+    readyToStart: "Ready to start?",
+    stepCounter: "Step {current} of {total}",
+    howToUseButton: "How to use",
+    steps: {
+      hero: {
+        title: "Your local air quality, at a glance",
+        body: "This card shows the Air Quality Index (AQI) and PM2.5 level nearest to you right now. Higher numbers mean more pollution — check the color and severity label to know when to take precautions.",
+      },
+      map: {
+        title: "Explore the map",
+        body: "Tap Map to see air quality readings from stations all across Thailand. Each marker is a monitoring station — tap one to see its details.",
+      },
+      report: {
+        title: "Report pollution you see",
+        body: "Spot open burning, factory smoke, or a smoky vehicle? Tap Report to submit it with a photo — your report helps the whole community stay informed.",
+      },
+      nav: {
+        title: "Get around AirSync",
+        body: "These five sections are always one tap away: Home, Map, Report, Alerts, and Profile.",
+      },
+      profile: {
+        title: "Follow the areas you care about",
+        body: "In Profile, add the stations you want to keep an eye on. Followed stations show up on your Home page and can send you alerts — even if a station is temporarily offline, you can still follow it.",
+      },
+    },
+    finishHint: "That's the tour! Explore the Map and Profile pages any time — you can replay this tour later from the \"How to use\" button.",
   },
 };

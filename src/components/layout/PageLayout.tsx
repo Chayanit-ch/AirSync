@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { TopBar } from "./TopBar";
 import { BottomNav } from "./BottomNav";
 import { Sidebar } from "./Sidebar";
 import { MobileNavDrawer } from "./MobileNavDrawer";
 import { ProfileSetupErrorBanner } from "../shared/ProfileSetupErrorBanner";
+import { TourOverlay } from "../onboarding/TourOverlay";
+import { useOnboardingTour } from "../../contexts/OnboardingTourContext";
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "airsync-sidebar-collapsed";
 
@@ -29,10 +31,25 @@ function readStoredCollapsed(): boolean {
 export function PageLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readStoredCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { isActive: isTourActive } = useOnboardingTour();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(sidebarCollapsed));
   }, [sidebarCollapsed]);
+
+  // Every tour step targets a Home-page element (see `tourSteps.ts`) — but
+  // the auto-start trigger (`OnboardingTourContext`) fires as soon as the
+  // profile loads, regardless of which page that happens to be (e.g. a
+  // fresh signup can land on /profile). Redirect to Home whenever the tour
+  // becomes active from elsewhere, so its spotlight always has a real
+  // target instead of falling back to an un-anchored centered tooltip.
+  useEffect(() => {
+    if (isTourActive && location.pathname !== "/") {
+      navigate("/", { replace: true });
+    }
+  }, [isTourActive, location.pathname, navigate]);
 
   function handleMenuButtonClick() {
     setSidebarCollapsed((prev) => !prev);
@@ -54,6 +71,7 @@ export function PageLayout() {
         </main>
         <BottomNav />
       </div>
+      <TourOverlay />
     </div>
   );
 }

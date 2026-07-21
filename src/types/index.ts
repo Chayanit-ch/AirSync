@@ -95,6 +95,25 @@ export interface MonitoringStation {
   source?: DataSource;
 }
 
+/**
+ * The FULL nationwide station catalog entry — permanent station info only,
+ * no current reading. Unlike `MonitoringStation`, this exists for every
+ * known station whether or not it's reporting live right now, so search
+ * (`utils/stationSearch.ts`) and anything else that needs "does this station
+ * exist" must use `StationMetadata[]`, not `MonitoringStation[]` — see
+ * `allStations` in `services/airQuality.ts`.
+ */
+export interface StationMetadata {
+  id: string;
+  name: string;
+  nameEn?: string;
+  address: string;
+  district: string;
+  province: string;
+  location: GeoPoint;
+  source?: DataSource;
+}
+
 /** An area followed by a user, summarized for dashboard cards. */
 export interface AreaAirQualitySummary {
   id: string;
@@ -246,6 +265,8 @@ export interface UserProfile {
   notificationSettings: NotificationSettings;
   /** Optional because profiles created before this field shipped don't have it — treat missing as `"general"`, see `resolveRiskGroup`. */
   riskGroup?: RiskGroup;
+  /** Whether this user has completed (or skipped) the first-run guided tour — see `OnboardingTourContext`. Missing/`false` means the tour should auto-start; `true` means it's done, and only the "How to Use" replay button shows it again. */
+  hasCompletedOnboarding?: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

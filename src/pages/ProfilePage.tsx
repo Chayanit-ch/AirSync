@@ -19,7 +19,7 @@ export function ProfilePage() {
   const { currentUser, userProfile, isLoggingOutRef } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { stations, isLoading: stationsLoading } = useAllStations();
+  const { stations, allStations, isLoading: stationsLoading } = useAllStations();
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
   async function handleLogout() {
@@ -50,7 +50,7 @@ export function ProfilePage() {
           guardianLevel={userProfile?.guardianLevel ?? mockUser.guardianLevel}
           onLogout={handleLogout}
         />
-        <AlertPreferencesCard stations={stations} />
+        <AlertPreferencesCard stations={stations} stationCatalog={allStations} />
       </div>
       <div className="flex flex-col gap-4">
         <PM25StatsCard followedAreaIds={followedAreaIds} />

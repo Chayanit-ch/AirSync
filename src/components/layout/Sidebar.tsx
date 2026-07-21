@@ -1,5 +1,6 @@
-import { ChevronLeft, ChevronRight, Wind } from "lucide-react";
+import { ChevronLeft, ChevronRight, HelpCircle, Wind } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useOnboardingTour } from "../../contexts/OnboardingTourContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import { NAV_ITEMS } from "./navItems";
 
@@ -17,6 +18,9 @@ interface SidebarProps {
  */
 export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
   const { t } = useTranslation();
+  // Redirecting to Home (if needed) is handled centrally in `PageLayout`
+  // whenever the tour becomes active — see its comment.
+  const { start: handleHowToUse } = useOnboardingTour();
 
   return (
     <aside
@@ -37,13 +41,14 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
         )}
       </div>
 
-      <nav className="flex flex-1 flex-col gap-1 p-2">
+      <nav data-tour-id="onboarding-nav-bar" className="flex flex-1 flex-col gap-1 p-2">
         {NAV_ITEMS.map(({ to, key, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
             title={collapsed ? t(`nav.${key}`) : undefined}
+            data-tour-id={key === "profile" ? "onboarding-nav-profile" : undefined}
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive ? "bg-brand-50 text-brand-700" : "text-gray-500 hover:bg-gray-50"
@@ -55,6 +60,18 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
           </NavLink>
         ))}
       </nav>
+
+      <button
+        type="button"
+        onClick={handleHowToUse}
+        title={collapsed ? t("onboarding.howToUseButton") : undefined}
+        className={`flex items-center gap-2 border-t border-gray-100 px-3 py-3 text-sm text-gray-500 hover:bg-gray-50 ${
+          collapsed ? "justify-center" : ""
+        }`}
+      >
+        <HelpCircle size={18} />
+        {!collapsed && <span>{t("onboarding.howToUseButton")}</span>}
+      </button>
 
       <button
         type="button"

@@ -11,7 +11,7 @@ import {
 import { auth, db } from "../firebase";
 import { monitoringStations as mockMonitoringStations } from "../data/mockData";
 import { pm25ToAqi, getAqiSeverity } from "../utils/aqi";
-import type { AirQualityRecord, GeoPoint, MonitoringStation } from "../types";
+import type { AirQualityRecord, GeoPoint, MonitoringStation, StationMetadata } from "../types";
 
 /**
  * Beyond this, a station is too far away to honestly call "your area" — used
@@ -171,6 +171,7 @@ interface Air4ThaiProxyResponse {
   ok: boolean;
   records?: AirQualityRecord[];
   stations?: MonitoringStation[];
+  allStations?: StationMetadata[];
   error?: string;
 }
 
@@ -179,6 +180,13 @@ export interface LiveAirQualityResult {
   records: AirQualityRecord[];
   /** Nationwide live stations, or the small legacy Samut Sakhon mock set if the whole fetch failed. */
   stations: MonitoringStation[];
+  /**
+   * The FULL nationwide station catalog (live + currently-offline), for
+   * search and anything else that needs "does this station exist at all" —
+   * see `StationMetadata`. Never filtered down to only-currently-reporting
+   * stations the way `stations` above is.
+   */
+  allStations: StationMetadata[];
   /** True only if the `/api/air4thai` request itself succeeded. */
   isLive: boolean;
 }
@@ -258,6 +266,13 @@ async function fetchLiveAirQuality(): Promise<LiveAirQualityResult> {
     if (!data.ok || !data.records || !data.stations) {
       throw new Error(data.error ?? "/api/air4thai returned an invalid payload");
     }
+    if (!data.allStations) {
+      // Older/mismatched proxy deploy without the full-catalog field yet —
+      // degrade to the live-only subset rather than crash search entirely.
+      console.warn(
+        "/api/air4thai response missing allStations — falling back to live-only stations for search.",
+      );
+    }
 
     // Don't block rendering on the Firestore write — the caller already has
     // everything it needs. Skipped entirely for signed-out visitors: Firestore
@@ -269,10 +284,20 @@ async function fetchLiveAirQuality(): Promise<LiveAirQualityResult> {
       void upsertLiveRecords(data.records);
     }
 
-    return { records: data.records, stations: data.stations, isLive: true };
+    return {
+      records: data.records,
+      stations: data.stations,
+      allStations: data.allStations ?? data.stations,
+      isLive: true,
+    };
   } catch (error) {
     console.warn("Using mock data because Air4Thai is unavailable.", error);
-    return { records: [], stations: mockMonitoringStations, isLive: false };
+    return {
+      records: [],
+      stations: mockMonitoringStations,
+      allStations: mockMonitoringStations,
+      isLive: false,
+    };
   }
 }
 

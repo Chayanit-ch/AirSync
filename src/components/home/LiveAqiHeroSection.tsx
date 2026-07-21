@@ -15,17 +15,23 @@ export function LiveAqiHeroSection() {
   const { userProfile } = useAuth();
 
   if (isLoading || !area) {
-    return <HeroSkeleton />;
+    return (
+      <div data-tour-id="onboarding-hero">
+        <HeroSkeleton />
+      </div>
+    );
   }
 
   return (
-    <AqiHeroCard
-      area={area}
-      distanceKm={distanceKm}
-      outOfRange={outOfRange}
-      locationStatus={locationStatus}
-      onRetryLocation={retryLocation}
-      riskGroup={userProfile?.riskGroup}
-    />
+    <div data-tour-id="onboarding-hero">
+      <AqiHeroCard
+        area={area}
+        distanceKm={distanceKm}
+        outOfRange={outOfRange}
+        locationStatus={locationStatus}
+        onRetryLocation={retryLocation}
+        riskGroup={userProfile?.riskGroup}
+      />
+    </div>
   );
 }

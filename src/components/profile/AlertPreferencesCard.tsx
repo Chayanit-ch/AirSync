@@ -1,8 +1,9 @@
 import { Bell, Plus, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { MonitoringStation, RiskGroup } from "../../types";
+import type { MonitoringStation, RiskGroup, StationMetadata } from "../../types";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "../../hooks/useTranslation";
+import { resolveStationReading } from "../../services/airQuality";
 import {
   followArea,
   unfollowArea,
@@ -16,7 +17,15 @@ import { ToggleSwitch } from "../shared/ToggleSwitch";
 const MAX_SEARCH_RESULTS = 8;
 const RISK_GROUPS: RiskGroup[] = ["general", "children", "elderly", "respiratory", "outdoor_worker"];
 
-export function AlertPreferencesCard({ stations }: { stations: MonitoringStation[] }) {
+export function AlertPreferencesCard({
+  stations,
+  stationCatalog,
+}: {
+  /** Currently-live stations only — used to determine each result's `isLive` status. */
+  stations: MonitoringStation[];
+  /** The FULL nationwide station catalog (live + currently-offline) — search always runs over this. */
+  stationCatalog: StationMetadata[];
+}) {
   const { currentUser, userProfile, loading } = useAuth();
   const { t } = useTranslation();
   const [isAddingArea, setIsAddingArea] = useState(false);
@@ -32,24 +41,30 @@ export function AlertPreferencesCard({ stations }: { stations: MonitoringStation
   const riskGroup = resolveRiskGroup(userProfile?.riskGroup);
   const uid = currentUser?.uid;
 
-  const stationById = useMemo(
-    () => new Map(stations.map((station) => [station.id, station])),
-    [stations],
+  const catalogById = useMemo(
+    () => new Map(stationCatalog.map((station) => [station.id, station])),
+    [stationCatalog],
   );
 
   // Followed stations may not currently be in the live `stations` batch
-  // (e.g. temporarily quiet) — fall back to showing the raw id rather than
-  // silently dropping the chip, matching the app's never-silent-fallback rule.
-  const followedStationOptions = followedAreaIds.map(
-    (id) => stationById.get(id) ?? { id, name: id, district: "", province: "" },
-  );
+  // (e.g. temporarily quiet) — resolve the real name from the full catalog
+  // first rather than showing the raw id, matching the app's
+  // never-silent-fallback rule while still being an honest place name.
+  const followedStationOptions = followedAreaIds.map((id) => {
+    const { station, isLive } = resolveStationReading(id, stations);
+    if (isLive) return { id, name: station.name, district: station.district };
+    const metadata = catalogById.get(id);
+    return metadata
+      ? { id, name: metadata.name, district: metadata.district }
+      : { id, name: t("common.stationUnavailable", { id }), district: "" };
+  });
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
-    const notFollowed = stations.filter((station) => !followedAreaIds.includes(station.id));
+    const notFollowed = stationCatalog.filter((station) => !followedAreaIds.includes(station.id));
     return searchStations(notFollowed, searchQuery).slice(0, MAX_SEARCH_RESULTS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stations, searchQuery, followedAreaIds.join(",")]);
+  }, [stationCatalog, searchQuery, followedAreaIds.join(",")]);
 
   const controlsDisabled = loading || !uid;
 
@@ -176,20 +191,28 @@ export function AlertPreferencesCard({ stations }: { stations: MonitoringStation
             ) : searchResults.length === 0 ? (
               <p className="px-1 py-2 text-xs text-gray-400">{t("profile.noStationResults")}</p>
             ) : (
-              searchResults.map((station) => (
-                <button
-                  key={station.id}
-                  type="button"
-                  onClick={() => handleAddArea(station.id)}
-                  disabled={controlsDisabled || pendingAreaId === station.id}
-                  className="flex flex-col items-start rounded-lg border border-gray-200 bg-white px-3 py-2 text-left disabled:opacity-40"
-                >
-                  <span className="text-sm font-medium text-gray-700">{station.name}</span>
-                  <span className="text-xs text-gray-400">
-                    {station.district}, {station.province}
-                  </span>
-                </button>
-              ))
+              searchResults.map((station) => {
+                const { isLive } = resolveStationReading(station.id, stations);
+                return (
+                  <button
+                    key={station.id}
+                    type="button"
+                    onClick={() => handleAddArea(station.id)}
+                    disabled={controlsDisabled || pendingAreaId === station.id}
+                    className="flex flex-col items-start rounded-lg border border-gray-200 bg-white px-3 py-2 text-left disabled:opacity-40"
+                  >
+                    <span className="text-sm font-medium text-gray-700">{station.name}</span>
+                    <span className="text-xs text-gray-400">
+                      {station.district}, {station.province}
+                    </span>
+                    {!isLive && (
+                      <span className="text-xs font-medium text-amber-600">
+                        {t("profile.stationOffline")}
+                      </span>
+                    )}
+                  </button>
+                );
+              })
             )}
           </div>
         </div>

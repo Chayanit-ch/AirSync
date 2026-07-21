@@ -1,6 +1,7 @@
-import { Info, LogIn, LogOut, Mail, Wind, X } from "lucide-react";
+import { HelpCircle, Info, LogIn, LogOut, Mail, Wind, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useOnboardingTour } from "../../contexts/OnboardingTourContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import { logOut } from "../../services/auth";
 import { UserAvatar } from "../common/UserAvatar";
@@ -22,8 +23,16 @@ interface MobileNavDrawerProps {
  */
 export function MobileNavDrawer({ open, onClose }: MobileNavDrawerProps) {
   const { currentUser, isLoggingOutRef } = useAuth();
+  // Redirecting to Home (if needed) is handled centrally in `PageLayout`
+  // whenever the tour becomes active — see its comment.
+  const { start: startTour } = useOnboardingTour();
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  function handleHowToUse() {
+    onClose();
+    startTour();
+  }
 
   async function handleLogout() {
     onClose();
@@ -93,6 +102,14 @@ export function MobileNavDrawer({ open, onClose }: MobileNavDrawerProps) {
         )}
 
         <nav className="flex flex-1 flex-col gap-1 p-2">
+          <button
+            type="button"
+            onClick={handleHowToUse}
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            <HelpCircle size={18} className="text-gray-400" />
+            {t("drawer.howToUse")}
+          </button>
           <button
             type="button"
             onClick={() => goTo("/about")}

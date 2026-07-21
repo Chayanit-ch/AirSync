@@ -102,10 +102,31 @@ interface NormalizedStation {
   source: "air4thai";
 }
 
+/**
+ * Metadata-only shape (no current reading) for the FULL nationwide station
+ * catalog — see `allStations` below. Deliberately has no `currentAqi`/
+ * `currentPm25`/`severity`/`lastUpdated`: many of these ~174 stations won't
+ * have a fresh reading this cycle, and fabricating placeholder numbers here
+ * would be exactly the kind of silent-fallback-as-if-live data this app
+ * avoids elsewhere (see `resolveStationReading` in `src/services/airQuality.ts`).
+ */
+interface NormalizedStationMetadata {
+  id: string;
+  name: string;
+  nameEn: string;
+  address: string;
+  district: string;
+  province: string;
+  location: { lat: number; lng: number };
+  source: "air4thai";
+}
+
 interface CacheEntry {
   fetchedAtMs: number;
   records: NormalizedRecord[];
   stations: NormalizedStation[];
+  /** Every station Air4Thai knows about, live or not — see `normalize()`. */
+  allStations: NormalizedStationMetadata[];
 }
 
 // Module-level variable = the "simple in-memory cache" the task asked for.
@@ -164,9 +185,30 @@ const STALE_THRESHOLD_MS = 6 * 60 * 60 * 1000; // 6 hours
 function normalize(raw: Air4ThaiResponse): CacheEntry {
   const records: NormalizedRecord[] = [];
   const stations: NormalizedStation[] = [];
+  const allStations: NormalizedStationMetadata[] = [];
   const fetchedAtMs = Date.now();
 
   for (const station of raw.stations) {
+    const lat = Number(station.lat);
+    const lng = Number(station.long);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+
+    // allStations = the FULL nationwide catalog — every station Air4Thai
+    // knows about, regardless of whether it has a fresh reading this cycle.
+    // Search (and anything else that needs "does this station exist at
+    // all") must use this, not `stations` below, or offline stations become
+    // permanently undiscoverable — see `src/hooks/useAllStations.ts`.
+    allStations.push({
+      id: station.stationID,
+      name: station.nameTH.trim(),
+      nameEn: station.nameEN,
+      address: station.areaTH,
+      district: extractDistrict(station.areaTH),
+      province: extractProvince(station.areaTH),
+      location: { lat, lng },
+      source: "air4thai",
+    });
+
     const pm25 = parseNumOrUndefined(station.AQILast.PM25?.value);
     const aqi = parseNumOrUndefined(station.AQILast.AQI?.aqi);
     if (pm25 === undefined || aqi === undefined) continue;
@@ -174,10 +216,6 @@ function normalize(raw: Air4ThaiResponse): CacheEntry {
     const timestamp = toIsoTimestamp(station.AQILast.date, station.AQILast.time);
     const ageMs = fetchedAtMs - new Date(timestamp).getTime();
     if (!Number.isFinite(ageMs) || ageMs > STALE_THRESHOLD_MS) continue;
-
-    const lat = Number(station.lat);
-    const lng = Number(station.long);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
 
     // areaId = the station's own stationID (e.g. "27t") — nationwide, one
     // record per real station, not filtered down to a hard-coded subset.
@@ -208,7 +246,7 @@ function normalize(raw: Air4ThaiResponse): CacheEntry {
     });
   }
 
-  return { fetchedAtMs, records, stations };
+  return { fetchedAtMs, records, stations, allStations };
 }
 
 /**
@@ -289,6 +327,7 @@ export default async function handler(req: { method?: string }, res: {
       fetchedAt: new Date(cache.fetchedAtMs).toISOString(),
       records: cache.records,
       stations: cache.stations,
+      allStations: cache.allStations,
     });
     return;
   }
@@ -303,6 +342,7 @@ export default async function handler(req: { method?: string }, res: {
       fetchedAt: new Date(cache.fetchedAtMs).toISOString(),
       records: cache.records,
       stations: cache.stations,
+      allStations: cache.allStations,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -318,6 +358,7 @@ export default async function handler(req: { method?: string }, res: {
         fetchedAt: new Date(cache.fetchedAtMs).toISOString(),
         records: cache.records,
         stations: cache.stations,
+        allStations: cache.allStations,
         warning: `Serving stale cache — live refetch failed: ${message}`,
       });
       return;
