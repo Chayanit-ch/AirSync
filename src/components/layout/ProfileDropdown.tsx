@@ -5,10 +5,12 @@ import { currentUser as mockUser } from "../../data/mockData";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import { logOut } from "../../services/auth";
+import { getLevelFromPoints, getProgressInCurrentLevel } from "../../utils/gamification";
 import { UserAvatar } from "../common/UserAvatar";
+import { LevelProgressBar } from "../profile/LevelProgressBar";
 
 export function ProfileDropdown() {
-  const { currentUser, isLoggingOutRef } = useAuth();
+  const { currentUser, userProfile, isLoggingOutRef } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -47,6 +49,11 @@ export function ProfileDropdown() {
 
   const displayName = currentUser.displayName || mockUser.displayName;
   const email = currentUser.email || mockUser.email;
+  const points = userProfile?.points ?? mockUser.points;
+  const role = userProfile?.role ?? mockUser.role;
+  const isOrg = role === "authority" || role === "admin";
+  const level = getLevelFromPoints(points);
+  const progress = getProgressInCurrentLevel(points);
 
   function goTo(path: string) {
     setIsOpen(false);
@@ -86,9 +93,20 @@ export function ProfileDropdown() {
         >
           <div className="flex items-center gap-3 p-4">
             <UserAvatar photoURL={currentUser.photoURL} displayName={displayName} size="md" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="truncate font-bold text-gray-900">{displayName}</p>
               <p className="truncate text-xs text-gray-400">{email}</p>
+              <p className="text-brand-600 mt-1 truncate text-xs font-semibold">
+                {isOrg ? t("profile.airProtectionOrg") : t("profile.guardianLevel", { level })}
+              </p>
+              {!isOrg && (
+                <div className="mt-1.5">
+                  <LevelProgressBar progress={progress} size="sm" />
+                  <p className="mt-1 text-[11px] text-gray-400">
+                    {t("profile.levelProgressShort", { current: progress })}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

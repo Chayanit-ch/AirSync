@@ -1,10 +1,14 @@
 /**
  * Guardian level is always derived from `UserProfile.points` at render time —
- * never stored as its own Firestore field — so there is no write path for it
- * and therefore no race condition to guard against (see `services/missions.ts`
- * for how `points` itself is safely incremented).
+ * never stored as its own Firestore field, and never written back to
+ * Firestore as a "reset" — so there is no write path for it and therefore no
+ * race condition to guard against (see `services/missions.ts` for how
+ * `points` itself is safely incremented via `increment()`).
  *
- * Progression is flat and uncapped: every 100 points is one more level.
+ * Progression is a flat, uncapped XP-bar model: every 100 points is one
+ * level, and `points % 100` — the remainder from a division that already
+ * happens on every read — is exactly the "progress bar reset to 0 on
+ * level-up" behavior, with no explicit reset logic anywhere.
  */
 
 const POINTS_PER_LEVEL = 100;
@@ -14,13 +18,14 @@ const POINTS_PER_LEVEL = 100;
  * guardian gear" look. */
 export const MAX_BADGE_TIER = 5;
 
-export function getGuardianLevel(points: number): number {
+/** The single source of truth for level — every place that displays a level must call this, not re-derive it. */
+export function getLevelFromPoints(points: number): number {
   return Math.floor(points / POINTS_PER_LEVEL) + 1;
 }
 
-/** Points still needed to reach the next level. Progression is uncapped, so this is never null. */
-export function pointsToNextLevel(points: number): number {
-  return POINTS_PER_LEVEL - (points % POINTS_PER_LEVEL);
+/** Points accumulated within the current level, 0-99 — display as "X/100". */
+export function getProgressInCurrentLevel(points: number): number {
+  return points % POINTS_PER_LEVEL;
 }
 
 /** Caps a numeric level at `MAX_BADGE_TIER` for badge/ring lookups. */

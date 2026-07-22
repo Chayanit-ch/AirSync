@@ -1,8 +1,9 @@
 import { BadgeCheck, Pencil } from "lucide-react";
 import { useTranslation } from "../../hooks/useTranslation";
-import { getGuardianLevel, pointsToNextLevel } from "../../utils/gamification";
+import { getLevelFromPoints, getProgressInCurrentLevel } from "../../utils/gamification";
 import type { UserRole } from "../../types";
 import { LevelAvatar } from "./LevelAvatar";
+import { LevelProgressBar } from "./LevelProgressBar";
 
 interface ProfileHeaderProps {
   displayName: string;
@@ -23,8 +24,8 @@ export function ProfileHeader({
 }: ProfileHeaderProps) {
   const { t } = useTranslation();
   const isOrg = role === "authority" || role === "admin";
-  const level = getGuardianLevel(points);
-  const remaining = pointsToNextLevel(points);
+  const level = getLevelFromPoints(points);
+  const progress = getProgressInCurrentLevel(points);
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-sm">
@@ -63,9 +64,12 @@ export function ProfileHeader({
               <p className="text-lg font-bold text-gray-800">{points}</p>
             </div>
           </div>
-          <p className="mt-1.5 text-xs text-gray-400">
-            {t("profile.pointsToNextLevel", { points: remaining })}
-          </p>
+          <div className="mt-3">
+            <LevelProgressBar progress={progress} />
+            <p className="mt-1.5 text-xs text-gray-400">
+              {t("profile.levelProgress", { current: progress })}
+            </p>
+          </div>
         </>
       )}
 
