@@ -252,7 +252,6 @@ export interface UserProfile {
   email: string;
   photoURL: string;
   role: UserRole;
-  guardianLevel: number;
   /**
    * NATIONWIDE ROLLOUT (2026-07-19): now stores real Air4Thai `stationID`s
    * (e.g. "27t") that the user follows, nationwide — not the old 5
@@ -267,8 +266,58 @@ export interface UserProfile {
   riskGroup?: RiskGroup;
   /** Whether this user has completed (or skipped) the first-run guided tour — see `OnboardingTourContext`. Missing/`false` means the tour should auto-start; `true` means it's done, and only the "How to Use" replay button shows it again. */
   hasCompletedOnboarding?: boolean;
+  /** Optional, free-form daily-life context collected as future AI-recommendation input — see `updateDailyContext`. No field is required; missing keys just mean "not answered". */
+  dailyContext?: DailyContext;
+  /**
+   * User-entered free-text health notes (e.g. allergies). Voluntarily provided, so it's
+   * stored like any other profile field, but it must NEVER be read anywhere except the
+   * Profile page of the account owner — no public profile, admin dashboard, or shared view
+   * may fetch another user's `users/{uid}` document to display this (or any) field. See
+   * `updateHealthNotes`.
+   */
+  healthNotes?: string;
+  /** Cumulative gamification points, only ever changed via `increment()` — see `services/missions.ts`. Guardian level is derived from this at render time (see `utils/gamification.ts`), never stored separately. */
+  points: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+export type CommuteMethod = "walk" | "public_transit" | "motorcycle" | "car" | "other";
+
+export interface DailyContext {
+  commuteMethod?: CommuteMethod;
+  worksOutdoors?: boolean;
+  hasOutdoorPlansToday?: boolean;
+  exerciseOutdoors?: boolean;
+}
+
+export type MissionFrequency = "daily" | "once";
+
+/** Static mission definition — see `src/data/missions.ts`. Never stored in Firestore. */
+export interface Mission {
+  id: string;
+  titleKey: string;
+  descriptionKey: string;
+  points: number;
+  /** lucide-react icon component name. */
+  icon: string;
+  frequency: MissionFrequency;
+  /** True for missions the app awards itself (no manual "mark complete" button). */
+  auto?: boolean;
+}
+
+/**
+ * A completed-mission record. Firestore: `users/{uid}/missionLog/{entryId}`.
+ * `entryId` is deterministic (`${missionId}` for `frequency: "once"` missions,
+ * `${missionId}_${dateKey}` for `"daily"` ones) — that determinism, combined with
+ * a transaction, is what makes duplicate-completion prevention atomic. See
+ * `services/missions.ts`.
+ */
+export interface MissionLogEntry {
+  missionId: string;
+  pointsEarned: number;
+  completedAt: Timestamp;
+  dateKey: string;
 }
 
 export type HistoricalPeriod = "daily" | "weekly" | "monthly";

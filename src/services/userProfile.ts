@@ -11,7 +11,9 @@ import {
   type FieldValue,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import type { NotificationSettings, RiskGroup, UserProfile } from "../types";
+import { SET_RISK_GROUP_MISSION } from "../data/missions";
+import { awardMissionBestEffort } from "./missions";
+import type { DailyContext, NotificationSettings, RiskGroup, UserProfile } from "../types";
 
 /**
  * SAFE-WRITE RULES for `users/{uid}` (read this before adding a new function
@@ -54,13 +56,13 @@ function buildDefaultUserDocument(
     email: user.email ?? "",
     photoURL: user.photoURL ?? "",
     role: "citizen",
-    guardianLevel: 1,
     followedAreaIds: [],
     notificationSettings: {
       pushEnabled: false,
       dailySummaryEnabled: false,
     },
     hasCompletedOnboarding: false,
+    points: 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -124,6 +126,36 @@ export async function updateNotificationSettings(
 export async function updateRiskGroup(uid: string, riskGroup: RiskGroup): Promise<void> {
   await updateDoc(userDocRef(uid), {
     riskGroup,
+    updatedAt: serverTimestamp(),
+  });
+
+  // One-time mission, best-effort — the deterministic `missionLog` doc ID
+  // (no date suffix, since this mission's `frequency` is "once") means this
+  // is a safe no-op on every risk-group change after the first.
+  await awardMissionBestEffort(uid, SET_RISK_GROUP_MISSION);
+}
+
+/** Updates one or more `dailyContext` fields without touching anything else or the sibling fields. */
+export async function updateDailyContext(
+  uid: string,
+  context: Partial<DailyContext>,
+): Promise<void> {
+  const fields: Record<string, boolean | string | FieldValue> = {
+    updatedAt: serverTimestamp(),
+  };
+  for (const [key, value] of Object.entries(context)) {
+    if (value !== undefined) fields[`dailyContext.${key}`] = value;
+  }
+  await updateDoc(userDocRef(uid), fields);
+}
+
+/**
+ * Updates only `healthNotes`. This field must never be read by any code path other than the
+ * account owner's own Profile page — see the privacy note on `UserProfile.healthNotes`.
+ */
+export async function updateHealthNotes(uid: string, healthNotes: string): Promise<void> {
+  await updateDoc(userDocRef(uid), {
+    healthNotes,
     updatedAt: serverTimestamp(),
   });
 }

@@ -12,6 +12,8 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
+import { REPORT_POLLUTION_MISSION } from "../data/missions";
+import { awardMissionBestEffort } from "./missions";
 import type { Report, ReportType, StatusHistoryEntry } from "../types";
 
 /** Firestore rules require an authenticated user to read `reports` at all — callers must never invoke `subscribeToRecentReports` while signed out. */
@@ -80,6 +82,10 @@ export async function createReport(data: CreateReportInput): Promise<void> {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+
+  // Best-effort: the report itself is already saved above, so a gamification
+  // hiccup here must never surface as a failed submission to the user.
+  await awardMissionBestEffort(uid, REPORT_POLLUTION_MISSION);
 }
 
 /**

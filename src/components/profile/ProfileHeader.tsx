@@ -1,12 +1,15 @@
 import { BadgeCheck, Pencil } from "lucide-react";
 import { useTranslation } from "../../hooks/useTranslation";
-import { UserAvatar } from "../common/UserAvatar";
+import { getGuardianLevel, pointsToNextLevel } from "../../utils/gamification";
+import type { UserRole } from "../../types";
+import { LevelAvatar } from "./LevelAvatar";
 
 interface ProfileHeaderProps {
   displayName: string;
   email: string;
   photoURL?: string | null;
-  guardianLevel: number;
+  points: number;
+  role: UserRole;
   onLogout: () => void;
 }
 
@@ -14,21 +17,25 @@ export function ProfileHeader({
   displayName,
   email,
   photoURL,
-  guardianLevel,
+  points,
+  role,
   onLogout,
 }: ProfileHeaderProps) {
   const { t } = useTranslation();
+  const isOrg = role === "authority" || role === "admin";
+  const level = getGuardianLevel(points);
+  const remaining = pointsToNextLevel(points);
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-sm">
       <div className="relative mx-auto w-fit">
-        <UserAvatar photoURL={photoURL} displayName={displayName} size="lg" />
+        <LevelAvatar photoURL={photoURL} displayName={displayName} size="lg" level={level} role={role} />
         <button
           type="button"
           disabled
           title={t("profile.editPhotoComingSoon")}
           aria-label={t("profile.editPhoto")}
-          className="bg-brand-600 absolute right-0 bottom-0 rounded-full p-1.5 text-white shadow disabled:opacity-40"
+          className="bg-brand-600 absolute -top-1 -right-1 rounded-full p-1.5 text-white shadow disabled:opacity-40"
         >
           <Pencil size={13} />
         </button>
@@ -40,9 +47,27 @@ export function ProfileHeader({
       <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
         <span className="bg-brand-600 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white">
           <BadgeCheck size={14} />
-          {t("profile.guardianLevel", { level: guardianLevel })}
+          {isOrg ? t("profile.airProtectionOrg") : t("profile.guardianLevel", { level })}
         </span>
       </div>
+
+      {!isOrg && (
+        <>
+          <div className="mt-3 grid grid-cols-2 divide-x divide-gray-100 rounded-xl border border-gray-100 bg-gray-50 py-2.5">
+            <div className="text-center">
+              <p className="text-xs text-gray-400">{t("profile.currentLevel")}</p>
+              <p className="text-lg font-bold text-gray-800">{level}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-gray-400">{t("profile.totalPoints")}</p>
+              <p className="text-lg font-bold text-gray-800">{points}</p>
+            </div>
+          </div>
+          <p className="mt-1.5 text-xs text-gray-400">
+            {t("profile.pointsToNextLevel", { points: remaining })}
+          </p>
+        </>
+      )}
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <button

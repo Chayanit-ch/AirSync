@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfileHeader } from "../components/profile/ProfileHeader";
+import { MissionsCard } from "../components/profile/MissionsCard";
 import { PM25StatsCard } from "../components/profile/PM25StatsCard";
 import { ReportHistorySection } from "../components/profile/ReportHistorySection";
 import { AlertPreferencesCard } from "../components/profile/AlertPreferencesCard";
@@ -47,9 +48,11 @@ export function ProfilePage() {
           displayName={currentUser?.displayName || mockUser.displayName}
           email={currentUser?.email || mockUser.email}
           photoURL={currentUser?.photoURL}
-          guardianLevel={userProfile?.guardianLevel ?? mockUser.guardianLevel}
+          points={userProfile?.points ?? mockUser.points}
+          role={userProfile?.role ?? mockUser.role}
           onLogout={handleLogout}
         />
+        <MissionsCard />
         <AlertPreferencesCard stations={stations} stationCatalog={allStations} />
       </div>
       <div className="flex flex-col gap-4">

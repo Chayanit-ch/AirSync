@@ -20,7 +20,7 @@ export const currentUser: UserProfile = {
   email: "baitoey8344@gmail.com",
   photoURL: "https://i.pravatar.cc/150?img=47",
   role: "citizen",
-  guardianLevel: 5,
+  points: 1200,
   followedAreaIds: ["area-ban-phaeo", "area-mueang", "area-krathum-baen"],
   notificationSettings: {
     pushEnabled: true,
