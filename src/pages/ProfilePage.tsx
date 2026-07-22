@@ -5,6 +5,7 @@ import { MissionsCard } from "../components/profile/MissionsCard";
 import { PM25StatsCard } from "../components/profile/PM25StatsCard";
 import { ReportHistorySection } from "../components/profile/ReportHistorySection";
 import { AlertPreferencesCard } from "../components/profile/AlertPreferencesCard";
+import { PersonalInfoCard } from "../components/profile/PersonalInfoCard";
 import { FollowedAreasGrid } from "../components/home/FollowedAreasGrid";
 import { ReportDetailModal } from "../components/report/ReportDetailModal";
 import { currentUser as mockUser } from "../data/mockData";
@@ -54,6 +55,7 @@ export function ProfilePage() {
         />
         <MissionsCard />
         <AlertPreferencesCard stations={stations} stationCatalog={allStations} />
+        <PersonalInfoCard />
       </div>
       <div className="flex flex-col gap-4">
         <PM25StatsCard followedAreaIds={followedAreaIds} />

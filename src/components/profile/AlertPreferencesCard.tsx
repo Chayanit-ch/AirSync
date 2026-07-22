@@ -1,30 +1,14 @@
 import { Bell, Plus, Search, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import type {
-  CommuteMethod,
-  DailyContext,
-  MonitoringStation,
-  RiskGroup,
-  StationMetadata,
-} from "../../types";
+import { useMemo, useState } from "react";
+import type { MonitoringStation, StationMetadata } from "../../types";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import { resolveStationReading } from "../../services/airQuality";
-import {
-  followArea,
-  unfollowArea,
-  updateDailyContext,
-  updateHealthNotes,
-  updateNotificationSettings,
-  updateRiskGroup,
-} from "../../services/userProfile";
-import { resolveRiskGroup } from "../../utils/recommendation";
+import { followArea, unfollowArea, updateNotificationSettings } from "../../services/userProfile";
 import { searchStations } from "../../utils/stationSearch";
 import { ToggleSwitch } from "../shared/ToggleSwitch";
 
 const MAX_SEARCH_RESULTS = 8;
-const RISK_GROUPS: RiskGroup[] = ["general", "children", "elderly", "respiratory", "outdoor_worker"];
-const COMMUTE_METHODS: CommuteMethod[] = ["walk", "public_transit", "motorcycle", "car", "other"];
 
 export function AlertPreferencesCard({
   stations,
@@ -43,24 +27,10 @@ export function AlertPreferencesCard({
   const [pendingSetting, setPendingSetting] = useState<
     "pushEnabled" | "dailySummaryEnabled" | null
   >(null);
-  const [isSavingRiskGroup, setIsSavingRiskGroup] = useState(false);
-  const [pendingContextField, setPendingContextField] = useState<keyof DailyContext | null>(null);
-  const [healthNotesDraft, setHealthNotesDraft] = useState("");
-  const [isSavingHealthNotes, setIsSavingHealthNotes] = useState(false);
 
   const followedAreaIds = userProfile?.followedAreaIds ?? [];
   const notificationSettings = userProfile?.notificationSettings;
-  const riskGroup = resolveRiskGroup(userProfile?.riskGroup);
-  const dailyContext = userProfile?.dailyContext;
   const uid = currentUser?.uid;
-
-  // Local draft only re-syncs from the live profile when a different user's
-  // data arrives — otherwise typing would keep getting overwritten by the
-  // `onSnapshot` echo of our own in-flight save.
-  useEffect(() => {
-    setHealthNotesDraft(userProfile?.healthNotes ?? "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uid]);
 
   const catalogById = useMemo(
     () => new Map(stationCatalog.map((station) => [station.id, station])),
@@ -121,40 +91,6 @@ export function AlertPreferencesCard({
       await updateNotificationSettings(uid, { [key]: value });
     } finally {
       setPendingSetting(null);
-    }
-  }
-
-  async function handleDailyContextField<K extends keyof DailyContext>(
-    key: K,
-    value: NonNullable<DailyContext[K]>,
-  ) {
-    if (!uid || controlsDisabled) return;
-    setPendingContextField(key);
-    try {
-      await updateDailyContext(uid, { [key]: value });
-    } finally {
-      setPendingContextField(null);
-    }
-  }
-
-  async function handleHealthNotesBlur() {
-    if (!uid || controlsDisabled) return;
-    if (healthNotesDraft === (userProfile?.healthNotes ?? "")) return;
-    setIsSavingHealthNotes(true);
-    try {
-      await updateHealthNotes(uid, healthNotesDraft);
-    } finally {
-      setIsSavingHealthNotes(false);
-    }
-  }
-
-  async function handleRiskGroupChange(value: RiskGroup) {
-    if (!uid || controlsDisabled) return;
-    setIsSavingRiskGroup(true);
-    try {
-      await updateRiskGroup(uid, value);
-    } finally {
-      setIsSavingRiskGroup(false);
     }
   }
 
@@ -263,27 +199,6 @@ export function AlertPreferencesCard({
         </div>
       )}
 
-      <div className="border-t border-gray-100 py-3">
-        <label htmlFor="profile-risk-group" className="mb-1.5 block text-sm text-gray-700">
-          {t("profile.riskGroupLabel")}
-        </label>
-        <select
-          id="profile-risk-group"
-          name="risk-group"
-          value={riskGroup}
-          disabled={controlsDisabled || isSavingRiskGroup}
-          onChange={(e) => handleRiskGroupChange(e.target.value as RiskGroup)}
-          className="focus:border-brand-500 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none disabled:opacity-60"
-        >
-          {RISK_GROUPS.map((group) => (
-            <option key={group} value={group}>
-              {t(`profile.riskGroups.${group}`)}
-            </option>
-          ))}
-        </select>
-        <p className="mt-1 text-xs text-gray-400">{t("profile.riskGroupHint")}</p>
-      </div>
-
       <div className="flex items-center justify-between border-t border-gray-100 py-3">
         <span className="text-sm text-gray-700">
           {t("profile.pushNotifications")}
@@ -303,82 +218,6 @@ export function AlertPreferencesCard({
           onChange={(value) => handleToggle("dailySummaryEnabled", value)}
           disabled={controlsDisabled || pendingSetting === "dailySummaryEnabled"}
         />
-      </div>
-
-      <div className="border-t border-gray-100 py-3">
-        <p className="mb-1.5 text-sm text-gray-700">{t("profile.dailyContext.sectionLabel")}</p>
-        <p className="mb-2 text-xs text-gray-400">{t("profile.dailyContext.sectionHint")}</p>
-
-        <label htmlFor="profile-commute-method" className="mb-1.5 block text-sm text-gray-700">
-          {t("profile.dailyContext.commuteMethodLabel")}
-        </label>
-        <select
-          id="profile-commute-method"
-          name="commute-method"
-          value={dailyContext?.commuteMethod ?? ""}
-          disabled={controlsDisabled || pendingContextField === "commuteMethod"}
-          onChange={(e) => handleDailyContextField("commuteMethod", e.target.value as CommuteMethod)}
-          className="focus:border-brand-500 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none disabled:opacity-60"
-        >
-          <option value="" disabled>
-            {t("profile.dailyContext.commuteMethodLabel")}
-          </option>
-          {COMMUTE_METHODS.map((method) => (
-            <option key={method} value={method}>
-              {t(`profile.dailyContext.commuteMethods.${method}`)}
-            </option>
-          ))}
-        </select>
-
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-sm text-gray-700">{t("profile.dailyContext.worksOutdoors")}</span>
-          <ToggleSwitch
-            label={t("profile.dailyContext.worksOutdoors")}
-            checked={dailyContext?.worksOutdoors ?? false}
-            onChange={(value) => handleDailyContextField("worksOutdoors", value)}
-            disabled={controlsDisabled || pendingContextField === "worksOutdoors"}
-          />
-        </div>
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-sm text-gray-700">
-            {t("profile.dailyContext.hasOutdoorPlansToday")}
-          </span>
-          <ToggleSwitch
-            label={t("profile.dailyContext.hasOutdoorPlansToday")}
-            checked={dailyContext?.hasOutdoorPlansToday ?? false}
-            onChange={(value) => handleDailyContextField("hasOutdoorPlansToday", value)}
-            disabled={controlsDisabled || pendingContextField === "hasOutdoorPlansToday"}
-          />
-        </div>
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-sm text-gray-700">
-            {t("profile.dailyContext.exerciseOutdoors")}
-          </span>
-          <ToggleSwitch
-            label={t("profile.dailyContext.exerciseOutdoors")}
-            checked={dailyContext?.exerciseOutdoors ?? false}
-            onChange={(value) => handleDailyContextField("exerciseOutdoors", value)}
-            disabled={controlsDisabled || pendingContextField === "exerciseOutdoors"}
-          />
-        </div>
-      </div>
-
-      <div className="border-t border-gray-100 py-3">
-        <label htmlFor="profile-health-notes" className="mb-1.5 block text-sm text-gray-700">
-          {t("profile.healthNotesLabel")}
-        </label>
-        <textarea
-          id="profile-health-notes"
-          name="health-notes"
-          rows={3}
-          value={healthNotesDraft}
-          disabled={controlsDisabled || isSavingHealthNotes}
-          onChange={(e) => setHealthNotesDraft(e.target.value)}
-          onBlur={handleHealthNotesBlur}
-          placeholder={t("profile.healthNotesPlaceholder")}
-          className="focus:border-brand-500 w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none placeholder:text-gray-400 disabled:opacity-60"
-        />
-        <p className="mt-1 text-xs text-gray-400">{t("profile.healthNotesPrivacyHint")}</p>
       </div>
     </div>
   );
