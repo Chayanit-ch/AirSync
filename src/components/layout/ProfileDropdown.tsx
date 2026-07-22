@@ -96,17 +96,19 @@ export function ProfileDropdown() {
             <div className="min-w-0 flex-1">
               <p className="truncate font-bold text-gray-900">{displayName}</p>
               <p className="truncate text-xs text-gray-400">{email}</p>
-              <p className="text-brand-600 mt-1 truncate text-xs font-semibold">
-                {isOrg ? t("profile.airProtectionOrg") : t("profile.guardianLevel", { level })}
+              <p
+                className={`mt-1 truncate text-xs font-semibold ${isOrg ? "text-amber-600" : "text-brand-600"}`}
+              >
+                {isOrg
+                  ? t("profile.airProtectionOrgLevel", { level })
+                  : t("profile.guardianLevel", { level })}
               </p>
-              {!isOrg && (
-                <div className="mt-1.5">
-                  <LevelProgressBar progress={progress} size="sm" />
-                  <p className="mt-1 text-[11px] text-gray-400">
-                    {t("profile.levelProgressShort", { current: progress })}
-                  </p>
-                </div>
-              )}
+              <div className="mt-1.5">
+                <LevelProgressBar progress={progress} size="sm" />
+                <p className="mt-1 text-[11px] text-gray-400">
+                  {t("profile.levelProgressShort", { current: progress })}
+                </p>
+              </div>
             </div>
           </div>
 

@@ -244,7 +244,7 @@ export const en: typeof th = {
     editPhoto: "Edit profile photo",
     editPhotoComingSoon: "Editing your profile photo is coming soon",
     guardianLevel: "Air Guardian level {level}",
-    airProtectionOrg: "Air Protection Organization",
+    airProtectionOrgLevel: "Air Protection Organization Level {level}",
     levelProgress: "{current}/100 points until the next level",
     levelProgressShort: "{current}/100 points",
     currentLevel: "Level",
@@ -322,6 +322,46 @@ export const en: typeof th = {
     avoidBurning: {
       title: "Avoid open-air burning",
       description: "Avoid burning waste, leaves, or incense outdoors.",
+    },
+    checkAirBeforeLeaving: {
+      title: "Check air quality before leaving home",
+      description: "Check today's PM2.5 level before you head out for the day.",
+    },
+    shareWithFamily: {
+      title: "Share air quality info with family",
+      description: "Tell a family member or housemate about today's air quality.",
+    },
+    closeWindows: {
+      title: "Close windows during high pollution",
+      description: "Keep windows and doors closed when PM2.5 levels are high.",
+    },
+    careForPlants: {
+      title: "Care for air-purifying plants",
+      description: "Care for houseplants that help filter indoor air.",
+    },
+    walkOrCycle: {
+      title: "Walk or cycle instead of driving",
+      description: "Choose walking or cycling for short trips instead of driving.",
+    },
+    checkAirPurifier: {
+      title: "Check your air purifier",
+      description: "Check or clean the air purifier/filter at home.",
+    },
+    avoidIdling: {
+      title: "Avoid idling your car engine",
+      description: "Turn off the engine instead of idling while parked.",
+    },
+    carpool: {
+      title: "Carpool or share a ride",
+      description: "Share a ride with someone instead of driving separately.",
+    },
+    limitOutdoorExercise: {
+      title: "Limit outdoor exercise on bad air days",
+      description: "Move exercise indoors when the air quality is poor.",
+    },
+    recycleInsteadOfBurning: {
+      title: "Recycle instead of burning waste",
+      description: "Recycle or dispose of waste properly instead of burning it.",
     },
     reportPollution: {
       title: "Report a pollution incident",

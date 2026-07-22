@@ -93,3 +93,84 @@ export const GUARDIAN_BADGE_BG_CLASSES: Record<number, string> = {
   4: "bg-yellow-500 text-white",
   5: "bg-emerald-500 text-white",
 };
+
+/**
+ * Authority/admin badge set — deliberately institutional (medal/insignia
+ * shapes, not the citizen set's rounded person silhouette) in a gold/orange
+ * palette, so the two account types are visually distinguishable at a
+ * glance, not just by a different color on the same shape.
+ */
+
+/** Authority tier 1 — official badge. */
+function AuthorityBadgeTier1({ size = 14, className }: BadgeIconProps) {
+  return (
+    <svg width={size} height={size} className={className} {...commonProps}>
+      <circle cx="12" cy="12" r="8" />
+    </svg>
+  );
+}
+
+/** Authority tier 2 — reinforced badge (medal with ribbon). */
+function AuthorityBadgeTier2({ size = 14, className }: BadgeIconProps) {
+  return (
+    <svg width={size} height={size} className={className} {...commonProps}>
+      <circle cx="12" cy="8" r="5" />
+      <path d="M9 12.5L7 21l5-3 5 3-2-8.5" />
+    </svg>
+  );
+}
+
+/** Authority tier 3 — shield insignia. */
+function AuthorityBadgeTier3({ size = 14, className }: BadgeIconProps) {
+  return (
+    <svg width={size} height={size} className={className} {...commonProps}>
+      <path d="M12 3l7 3.5v6c0 4.7-2.8 8-7 9-4.2-1-7-4.3-7-9v-6z" />
+      <path d="M8.5 12h7" />
+    </svg>
+  );
+}
+
+/** Authority tier 4 — advanced authority crest (shield + star). */
+function AuthorityBadgeTier4({ size = 14, className }: BadgeIconProps) {
+  return (
+    <svg width={size} height={size} className={className} {...commonProps}>
+      <path d="M12 3l7 3.5v6c0 4.7-2.8 8-7 9-4.2-1-7-4.3-7-9v-6z" />
+      <path d="M12 8.2l1 2 2.2.3-1.6 1.55.4 2.2-2-1.05-2 1.05.4-2.2-1.6-1.55 2.2-.3z" />
+    </svg>
+  );
+}
+
+/** Authority tier 5 — elite authority emblem (crest + rank ticks). */
+function AuthorityBadgeTier5({ size = 14, className }: BadgeIconProps) {
+  return (
+    <svg width={size} height={size} className={className} {...commonProps}>
+      <path d="M12 3l7 3.5v6c0 4.7-2.8 8-7 9-4.2-1-7-4.3-7-9v-6z" />
+      <path d="M12 8.2l1 2 2.2.3-1.6 1.55.4 2.2-2-1.05-2 1.05.4-2.2-1.6-1.55 2.2-.3z" />
+      <path d="M3.5 9l2 1M20.5 9l-2 1" />
+    </svg>
+  );
+}
+
+export const AUTHORITY_BADGE_ICONS: Record<number, typeof AuthorityBadgeTier1> = {
+  1: AuthorityBadgeTier1,
+  2: AuthorityBadgeTier2,
+  3: AuthorityBadgeTier3,
+  4: AuthorityBadgeTier4,
+  5: AuthorityBadgeTier5,
+};
+
+export const AUTHORITY_BADGE_RING_CLASSES: Record<number, string> = {
+  1: "border-amber-300",
+  2: "border-amber-500",
+  3: "border-orange-500",
+  4: "border-orange-600",
+  5: "border-amber-700",
+};
+
+export const AUTHORITY_BADGE_BG_CLASSES: Record<number, string> = {
+  1: "bg-amber-300 text-amber-900",
+  2: "bg-amber-500 text-white",
+  3: "bg-orange-500 text-white",
+  4: "bg-orange-600 text-white",
+  5: "bg-amber-700 text-white",
+};

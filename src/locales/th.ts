@@ -241,7 +241,7 @@ export const th = {
     editPhoto: "แก้ไขรูปโปรไฟล์",
     editPhotoComingSoon: "แก้ไขรูปโปรไฟล์จะพร้อมใช้งานเร็วๆ นี้",
     guardianLevel: "ผู้พิทักษ์อากาศระดับ {level}",
-    airProtectionOrg: "องค์กรพิทักษ์อากาศ",
+    airProtectionOrgLevel: "องค์กรพิทักษ์อากาศ ระดับ {level}",
     levelProgress: "{current}/100 แต้ม ถึงเลเวลถัดไป",
     levelProgressShort: "{current}/100 แต้ม",
     currentLevel: "เลเวล",
@@ -319,6 +319,46 @@ export const th = {
     avoidBurning: {
       title: "หลีกเลี่ยงการเผาในที่โล่ง",
       description: "หลีกเลี่ยงการเผาขยะ ใบไม้ หรือธูปกลางแจ้ง",
+    },
+    checkAirBeforeLeaving: {
+      title: "ตรวจสอบคุณภาพอากาศก่อนออกจากบ้าน",
+      description: "ตรวจสอบระดับฝุ่น PM2.5 ก่อนออกจากบ้านในแต่ละวัน",
+    },
+    shareWithFamily: {
+      title: "แชร์ข้อมูลคุณภาพอากาศให้ครอบครัว",
+      description: "บอกคนในครอบครัวหรือเพื่อนร่วมบ้านเกี่ยวกับคุณภาพอากาศวันนี้",
+    },
+    closeWindows: {
+      title: "ปิดหน้าต่างช่วงมลพิษสูง",
+      description: "ปิดประตูหน้าต่างเมื่อค่าฝุ่น PM2.5 อยู่ในระดับสูง",
+    },
+    careForPlants: {
+      title: "ดูแลต้นไม้ฟอกอากาศ",
+      description: "ดูแลต้นไม้ในบ้านที่ช่วยกรองอากาศ",
+    },
+    walkOrCycle: {
+      title: "เดินหรือปั่นจักรยานแทนการขับรถ",
+      description: "เลือกเดินหรือปั่นจักรยานสำหรับการเดินทางระยะสั้นแทนการขับรถ",
+    },
+    checkAirPurifier: {
+      title: "ตรวจสอบเครื่องฟอกอากาศ",
+      description: "ตรวจสอบหรือทำความสะอาดเครื่องฟอกอากาศ/แผ่นกรองที่บ้าน",
+    },
+    avoidIdling: {
+      title: "หลีกเลี่ยงการติดเครื่องยนต์เดินเบา",
+      description: "ดับเครื่องยนต์แทนการติดเครื่องทิ้งไว้ขณะจอดรถ",
+    },
+    carpool: {
+      title: "ใช้รถร่วมกัน",
+      description: "เดินทางร่วมรถกับผู้อื่นแทนการขับรถแยกกัน",
+    },
+    limitOutdoorExercise: {
+      title: "ลดการออกกำลังกายกลางแจ้งวันฝุ่นสูง",
+      description: "ย้ายการออกกำลังกายมาทำในที่ร่มเมื่อคุณภาพอากาศไม่ดี",
+    },
+    recycleInsteadOfBurning: {
+      title: "รีไซเคิลแทนการเผาขยะ",
+      description: "รีไซเคิลหรือกำจัดขยะอย่างถูกวิธีแทนการเผา",
     },
     reportPollution: {
       title: "รายงานเหตุการณ์มลพิษ",

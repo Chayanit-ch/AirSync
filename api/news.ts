@@ -9,19 +9,30 @@
 //
 // Sources verified live (2026-07-22) to be public, unauthenticated, valid
 // RSS 2.0 with no bot paywall:
-//   - Thairath (Thai):          https://www.thairath.co.th/rss/news
+//   - Thairath (Thai):           https://www.thairath.co.th/rss/news
 //   - Khaosod English (English): https://www.khaosodenglish.com/feed/
+//   - Matichon (Thai):           https://www.matichon.co.th/feed
 // Deliberately NOT used:
 //   - Bangkok Post's RSS now returns HTTP 402 behind a TollBit AI-bot
 //     licensing paywall — using it without a paid license would violate
 //     their terms.
 //   - Pollution Control Department (PCD) and Thai PBS have no discoverable
-//     public RSS feed as of this writing.
+//     public RSS feed as of this writing. Category-specific feeds on both
+//     Matichon and Khaosod English (e.g. `/environment/feed`) return 403 —
+//     only each site's general feed is accessible, hence the keyword filter
+//     below instead of relying on a pre-filtered category feed.
+//
+// Three general-news feeds were used instead of one because with only ~20
+// items/feed/day, a strict PM2.5/pollution keyword filter frequently matched
+// zero articles from a single source — a real, working integration that
+// LOOKED broken because the "Latest News" section was empty so often. More
+// source feeds + a broader keyword list (below) is the actual fix.
 import Parser from "rss-parser";
 
 const FEEDS = [
   { url: "https://www.thairath.co.th/rss/news", source: "Thairath" },
   { url: "https://www.khaosodenglish.com/feed/", source: "Khaosod English" },
+  { url: "https://www.matichon.co.th/feed", source: "Matichon" },
 ];
 
 /** ~45 minutes — inside the requested 30-60 min window. */
@@ -38,13 +49,20 @@ const KEYWORDS = [
   "haze",
   "smog",
   "dust",
+  "wildfire",
+  "carbon emission",
   // Thai
   "ฝุ่น",
   "pm2.5",
   "มลพิษ",
+  "คุณภาพอากาศ",
+  "ค่าฝุ่น",
   "อากาศ",
   "หมอกควัน",
   "สิ่งแวดล้อม",
+  "ไฟป่า",
+  "เผาป่า",
+  "การเผา",
 ];
 
 interface NewsArticle {
@@ -111,9 +129,18 @@ async function fetchAllFeeds(): Promise<NewsArticle[]> {
   const results = await Promise.allSettled(FEEDS.map((feed) => fetchFeed(parser, feed)));
 
   const articles: NewsArticle[] = [];
-  for (const result of results) {
-    if (result.status === "fulfilled") articles.push(...result.value);
-  }
+  results.forEach((result, i) => {
+    if (result.status === "fulfilled") {
+      articles.push(...result.value);
+      return;
+    }
+    // Every individual feed failure is logged — a partial failure (2 of 3
+    // feeds OK) must never pass silently just because the overall request
+    // still succeeds.
+    const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+    console.warn(`RSS feed unavailable, skipping: ${FEEDS[i].source} — ${reason}`);
+  });
+
   // If every single feed failed, surface that as a real error rather than a
   // silent empty success — matches this app's no-silent-fallbacks rule.
   if (articles.length === 0 && results.every((r) => r.status === "rejected")) {
@@ -128,6 +155,14 @@ async function fetchAllFeeds(): Promise<NewsArticle[]> {
     const bTime = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
     return bTime - aTime;
   });
+
+  if (articles.length === 0) {
+    // Feeds fetched fine, but nothing matched the keyword filter today —
+    // logged explicitly so this is distinguishable from a fetch failure in
+    // server logs, not just a quietly-empty array.
+    console.warn("RSS feeds fetched successfully but 0 articles matched the PM2.5/pollution keyword filter today.");
+  }
+
   return articles;
 }
 
@@ -168,6 +203,7 @@ export default async function handler(req: { method?: string }, res: {
     const message = error instanceof Error ? error.message : "Unknown error";
 
     if (cache) {
+      console.warn(`RSS feed unavailable, falling back to cached data: ${message}`);
       res.status(200).json({
         ok: true,
         cached: true,
@@ -179,6 +215,7 @@ export default async function handler(req: { method?: string }, res: {
       return;
     }
 
+    console.error(`RSS news fetch failed with no cache available: ${message}`);
     res.status(502).json({ ok: false, error: message });
   }
 }

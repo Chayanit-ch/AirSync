@@ -1,9 +1,30 @@
-import { CheckCircle2, Flame, Leaf, ListChecks, Megaphone, MapPin, ShieldCheck, TreePine, Wind } from "lucide-react";
+import {
+  AirVent,
+  Bike,
+  Car,
+  CheckCircle2,
+  DoorClosed,
+  Eye,
+  Flame,
+  HeartPulse,
+  Leaf,
+  ListChecks,
+  Megaphone,
+  MapPin,
+  Recycle,
+  Share2,
+  ShieldCheck,
+  Sprout,
+  TreePine,
+  Users,
+  Wind,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "../../hooks/useTranslation";
-import { MISSIONS } from "../../data/missions";
+import { HONOR_SYSTEM_MISSIONS, REPORT_POLLUTION_MISSION, SET_RISK_GROUP_MISSION } from "../../data/missions";
 import { awardMission, getBangkokDateKey, subscribeTodaysMissionLog } from "../../services/missions";
+import { getTodaysMissions } from "../../utils/missionRotation";
 import type { Mission } from "../../types";
 
 const MISSION_ICONS: Record<string, typeof Wind> = {
@@ -14,19 +35,54 @@ const MISSION_ICONS: Record<string, typeof Wind> = {
   Flame,
   Megaphone,
   Leaf,
+  Eye,
+  Share2,
+  DoorClosed,
+  Sprout,
+  Bike,
+  AirVent,
+  Car,
+  Users,
+  HeartPulse,
+  Recycle,
 };
 
 const TOAST_DURATION_MS = 3000;
+/** How often to re-check the current date, so a tab left open overnight still rolls over to the new day's missions without requiring a manual reload. */
+const DATE_RECHECK_INTERVAL_MS = 60 * 1000;
 
 export function MissionsCard() {
   const { currentUser, userProfile } = useAuth();
   const { t } = useTranslation();
   const uid = currentUser?.uid;
-  const dateKey = useMemo(() => getBangkokDateKey(), []);
+  const [dateKey, setDateKey] = useState(() => getBangkokDateKey());
+
+  const todaysMissions = useMemo(() => getTodaysMissions(HONOR_SYSTEM_MISSIONS, dateKey), [dateKey]);
+  const displayedMissions = useMemo(
+    () => [...todaysMissions, REPORT_POLLUTION_MISSION, SET_RISK_GROUP_MISSION],
+    [todaysMissions],
+  );
 
   const [completedToday, setCompletedToday] = useState<Set<string>>(new Set());
   const [pendingMissionId, setPendingMissionId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  // A tab kept open across midnight would otherwise stay stuck showing
+  // yesterday's rotation and "already completed" state forever — re-check
+  // periodically and whenever the tab regains focus (the far more common
+  // "came back to the app the next day" case) so a fresh day is picked up
+  // without requiring a manual reload.
+  useEffect(() => {
+    function checkDate() {
+      setDateKey(getBangkokDateKey());
+    }
+    const interval = setInterval(checkDate, DATE_RECHECK_INTERVAL_MS);
+    document.addEventListener("visibilitychange", checkDate);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", checkDate);
+    };
+  }, []);
 
   useEffect(() => {
     if (!uid) return;
@@ -70,7 +126,7 @@ export function MissionsCard() {
       </div>
 
       <div className="flex flex-col gap-2.5">
-        {MISSIONS.map((mission) => {
+        {displayedMissions.map((mission) => {
           const Icon = MISSION_ICONS[mission.icon] ?? Wind;
           const done = isCompleted(mission);
           return (

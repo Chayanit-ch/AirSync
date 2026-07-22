@@ -46,32 +46,34 @@ export function ProfileHeader({
       <p className="text-sm text-gray-400">{email}</p>
 
       <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
-        <span className="bg-brand-600 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white">
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white ${
+            isOrg ? "bg-amber-600" : "bg-brand-600"
+          }`}
+        >
           <BadgeCheck size={14} />
-          {isOrg ? t("profile.airProtectionOrg") : t("profile.guardianLevel", { level })}
+          {isOrg
+            ? t("profile.airProtectionOrgLevel", { level })
+            : t("profile.guardianLevel", { level })}
         </span>
       </div>
 
-      {!isOrg && (
-        <>
-          <div className="mt-3 grid grid-cols-2 divide-x divide-gray-100 rounded-xl border border-gray-100 bg-gray-50 py-2.5">
-            <div className="text-center">
-              <p className="text-xs text-gray-400">{t("profile.currentLevel")}</p>
-              <p className="text-lg font-bold text-gray-800">{level}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs text-gray-400">{t("profile.totalPoints")}</p>
-              <p className="text-lg font-bold text-gray-800">{points}</p>
-            </div>
-          </div>
-          <div className="mt-3">
-            <LevelProgressBar progress={progress} />
-            <p className="mt-1.5 text-xs text-gray-400">
-              {t("profile.levelProgress", { current: progress })}
-            </p>
-          </div>
-        </>
-      )}
+      <div className="mt-3 grid grid-cols-2 divide-x divide-gray-100 rounded-xl border border-gray-100 bg-gray-50 py-2.5">
+        <div className="text-center">
+          <p className="text-xs text-gray-400">{t("profile.currentLevel")}</p>
+          <p className="text-lg font-bold text-gray-800">{level}</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xs text-gray-400">{t("profile.totalPoints")}</p>
+          <p className="text-lg font-bold text-gray-800">{points}</p>
+        </div>
+      </div>
+      <div className="mt-3">
+        <LevelProgressBar progress={progress} />
+        <p className="mt-1.5 text-xs text-gray-400">
+          {t("profile.levelProgress", { current: progress })}
+        </p>
+      </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <button
