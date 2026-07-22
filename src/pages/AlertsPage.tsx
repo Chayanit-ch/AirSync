@@ -32,7 +32,7 @@ export function AlertsPage() {
 
       <FeaturedArticleCard article={featuredArticle} />
 
-      <NewsFeedSection />
+      <NewsFeedSection filter={filter} searchQuery={searchQuery} />
 
       <div>
         <h2 className="border-brand-600 mb-3 border-l-4 pl-2.5 text-lg font-bold text-gray-800">

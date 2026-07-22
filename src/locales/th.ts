@@ -219,6 +219,7 @@ export const th = {
     readFullArticle: "อ่านข่าวเต็มที่ {source}",
     newsLoadError: "ไม่สามารถโหลดข่าวล่าสุดได้ในขณะนี้",
     newsEmpty: "ไม่พบข่าวที่เกี่ยวข้องในขณะนี้",
+    newsNoMatch: "ไม่พบข่าวที่ตรงกับคำค้นหาหรือหมวดหมู่ที่เลือก",
     searchPlaceholder: "ค้นหาข่าว ...",
     filterAll: "เนื้อหาทั้งหมด",
     filterPm25: "PM 2.5",

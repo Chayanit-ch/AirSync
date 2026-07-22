@@ -222,6 +222,7 @@ export const en: typeof th = {
     readFullArticle: "Read full article at {source}",
     newsLoadError: "Couldn't load the latest news right now",
     newsEmpty: "No related news right now",
+    newsNoMatch: "No news matches your search or filter",
     searchPlaceholder: "Search news...",
     filterAll: "All",
     filterPm25: "PM2.5",
