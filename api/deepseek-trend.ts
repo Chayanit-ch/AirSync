@@ -91,7 +91,7 @@ Rules you must follow exactly:
 - Base your description only on the pattern in the data given to you — do not invent readings.
 - Describe whether conditions have been improving, worsening, stable, or fluctuating, and mention any notable time-of-day pattern (e.g. mornings vs evenings) if the data shows one, in plain qualitative language (e.g. "conditions may become less favorable" rather than any number).
 - Keep it concise: about 3-5 sentences, easy to read on a mobile screen.
-- Respond with ONLY a JSON object in exactly this shape, and nothing else before or after it: {"guidance": "..."}`;
+- Respond with the guidance text directly as plain prose. Do NOT wrap it in JSON, markdown, quotation marks, or any other formatting — just the sentences themselves, nothing before or after.`;
 }
 
 function buildUserPrompt(body: TrendRequestBody): string {
@@ -163,9 +163,23 @@ export default async function handler(req: IncomingRequest, res: JsonResponse) {
           { role: "system", content: buildSystemPrompt(body.language) },
           { role: "user", content: buildUserPrompt(body) },
         ],
-        response_format: { type: "json_object" },
+        // No response_format/JSON mode here: this endpoint only ever needs
+        // one plain-text field, so there's no structured data worth risking
+        // a JSON-parse failure over. See deepseek-advice.ts for the
+        // equivalent reasoning on why that endpoint uses a delimited plain
+        // text format instead of JSON mode too, for the same reason.
         temperature: 0.6,
-        max_tokens: 400,
+        // Generous headroom: this model's "thinking"/reasoning tokens are
+        // billed out of the SAME max_tokens budget as the visible answer
+        // (confirmed via choices[0].usage.completion_tokens_details.
+        // reasoning_tokens in testing) — 400 was cutting the answer off
+        // mid-sentence whenever reasoning ran long, which is exactly what
+        // caused the "Unterminated string in JSON" / missing-content
+        // failures reported in production. Measured directly against the
+        // real API with a full 48-point history: completion_tokens spiked
+        // as high as 1062 in a small sample — 2000 leaves real headroom
+        // above that observed spread.
+        max_tokens: 2000,
       }),
       signal: controller.signal,
     });
@@ -176,17 +190,31 @@ export default async function handler(req: IncomingRequest, res: JsonResponse) {
     }
 
     const data = (await deepseekRes.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
+      choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
     };
-    const raw = data.choices?.[0]?.message?.content;
-    if (!raw) throw new Error("DeepSeek response missing choices[0].message.content");
-
-    const parsed = JSON.parse(raw) as { guidance?: unknown };
-    if (typeof parsed.guidance !== "string") {
-      throw new Error("DeepSeek response JSON missing guidance string field");
+    const finishReason = data.choices?.[0]?.finish_reason;
+    if (finishReason === "length") {
+      // Not necessarily fatal (the answer may still be complete enough to
+      // use), but worth knowing about if truncation-related bugs show up
+      // again — logged, never silent.
+      console.warn(
+        `deepseek-trend response for station ${body.stationId} was cut off by max_tokens (finish_reason: "length")`,
+      );
     }
 
-    res.status(200).json({ ok: true, guidance: parsed.guidance });
+    const raw = data.choices?.[0]?.message?.content;
+    if (!raw || !raw.trim()) {
+      console.error(
+        `deepseek-trend got an empty/missing content field for station ${body.stationId}. Full response: ${JSON.stringify(data)}`,
+      );
+      throw new Error("DeepSeek response missing choices[0].message.content");
+    }
+
+    // Defensive cleanup only — the prompt asks for plain prose, but strip a
+    // stray wrapping-quote pair if the model adds one out of habit anyway.
+    const guidance = raw.trim().replace(/^"([\s\S]*)"$/, "$1").trim();
+
+    res.status(200).json({ ok: true, guidance });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error(`deepseek-trend failed for station ${body.stationId}: ${message}`);

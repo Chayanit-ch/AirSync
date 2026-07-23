@@ -12,11 +12,18 @@
 //   - POST https://api.deepseek.com/chat/completions
 //   - model: "deepseek-v4-flash" (NOT "deepseek-chat"/"deepseek-reasoner" —
 //     those are deprecated 2026-07-24)
-//   - response_format: {"type": "json_object"} enables JSON mode, but the
-//     docs explicitly warn the prompt must also instruct the model to
-//     produce JSON or it can generate unbounded whitespace — the system
-//     prompt below states the exact JSON shape required.
 //   - generated text lives at choices[0].message.content
+//
+// NOT using response_format/JSON mode: an earlier version did, and hit
+// production 502s ("Unterminated string in JSON") because this model's
+// internal "thinking"/reasoning tokens are billed out of the SAME
+// max_tokens budget as the visible answer (confirmed via
+// choices[0].usage.completion_tokens_details.reasoning_tokens in testing),
+// so a heavier reasoning pass could cut the answer off before the JSON
+// braces/quotes closed. A `[SHORT_TERM]`/`[LONG_TERM]` plain-text delimiter
+// format (parsed below) survives truncation instead of hard-failing on it —
+// if the model gets cut off mid-sentence, the section is merely shorter,
+// not unparseable.
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 const DEEPSEEK_MODEL = "deepseek-v4-flash";
@@ -108,9 +115,27 @@ Rules you must follow exactly:
 - Each section must be roughly 3-4 sentences — concise, not a long essay.
 - Never give specific medical advice: no drug names, no dosages, no diagnoses. You may suggest consulting a healthcare professional if symptoms worsen, and nothing more specific than that.
 - Base your advice only on the context given to you. Do not invent facts.
-- "shortTerm": practical actions to consider today or this week, based on the current AQI/conditions and the user's personal context.
-- "longTerm": sustainable habits and behavioral changes (transportation choices, environmental practices, exposure-reduction habits, energy usage).
-- Respond with ONLY a JSON object in exactly this shape, and nothing else before or after it: {"shortTerm": "...", "longTerm": "..."}`;
+- The first section is practical actions to consider today or this week, based on the current AQI/conditions and the user's personal context.
+- The second section is sustainable habits and behavioral changes (transportation choices, environmental practices, exposure-reduction habits, energy usage).
+- Respond in EXACTLY this plain-text format, with no JSON, no markdown, and nothing before, between, or after these two blocks other than what's shown:
+[SHORT_TERM]
+<short-term section text here>
+[LONG_TERM]
+<long-term section text here>`;
+}
+
+/** Tolerant of truncation: as long as both markers appear, each section is
+ * whatever text follows its marker (up to the next marker, or end of
+ * string) — a mid-sentence cutoff just makes a section shorter, not unusable. */
+function parseAdviceResponse(raw: string): { shortTerm: string; longTerm: string } | null {
+  const shortIdx = raw.indexOf("[SHORT_TERM]");
+  const longIdx = raw.indexOf("[LONG_TERM]");
+  if (shortIdx === -1 || longIdx === -1 || longIdx <= shortIdx) return null;
+
+  const shortTerm = raw.slice(shortIdx + "[SHORT_TERM]".length, longIdx).trim();
+  const longTerm = raw.slice(longIdx + "[LONG_TERM]".length).trim();
+  if (!shortTerm || !longTerm) return null;
+  return { shortTerm, longTerm };
 }
 
 function buildUserPrompt(body: AdviceRequestBody): string {
@@ -184,9 +209,13 @@ export default async function handler(req: IncomingRequest, res: JsonResponse) {
           { role: "system", content: buildSystemPrompt(body.language) },
           { role: "user", content: buildUserPrompt(body) },
         ],
-        response_format: { type: "json_object" },
         temperature: 0.7,
-        max_tokens: 500,
+        // See the header comment: reasoning tokens share this budget with
+        // the visible answer. Measured directly against the real API:
+        // completion_tokens (reasoning + visible combined) ranged 384-784
+        // across 5 trials for this exact prompt shape — 2000 leaves real
+        // headroom above that observed spread, not just the average case.
+        max_tokens: 2000,
       }),
       signal: controller.signal,
     });
@@ -197,14 +226,29 @@ export default async function handler(req: IncomingRequest, res: JsonResponse) {
     }
 
     const data = (await deepseekRes.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
+      choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
     };
-    const raw = data.choices?.[0]?.message?.content;
-    if (!raw) throw new Error("DeepSeek response missing choices[0].message.content");
+    const finishReason = data.choices?.[0]?.finish_reason;
+    if (finishReason === "length") {
+      console.warn(
+        `deepseek-advice response for uid ${uid} was cut off by max_tokens (finish_reason: "length")`,
+      );
+    }
 
-    const parsed = JSON.parse(raw) as { shortTerm?: unknown; longTerm?: unknown };
-    if (typeof parsed.shortTerm !== "string" || typeof parsed.longTerm !== "string") {
-      throw new Error("DeepSeek response JSON missing shortTerm/longTerm string fields");
+    const raw = data.choices?.[0]?.message?.content;
+    if (!raw || !raw.trim()) {
+      console.error(
+        `deepseek-advice got an empty/missing content field for uid ${uid}. Full response: ${JSON.stringify(data)}`,
+      );
+      throw new Error("DeepSeek response missing choices[0].message.content");
+    }
+
+    const parsed = parseAdviceResponse(raw);
+    if (!parsed) {
+      console.error(
+        `deepseek-advice couldn't find [SHORT_TERM]/[LONG_TERM] markers for uid ${uid}. Raw content: ${raw}`,
+      );
+      throw new Error("DeepSeek response missing shortTerm/longTerm sections");
     }
 
     res.status(200).json({ ok: true, shortTerm: parsed.shortTerm, longTerm: parsed.longTerm });
