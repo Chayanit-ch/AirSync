@@ -102,3 +102,18 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .animate-dropdown-in {
   animation: dropdown-in 150ms ease-out;
 }
+
+@keyframes slide-down-in {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down-in {
+  animation: slide-down-in 220ms ease-out;
+}

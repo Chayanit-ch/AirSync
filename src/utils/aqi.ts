@@ -37,6 +37,20 @@ export function getAqiSeverity(aqi: number): AQISeverityLevel {
   return "hazardous";
 }
 
+/** Best (lowest index) to worst (highest index) — the single source of truth for "is A worse than B" comparisons (e.g. `useAirQualityAlerts`'s severity-worsened detection). */
+export const SEVERITY_ORDER: AQISeverityLevel[] = [
+  "good",
+  "moderate",
+  "sensitive",
+  "unhealthy",
+  "veryUnhealthy",
+  "hazardous",
+];
+
+export function isSeverityWorse(current: AQISeverityLevel, previous: AQISeverityLevel): boolean {
+  return SEVERITY_ORDER.indexOf(current) > SEVERITY_ORDER.indexOf(previous);
+}
+
 /**
  * Styling only — every severity level's display label and health
  * recommendation lives in `dict.common.severity` / `dict.common.severityRecommendation`

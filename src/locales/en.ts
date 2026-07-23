@@ -431,6 +431,24 @@ export const en: typeof th = {
       "There was a problem setting up your account. Try signing out and back in, or contact support.",
     retry: "Try again",
   },
+  alertBanner: {
+    title: "Air quality alert",
+    viewDetails: "View details",
+    dismiss: "Dismiss",
+    permissionExplanation:
+      "Allow notifications to receive important air-quality alerts while using the app.",
+    permissionAllow: "Allow notifications",
+    permissionNotNow: "Not now",
+  },
+  dailySummary: {
+    title: "Today's air quality summary",
+    close: "Got it",
+    trend: {
+      worse: "Air quality has slightly worsened compared with the past day.",
+      better: "Air quality has improved compared with the past day.",
+      same: "Air quality is about the same as the past day.",
+    },
+  },
   drawer: {
     title: "Navigation menu",
     about: "About AirSync",

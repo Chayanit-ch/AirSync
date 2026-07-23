@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { MapContainer, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { MapPinOff } from "lucide-react";
@@ -183,17 +184,27 @@ export function MapPage() {
 
   const [selectedStation, setSelectedStation] = useState<MonitoringStation | null>(null);
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
+  const [searchParams] = useSearchParams();
 
   // Once the live fetch has settled (success or fail), pick a sensible
-  // default marker to show in the bottom sheet: nearest-to-user if we have
-  // a location, otherwise just the first station — mirrors the Home hero
-  // card's "nearest real station" behavior instead of a hard-coded pick.
+  // default marker to show in the bottom sheet. `?station=<id>` (e.g. from
+  // `AirQualityAlertBanner`'s "View details" link) takes priority over the
+  // usual nearest-to-user/first-station fallback — mirrors the Home hero
+  // card's "nearest real station" behavior otherwise, instead of a
+  // hard-coded pick.
   useEffect(() => {
     if (hasAutoSelected || stationsLoading || stations.length === 0) return;
+    const requestedId = searchParams.get("station");
+    const requested = requestedId ? stations.find((s) => s.id === requestedId) : null;
+    if (requested) {
+      setSelectedStation(requested);
+      setHasAutoSelected(true);
+      return;
+    }
     const nearest = coords ? findNearestStation(stations, coords) : null;
     setSelectedStation(nearest ? nearest.station : stations[0]);
     setHasAutoSelected(true);
-  }, [hasAutoSelected, stationsLoading, stations, coords]);
+  }, [hasAutoSelected, stationsLoading, stations, coords, searchParams]);
 
   const visibleStations = useMemo(
     () => searchStations(stations, searchQuery),

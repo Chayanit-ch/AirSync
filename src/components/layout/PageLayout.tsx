@@ -6,6 +6,8 @@ import { Sidebar } from "./Sidebar";
 import { MobileNavDrawer } from "./MobileNavDrawer";
 import { ProfileSetupErrorBanner } from "../shared/ProfileSetupErrorBanner";
 import { TourOverlay } from "../onboarding/TourOverlay";
+import { AirQualityAlertBanner } from "../AirQualityAlertBanner";
+import { DailySummaryModal } from "../DailySummaryModal";
 import { useOnboardingTour } from "../../contexts/OnboardingTourContext";
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "airsync-sidebar-collapsed";
@@ -66,12 +68,14 @@ export function PageLayout() {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <TopBar onMenuButtonClick={handleMenuButtonClick} />
         <ProfileSetupErrorBanner />
+        <AirQualityAlertBanner />
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
           <Outlet />
         </main>
         <BottomNav />
       </div>
       <TourOverlay />
+      <DailySummaryModal />
     </div>
   );
 }
