@@ -63,6 +63,16 @@ export function useAirQualityAlerts() {
   const pushEnabled = userProfile?.notificationSettings?.pushEnabled ?? false;
   const enabled = Boolean(currentUser) && pushEnabled && followedAreaIds.length > 0;
 
+  // TEMPORARY diagnostic logging — remove once the production "banner never
+  // appears" report is root-caused. Logs the gate inputs on every render so
+  // it's visible in the console even if the effect below never fires at all.
+  console.log("[AQ-ALERT-DEBUG] gate check:", {
+    hasCurrentUser: Boolean(currentUser),
+    pushEnabled,
+    followedAreaIds,
+    enabled,
+  });
+
   // Tier 2 (optional, additive on top of Tier 1's in-app banner — never a
   // replacement for it). Only ever surfaces the contextual prompt once:
   // not on every mount, not again after a grant/dismiss either way.
@@ -93,23 +103,31 @@ export function useAirQualityAlerts() {
   }, []);
 
   const checkForAlerts = useCallback(async () => {
+    console.log("[AQ-ALERT-DEBUG] checkForAlerts() running, followedAreaIds =", followedAreaIds);
     try {
       const { stations } = await getLiveAirQuality();
+      console.log(`[AQ-ALERT-DEBUG] getLiveAirQuality() returned ${stations.length} stations`);
       const now = Date.now();
       const newAlerts: AirQualityAlert[] = [];
 
       for (const areaId of followedAreaIds) {
         const { station, isLive } = resolveStationReading(areaId, stations);
+        console.log(`[AQ-ALERT-DEBUG] area "${areaId}": isLive=${isLive}, currentSeverity=${station.severity}`);
         // Synthetic/placeholder readings (isLive: false) fluctuate from a
         // seeded wave function, not real conditions — never alert on those.
-        if (!isLive) continue;
+        if (!isLive) {
+          console.log(`[AQ-ALERT-DEBUG] area "${areaId}": skipped — not live this poll`);
+          continue;
+        }
 
         const currentSeverity = station.severity;
         const stored = readStored(areaId);
+        console.log(`[AQ-ALERT-DEBUG] area "${areaId}": stored =`, stored);
 
         if (!stored) {
           // Nothing to compare against yet — record a baseline silently,
           // never alert on the very first check (would just be noise).
+          console.log(`[AQ-ALERT-DEBUG] area "${areaId}": no stored baseline yet, writing one, no alert`);
           writeStored(areaId, { severity: currentSeverity, lastAlertAt: null });
           continue;
         }
@@ -117,6 +135,9 @@ export function useAirQualityAlerts() {
         if (isSeverityWorse(currentSeverity, stored.severity)) {
           const withinCooldown =
             stored.lastAlertAt !== null && now - stored.lastAlertAt < COOLDOWN_MS;
+          console.log(
+            `[AQ-ALERT-DEBUG] area "${areaId}": ${stored.severity} -> ${currentSeverity} is WORSE, withinCooldown=${withinCooldown}`,
+          );
           if (withinCooldown) {
             // Still worse, but suppressed by cooldown — keep the severity
             // current so a later check compares against reality, not a
@@ -127,12 +148,18 @@ export function useAirQualityAlerts() {
             writeStored(areaId, { severity: currentSeverity, lastAlertAt: now });
           }
         } else if (currentSeverity !== stored.severity) {
+          console.log(
+            `[AQ-ALERT-DEBUG] area "${areaId}": ${stored.severity} -> ${currentSeverity} changed but not worse, silent update`,
+          );
           // Improved or otherwise changed without worsening — update
           // silently, never notify (per spec).
           writeStored(areaId, { severity: currentSeverity, lastAlertAt: stored.lastAlertAt });
+        } else {
+          console.log(`[AQ-ALERT-DEBUG] area "${areaId}": severity unchanged (${currentSeverity})`);
         }
       }
 
+      console.log(`[AQ-ALERT-DEBUG] poll complete, ${newAlerts.length} new alert(s)`, newAlerts);
       if (newAlerts.length > 0) {
         setQueue((prev) => [...prev, ...newAlerts]);
 
@@ -165,10 +192,18 @@ export function useAirQualityAlerts() {
   }, [followedAreaIds.join(",")]);
 
   useEffect(() => {
+    console.log(`[AQ-ALERT-DEBUG] polling effect ran, enabled=${enabled}`);
     if (!enabled) return;
+    console.log("[AQ-ALERT-DEBUG] polling effect ACTIVE — running initial checkForAlerts() now, then every 5 min");
     checkForAlerts();
-    const interval = setInterval(checkForAlerts, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      console.log("[AQ-ALERT-DEBUG] 5-minute interval fired");
+      checkForAlerts();
+    }, POLL_INTERVAL_MS);
+    return () => {
+      console.log("[AQ-ALERT-DEBUG] polling effect cleanup (enabled/checkForAlerts changed, or unmounted)");
+      clearInterval(interval);
+    };
   }, [enabled, checkForAlerts]);
 
   const dismiss = useCallback(() => {
