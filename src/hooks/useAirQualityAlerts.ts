@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useTranslation } from "./useTranslation";
 import { getLiveAirQuality, resolveStationReading } from "../services/airQuality";
-import { isSeverityWorse } from "../utils/aqi";
+import { isSeverityWorse, SEVERITY_ORDER } from "../utils/aqi";
 import type { AQISeverityLevel } from "../types";
 
 /** `api/air4thai.ts` already caches the real upstream fetch for ~12 minutes, so polling this proxy every 5 minutes from here is cheap. */
@@ -45,6 +45,33 @@ function writeStored(stationId: string, value: StoredSeverity) {
     console.warn(`Failed to persist AQI severity for station ${stationId}:`, error);
   }
 }
+
+/**
+ * QA/demo hook: `?mockStation=<followed areaId>&mockSeverity=<level>` forces
+ * that one followed area to alert at the given severity, without needing a
+ * real station that's currently worse than "good" (see the investigation
+ * that led here — most of the 174 nationwide stations are "good" most of the
+ * time, making that hard to hit organically). No-op unless both params are
+ * present, so real users never take this path. Read fresh from
+ * `location.search` on every poll (not memoized) so editing the URL and
+ * reloading takes effect immediately.
+ */
+function getMockSeverityOverride(): { stationId: string; severity: AQISeverityLevel } | null {
+  const params = new URLSearchParams(window.location.search);
+  const stationId = params.get("mockStation");
+  const severity = params.get("mockSeverity");
+  if (!stationId || !severity) return null;
+  if (!SEVERITY_ORDER.includes(severity as AQISeverityLevel)) {
+    console.warn(
+      `Ignoring ?mockSeverity="${severity}" — must be one of: ${SEVERITY_ORDER.join(", ")}`,
+    );
+    return null;
+  }
+  return { stationId, severity: severity as AQISeverityLevel };
+}
+
+/** Fires a given mock override once per page load (per station+severity combo) — reload with the same params to fire it again, rather than re-alerting on every 5-minute poll while the tab stays open. */
+const firedMockOverrides = new Set<string>();
 
 /**
  * Self-contained: reads auth/profile itself so `<AirQualityAlertBanner>` can
@@ -97,9 +124,24 @@ export function useAirQualityAlerts() {
       const { stations } = await getLiveAirQuality();
       const now = Date.now();
       const newAlerts: AirQualityAlert[] = [];
+      const mockOverride = getMockSeverityOverride();
 
       for (const areaId of followedAreaIds) {
         const { station, isLive } = resolveStationReading(areaId, stations);
+
+        // QA/demo override — bypasses the real isLive/stored-baseline
+        // comparison entirely for this one area, and never touches its real
+        // `last-severity-*` localStorage entry, so it can't corrupt the
+        // genuine worsened-detection history for that station.
+        if (mockOverride && mockOverride.stationId === areaId) {
+          const key = `${areaId}:${mockOverride.severity}`;
+          if (!firedMockOverrides.has(key)) {
+            firedMockOverrides.add(key);
+            newAlerts.push({ areaId, areaName: station.name, severity: mockOverride.severity });
+          }
+          continue;
+        }
+
         // Synthetic/placeholder readings (isLive: false) fluctuate from a
         // seeded wave function, not real conditions — never alert on those.
         if (!isLive) continue;
