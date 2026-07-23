@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#fef9c3"/>
+  <!-- protective arc -->
+  <path d="M40 220a160 160 0 0 1 320 0" fill="none" stroke="#2563eb" stroke-width="10" stroke-linecap="round" opacity="0.85"/>
+  <!-- child -->
+  <g>
+    <circle cx="105" cy="175" r="20" fill="#fde8d2"/>
+    <path d="M85 260c0 -30 15 -50 20 -50s20 20 20 50z" fill="#f97316"/>
+  </g>
+  <!-- adult / outdoor worker -->
+  <g>
+    <circle cx="200" cy="160" r="24" fill="#fde8d2"/>
+    <path d="M172 260c0 -38 18 -60 28 -60s28 22 28 60z" fill="#2563eb"/>
+    <rect x="182" y="152" width="36" height="10" rx="5" fill="#334155"/>
+  </g>
+  <!-- elderly -->
+  <g>
+    <circle cx="295" cy="178" r="20" fill="#fde8d2"/>
+    <path d="M275 260c0 -30 15 -48 20 -48s20 18 20 48z" fill="#22c55e"/>
+    <line x1="295" y1="230" x2="295" y2="260" stroke="#78716c" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <!-- mask marks -->
+  <rect x="95" y="180" width="20" height="10" rx="4" fill="#ffffff"/>
+  <rect x="188" y="163" width="24" height="11" rx="4" fill="#ffffff"/>
+  <rect x="284" y="183" width="20" height="10" rx="4" fill="#ffffff"/>
+</svg>

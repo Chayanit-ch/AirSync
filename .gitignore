@@ -26,3 +26,9 @@ dist-ssr
 *.sw?
 .vercel
 .env*
+
+# Firebase Admin SDK service account keys — never commit, highest-privilege credential.
+# One-off local seed/admin scripts also live in scripts/ and are never deployed.
+service-account-key.json
+*service-account*.json
+scripts/

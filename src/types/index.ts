@@ -217,6 +217,18 @@ export interface KnowledgeArticle {
   id: string;
   title: string;
   excerpt: string;
+  /** Optional English translation — not read anywhere yet (every current display path renders `title`/`excerpt` directly, not through the TH/EN dictionary), but stored so the page can be made bilingual later without a data migration. */
+  titleEn?: string;
+  excerptEn?: string;
+  /**
+   * Full article body for the "read full article" expand on the card —
+   * optional because the 5 articles seeded 2026-07-23 only have a short
+   * `excerpt`, no separate long-form body yet. When absent, the UI shows
+   * just the excerpt with no expand control, rather than a button that
+   * reveals nothing new.
+   */
+  content?: string;
+  contentEn?: string;
   category: ArticleCategory;
   imageUrl: string;
   readTimeMinutes: number;

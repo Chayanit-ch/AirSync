@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#ecfdf5"/>
+  <!-- face -->
+  <circle cx="200" cy="150" r="95" fill="#fde8d2"/>
+  <circle cx="165" cy="120" r="8" fill="#334155"/>
+  <circle cx="235" cy="120" r="8" fill="#334155"/>
+  <path d="M155 95q45 -25 90 0" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <!-- N95 mask -->
+  <path d="M120 155c0 -18 36 -34 80 -34s80 16 80 34c0 34 -36 78 -80 78s-80 -44 -80 -78z" fill="#22c55e"/>
+  <path d="M120 155c0 -18 36 -34 80 -34s80 16 80 34" fill="none" stroke="#15803d" stroke-width="4"/>
+  <!-- pleats -->
+  <line x1="140" y1="175" x2="260" y2="175" stroke="#15803d" stroke-width="3" opacity="0.6"/>
+  <line x1="135" y1="195" x2="265" y2="195" stroke="#15803d" stroke-width="3" opacity="0.6"/>
+  <line x1="140" y1="215" x2="260" y2="215" stroke="#15803d" stroke-width="3" opacity="0.6"/>
+  <!-- straps -->
+  <line x1="120" y1="150" x2="55" y2="120" stroke="#334155" stroke-width="4"/>
+  <line x1="280" y1="150" x2="345" y2="120" stroke="#334155" stroke-width="4"/>
+  <line x1="120" y1="190" x2="55" y2="215" stroke="#334155" stroke-width="4"/>
+  <line x1="280" y1="190" x2="345" y2="215" stroke="#334155" stroke-width="4"/>
+  <!-- shield check badge -->
+  <path d="M320 60l22 9v16c0 15 -9 26 -22 31 -13 -5 -22 -16 -22 -31V69z" fill="#2563eb"/>
+  <path d="M310 90l7 7 14 -14" stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

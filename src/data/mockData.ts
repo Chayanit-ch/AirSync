@@ -239,41 +239,7 @@ export const featuredArticle: KnowledgeArticle = {
   isFeatured: true,
 };
 
-export const knowledgeArticles: KnowledgeArticle[] = [
-  {
-    id: "article-002",
-    title: "เจาะลึก PM2.5 ในสมุทรสาคร มีข้อมูลอะไรบ้าง",
-    excerpt: "สำรวจแหล่งกำเนิดฝุ่น PM2.5 หลักในพื้นที่สมุทรสาครและแนวโน้มล่าสุด",
-    category: "pm25",
-    imageUrl: "https://picsum.photos/seed/airsync-article-2/200/200",
-    readTimeMinutes: 10,
-    publishedAt: "2026-07-15T09:00:00+07:00",
-  },
-  {
-    id: "article-003",
-    title: "เทคโนโลยีใหม่ในการจัดการฝุ่น PM 2.5",
-    excerpt: "เทคโนโลยีตรวจวัดและลดฝุ่นละอองที่กำลังถูกนำมาใช้ในภาคอุตสาหกรรม",
-    category: "health",
-    imageUrl: "https://picsum.photos/seed/airsync-article-3/200/200",
-    readTimeMinutes: 10,
-    publishedAt: "2026-07-14T09:00:00+07:00",
-  },
-  {
-    id: "article-004",
-    title: "นโยบายป้องกันฝุ่นเบื้องต้น",
-    excerpt: "มาตรการเบื้องต้นที่ประชาชนสามารถทำได้เพื่อลดผลกระทบจากฝุ่น PM2.5",
-    category: "health",
-    imageUrl: "https://picsum.photos/seed/airsync-article-4/200/200",
-    readTimeMinutes: 10,
-    publishedAt: "2026-07-13T09:00:00+07:00",
-  },
-  {
-    id: "article-005",
-    title: "หน้ากากอนามัยแบบไหนป้องกัน PM2.5 ได้ดีที่สุด",
-    excerpt: "เปรียบเทียบหน้ากากอนามัยชนิดต่างๆ และประสิทธิภาพในการกรองฝุ่น PM2.5",
-    category: "health",
-    imageUrl: "https://picsum.photos/seed/airsync-article-5/200/200",
-    readTimeMinutes: 7,
-    publishedAt: "2026-07-11T09:00:00+07:00",
-  },
-];
+// The old mock `knowledgeArticles` list is gone — the Alerts page now reads
+// real documents from Firestore's `knowledgeArticles` collection instead
+// (see `services/knowledgeArticles.ts` / `KnowledgeArticlesSection`).
+// `featuredArticle` above is a separate, still-mock hero banner, untouched.

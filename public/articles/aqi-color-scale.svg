@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#f8fafc"/>
+  <!-- gauge arc bands -->
+  <g fill="none" stroke-width="34" stroke-linecap="butt">
+    <path d="M60 220a140 140 0 0 1 28 -99" stroke="#22c55e"/>
+    <path d="M88 121a140 140 0 0 1 68 -41" stroke="#eab308"/>
+    <path d="M156 80a140 140 0 0 1 88 0" stroke="#f97316"/>
+    <path d="M244 80a140 140 0 0 1 68 41" stroke="#dc2626"/>
+    <path d="M312 121a140 140 0 0 1 28 99" stroke="#7c3aed"/>
+  </g>
+  <!-- needle -->
+  <g transform="rotate(35 200 220)">
+    <line x1="200" y1="220" x2="200" y2="100" stroke="#334155" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <circle cx="200" cy="220" r="14" fill="#334155"/>
+  <!-- base label chip -->
+  <rect x="150" y="248" width="100" height="30" rx="15" fill="#334155"/>
+  <text x="200" y="268" font-family="Arial, sans-serif" font-size="16" fill="#ffffff" text-anchor="middle">AQI</text>
+</svg>
