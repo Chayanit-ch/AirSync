@@ -1,7 +1,8 @@
-import { ChevronDown, ChevronUp, Clock, ShieldCheck } from "lucide-react";
+import { ChevronDown, ChevronUp, CircleAlert, Clock, ShieldCheck, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import type { MonitoringStation } from "../../types";
 import { useTranslation } from "../../hooks/useTranslation";
+import { useTrendGuidance } from "../../hooks/useTrendGuidance";
 import { AQI_SEVERITY_META } from "../../utils/aqi";
 import { resolveSource } from "../../utils/dataSource";
 import type { MapLayerMode } from "./LayerToggle";
@@ -19,8 +20,10 @@ export function StationBottomSheet({
    * (including `"heatmap"`, which doesn't have its own distinct metric). */
   mode: MapLayerMode;
 }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [trendRequested, setTrendRequested] = useState(false);
+  const trend = useTrendGuidance(station.id, station.name, language);
   // Mobile-only (see the `lg:` split below — desktop's docked panel always
   // shows the full sheet regardless of this). "peek" is a compact summary
   // bar so a collapsed sheet still names the selected station instead of
@@ -38,7 +41,13 @@ export function StationBottomSheet({
   useEffect(() => {
     setSheetState("expanded");
     setDragOffset(0);
+    setTrendRequested(false);
   }, [station.id]);
+
+  function handleViewTrendGuidance() {
+    setTrendRequested(true);
+    trend.fetchOrGenerate();
+  }
 
   const hoursAgo = Math.max(
     1,
@@ -236,13 +245,40 @@ export function StationBottomSheet({
           </button>
           <button
             type="button"
-            disabled
-            title={t("map.forecastComingSoon")}
-            className="bg-brand-600 rounded-xl py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+            onClick={handleViewTrendGuidance}
+            disabled={trend.isLoading}
+            className="bg-brand-600 hover:bg-brand-700 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {t("map.viewForecast")}
+            <Sparkles size={15} />
+            {t("map.viewAiTrendGuidance")}
           </button>
         </div>
+
+        {trendRequested && (
+          <div className="mt-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
+            {trend.isLoading ? (
+              <div className="flex flex-col gap-1.5">
+                <div className="h-3 w-3/4 animate-pulse rounded bg-gray-200" />
+                <div className="h-3 w-full animate-pulse rounded bg-gray-200" />
+                <div className="h-3 w-2/3 animate-pulse rounded bg-gray-200" />
+              </div>
+            ) : trend.error ? (
+              <p className="flex items-center gap-1.5 text-xs text-gray-400">
+                <CircleAlert size={14} className="shrink-0" />
+                {t("map.aiTrendGuidanceError")}
+              </p>
+            ) : trend.guidance ? (
+              <>
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-purple-600">
+                  <Sparkles size={13} />
+                  {t("map.aiTrendGuidanceTitle")}
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-gray-700">{trend.guidance}</p>
+                <p className="mt-2 text-[11px] text-gray-400">{t("map.aiTrendGuidanceDisclaimer")}</p>
+              </>
+            ) : null}
+          </div>
+        )}
       </div>
     </>
   );

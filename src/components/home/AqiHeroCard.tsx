@@ -23,6 +23,11 @@ interface AqiHeroCardProps {
   onRetryLocation?: () => void;
   /** The signed-in user's `UserProfile.riskGroup` — undefined for guests or profiles saved before this field existed, treated as `"general"` (see `resolveRiskGroup`). */
   riskGroup?: RiskGroup;
+  /** When both are present, these AI-generated sections replace the single rule-based line below — absent/null falls straight back to it (see `useAiAdvice`). */
+  aiShortTerm?: string | null;
+  aiLongTerm?: string | null;
+  onRefreshAdvice?: () => void;
+  isRefreshingAdvice?: boolean;
 }
 
 export function AqiHeroCard({
@@ -32,12 +37,17 @@ export function AqiHeroCard({
   locationStatus,
   onRetryLocation,
   riskGroup,
+  aiShortTerm,
+  aiLongTerm,
+  onRefreshAdvice,
+  isRefreshingAdvice = false,
 }: AqiHeroCardProps) {
   const { t, dict } = useTranslation();
   const severityLabel = dict.common.severity[area.severity];
   const resolvedRiskGroup = resolveRiskGroup(riskGroup);
   const recommendation = getPersonalizedRecommendation(dict, area.severity, resolvedRiskGroup);
   const showRiskGroupCta = resolvedRiskGroup === "general";
+  const isAiGenerated = Boolean(aiShortTerm && aiLongTerm);
   const showLocationRetry =
     (locationStatus === "denied" || locationStatus === "unsupported") && onRetryLocation;
 
@@ -92,10 +102,46 @@ export function AqiHeroCard({
             longer than the old one-liner, so this can no longer share a
             cramped half-width column with the PM2.5 stat. */}
         <div className="px-4 py-3">
-          <p className="text-xs text-gray-400">{t("home.recommendation")}</p>
-          <p className="mt-0.5 text-sm leading-relaxed font-medium text-wrap text-gray-700">
-            {recommendation}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-400">{t("home.recommendation")}</p>
+            {isAiGenerated && (
+              <span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-600">
+                {t("home.aiGeneratedLabel")}
+              </span>
+            )}
+          </div>
+
+          {isAiGenerated ? (
+            <>
+              <div className="mt-1.5">
+                <p className="text-xs font-semibold text-gray-500">{t("home.shortTermAdvice")}</p>
+                <p className="mt-0.5 text-sm leading-relaxed font-medium text-wrap text-gray-700">
+                  {aiShortTerm}
+                </p>
+              </div>
+              <div className="mt-2.5">
+                <p className="text-xs font-semibold text-gray-500">{t("home.longTermAdvice")}</p>
+                <p className="mt-0.5 text-sm leading-relaxed font-medium text-wrap text-gray-700">
+                  {aiLongTerm}
+                </p>
+              </div>
+              {onRefreshAdvice && (
+                <button
+                  type="button"
+                  onClick={onRefreshAdvice}
+                  disabled={isRefreshingAdvice}
+                  className="text-brand-600 mt-2.5 text-xs font-semibold disabled:opacity-40"
+                >
+                  {isRefreshingAdvice ? t("home.refreshingAdvice") : t("home.getNewAdvice")}
+                </button>
+              )}
+            </>
+          ) : (
+            <p className="mt-0.5 text-sm leading-relaxed font-medium text-wrap text-gray-700">
+              {recommendation}
+            </p>
+          )}
+
           {showRiskGroupCta && (
             <p className="text-brand-600 mt-2 text-xs font-medium text-wrap">
               {t("home.riskGroupCta")}
