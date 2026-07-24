@@ -247,6 +247,45 @@ export type UserType = "citizen" | "organization" | "government";
 /** Drives the Home hero card's personalized recommendation matrix — see `utils/recommendation.ts`. */
 export type RiskGroup = "general" | "children" | "elderly" | "respiratory" | "outdoor_worker";
 
+/**
+ * A single citizen's 1-5 star rating of an organization account. Firestore:
+ * `users/{orgUid}/ratings/{raterUid}` — document ID is the rater's own uid,
+ * so each person can only ever have one rating per organization; a repeat
+ * rating overwrites this same document rather than creating another one.
+ * Independent Firestore rules from the parent `users/{orgUid}` doc, same
+ * philosophy as `missionLog`/`aiAdvice` subcollections.
+ */
+export interface OrganizationRating {
+  rating: number;
+  raterUid: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface OrganizationRatingSummary {
+  average: number;
+  count: number;
+}
+
+/**
+ * Public directory mirror for organization accounts. Firestore:
+ * `organizationProfiles/{orgUid}`. Deliberately holds ONLY non-sensitive
+ * fields safe for anyone (including guests) to read — never merge this with
+ * `users/{uid}`, which stays owner-read-only (see `UserProfile.healthNotes`).
+ * Written only by the organization's own client (see
+ * `services/organizationDirectory.ts`), whenever their `userType`
+ * becomes/stops being `"organization"`, and opportunistically refreshed
+ * whenever they view their own Profile page.
+ */
+export interface OrganizationDirectoryEntry {
+  uid: string;
+  displayName: string;
+  photoURL: string;
+  points: number;
+  userType: "organization";
+  updatedAt: Timestamp;
+}
+
 export interface NotificationSettings {
   pushEnabled: boolean;
   dailySummaryEnabled: boolean;

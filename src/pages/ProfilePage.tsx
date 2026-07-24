@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfileHeader } from "../components/profile/ProfileHeader";
 import { MissionsCard } from "../components/profile/MissionsCard";
@@ -15,6 +15,7 @@ import { useFollowedAreaSummaries } from "../hooks/useFollowedAreaSummaries";
 import { useMyReports } from "../hooks/useMyReports";
 import { useTranslation } from "../hooks/useTranslation";
 import { logOut } from "../services/auth";
+import { syncOrganizationDirectoryEntry } from "../services/organizationDirectory";
 import { getUserType } from "../utils/userType";
 import type { Report } from "../types";
 
@@ -37,6 +38,20 @@ export function ProfilePage() {
     }, 0);
   }
 
+  // Opportunistic refresh of the public organizationProfiles mirror whenever
+  // an organization account views its own profile — keeps the leaderboard's
+  // displayName/photoURL/points reasonably fresh without threading a sync
+  // call through missions.ts or every other points-award/profile-edit path.
+  useEffect(() => {
+    if (!currentUser || getUserType(userProfile) !== "organization" || !userProfile) return;
+    void syncOrganizationDirectoryEntry(currentUser.uid, {
+      displayName: userProfile.displayName,
+      photoURL: userProfile.photoURL,
+      points: userProfile.points,
+      userType: "organization",
+    });
+  }, [currentUser, userProfile]);
+
   const followedAreaIds = userProfile?.followedAreaIds ?? [];
   // Same live `stations` source as the Map (via `resolveStationReading`), so
   // this can never disagree with what the Map shows for the same station.
@@ -47,6 +62,7 @@ export function ProfilePage() {
     <div className="flex flex-col gap-4 p-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:p-6">
       <div className="flex flex-col gap-4">
         <ProfileHeader
+          uid={currentUser?.uid}
           displayName={currentUser?.displayName || mockUser.displayName}
           email={currentUser?.email || mockUser.email}
           photoURL={currentUser?.photoURL}

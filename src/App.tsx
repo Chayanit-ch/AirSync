@@ -8,6 +8,7 @@ import { HomePage } from "./pages/HomePage";
 import { MapPage } from "./pages/MapPage";
 import { ReportPage } from "./pages/ReportPage";
 import { AlertsPage } from "./pages/AlertsPage";
+import { OrganizationsPage } from "./pages/OrganizationsPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { AuthPage } from "./pages/AuthPage";
 import { AboutPage } from "./pages/AboutPage";
@@ -32,6 +33,7 @@ function App() {
                   }
                 />
                 <Route path="/alerts" element={<AlertsPage />} />
+                <Route path="/organizations" element={<OrganizationsPage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route
                   path="/profile"

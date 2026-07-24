@@ -1,10 +1,13 @@
 import { History, MapPin, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { Report, StatusHistoryEntry } from "../../types";
+import type { OrganizationDirectoryEntry, Report, StatusHistoryEntry } from "../../types";
 import { getReportTypeLabel, subscribeToStatusHistory, updateReportStatus } from "../../services/reports";
+import { getOrganizationDirectoryEntry } from "../../services/organizationDirectory";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "../../hooks/useTranslation";
+import { getLevelFromPoints } from "../../utils/gamification";
 import { formatLocalizedDate, formatLocalizedTime } from "../../utils/date";
+import { LevelAvatar } from "../profile/LevelAvatar";
 import { StatusBadge } from "../shared/StatusBadge";
 
 interface ReportDetailModalProps {
@@ -31,6 +34,7 @@ export function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
   const [history, setHistory] = useState<StatusHistoryEntry[]>([]);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [statusUpdateError, setStatusUpdateError] = useState<string | null>(null);
+  const [updaterOrgs, setUpdaterOrgs] = useState<Record<string, OrganizationDirectoryEntry | null>>({});
 
   const reportId = report?.id;
   useEffect(() => {
@@ -38,6 +42,33 @@ export function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
     setStatusUpdateError(null);
     return subscribeToStatusHistory(reportId, setHistory);
   }, [reportId]);
+
+  // Looks up organizationProfiles for each status-history updater — public
+  // data (see services/organizationDirectory.ts), so this never needs to
+  // touch users/{uid}. Falls back to the generic "authority account" text
+  // below for uids with no directory entry (admins, or org accounts that
+  // later switched userType away from "organization").
+  useEffect(() => {
+    const uniqueUids = Array.from(new Set(history.map((entry) => entry.updatedBy))).filter(
+      (uid) => !(uid in updaterOrgs),
+    );
+    if (uniqueUids.length === 0) return;
+    let cancelled = false;
+    Promise.all(uniqueUids.map((uid) => getOrganizationDirectoryEntry(uid))).then((results) => {
+      if (cancelled) return;
+      setUpdaterOrgs((prev) => {
+        const next = { ...prev };
+        uniqueUids.forEach((uid, i) => {
+          next[uid] = results[i];
+        });
+        return next;
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [history]);
 
   if (!report) return null;
 
@@ -166,6 +197,7 @@ export function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
               <ul className="flex flex-col gap-2 border-l-2 border-gray-100 pl-3">
                 {history.map((entry) => {
                   const entryDate = entry.updatedAt?.toDate?.() ?? new Date();
+                  const updaterOrg = updaterOrgs[entry.updatedBy];
                   return (
                     <li key={entry.id} className="text-xs">
                       <div className="flex items-center gap-1.5">
@@ -175,9 +207,24 @@ export function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
                           {formatLocalizedTime(entryDate, language)}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-gray-400">
-                        {t("report.statusHistoryUpdatedByAuthority")}
-                      </p>
+                      {updaterOrg ? (
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <LevelAvatar
+                            photoURL={updaterOrg.photoURL}
+                            displayName={updaterOrg.displayName}
+                            size="sm"
+                            level={getLevelFromPoints(updaterOrg.points)}
+                            userType="organization"
+                          />
+                          <p className="text-gray-500">
+                            {t("report.statusHistoryUpdatedByOrganization", { name: updaterOrg.displayName })}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="mt-0.5 text-gray-400">
+                          {t("report.statusHistoryUpdatedByAuthority")}
+                        </p>
+                      )}
                     </li>
                   );
                 })}

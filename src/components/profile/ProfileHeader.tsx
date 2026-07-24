@@ -1,11 +1,15 @@
 import { BadgeCheck, Pencil } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "../../hooks/useTranslation";
 import { getLevelFromPoints, getProgressInCurrentLevel } from "../../utils/gamification";
-import type { UserType } from "../../types";
+import { getOrganizationRatingSummary } from "../../services/organizationRatings";
+import type { OrganizationRatingSummary, UserType } from "../../types";
 import { LevelAvatar } from "./LevelAvatar";
 import { LevelProgressBar } from "./LevelProgressBar";
+import { StarRating } from "../shared/StarRating";
 
 interface ProfileHeaderProps {
+  uid?: string;
   displayName: string;
   email: string;
   photoURL?: string | null;
@@ -27,6 +31,7 @@ const LEVEL_BADGE_BG_CLASSES: Record<UserType, string> = {
 };
 
 export function ProfileHeader({
+  uid,
   displayName,
   email,
   photoURL,
@@ -37,6 +42,19 @@ export function ProfileHeader({
   const { t } = useTranslation();
   const level = getLevelFromPoints(points);
   const progress = getProgressInCurrentLevel(points);
+
+  const [ratingSummary, setRatingSummary] = useState<OrganizationRatingSummary | null>(null);
+  useEffect(() => {
+    setRatingSummary(null);
+    if (!uid || userType !== "organization") return;
+    let cancelled = false;
+    getOrganizationRatingSummary(uid).then((summary) => {
+      if (!cancelled) setRatingSummary(summary);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [uid, userType]);
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-sm">
@@ -69,6 +87,13 @@ export function ProfileHeader({
           <BadgeCheck size={14} />
           {t(LEVEL_LABEL_KEYS[userType], { level })}
         </span>
+        {userType === "organization" && ratingSummary && ratingSummary.count > 0 && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-100 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600">
+            <StarRating value={ratingSummary.average} size={13} />
+            {ratingSummary.average.toFixed(1)} ·{" "}
+            {t("leaderboard.reviewerCount", { count: ratingSummary.count })}
+          </span>
+        )}
       </div>
 
       <div className="mt-3 grid grid-cols-2 divide-x divide-gray-100 rounded-xl border border-gray-100 bg-gray-50 py-2.5">

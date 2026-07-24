@@ -13,6 +13,7 @@ import {
 import { db } from "../firebase";
 import { SET_RISK_GROUP_MISSION } from "../data/missions";
 import { awardMissionBestEffort } from "./missions";
+import { syncOrganizationDirectoryEntry } from "./organizationDirectory";
 import type { DailyContext, NotificationSettings, RiskGroup, UserProfile, UserType } from "../types";
 
 /**
@@ -110,6 +111,25 @@ export async function reconcileDisplayNameAfterSignup(
 }
 
 /**
+ * Re-reads the just-written `users/{uid}` doc (always allowed — the caller
+ * is always the owner here) and syncs the public `organizationProfiles/{uid}`
+ * mirror from it. Centralizing the read here means every `userType`-changing
+ * call site stays a one-argument call, instead of threading displayName/
+ * photoURL/points through each of them.
+ */
+async function syncOrganizationDirectoryFromLatestDoc(uid: string): Promise<void> {
+  const snapshot = await getDoc(userDocRef(uid));
+  if (!snapshot.exists()) return;
+  const profile = snapshot.data() as UserProfile;
+  await syncOrganizationDirectoryEntry(uid, {
+    displayName: profile.displayName,
+    photoURL: profile.photoURL,
+    points: profile.points,
+    userType: profile.userType ?? "citizen",
+  });
+}
+
+/**
  * Reconciles `userType` after signup, mirroring `reconcileDisplayNameAfterSignup`:
  * `ensureUserDocument` (fired from `AuthContext`'s `onAuthStateChanged`) can
  * create the document with the default `"citizen"` before the signup call
@@ -125,6 +145,7 @@ export async function reconcileUserTypeAfterSignup(
       userType,
       updatedAt: serverTimestamp(),
     });
+    await syncOrganizationDirectoryFromLatestDoc(uid);
   } catch {
     // Document not created yet — ensureUserDocument will default to
     // "citizen"; the user can still change it later via profile editing.
@@ -169,6 +190,7 @@ export async function updateUserType(uid: string, userType: UserType): Promise<v
     userType,
     updatedAt: serverTimestamp(),
   });
+  await syncOrganizationDirectoryFromLatestDoc(uid);
 }
 
 /** Updates one or more `dailyContext` fields without touching anything else or the sibling fields. */
