@@ -12,17 +12,52 @@
 // API verified directly against https://api-docs.deepseek.com/ on 2026-07-23
 // — same endpoint/model/JSON-mode details as api/deepseek-advice.ts (see
 // that file's header comment for the full verification notes).
+//
+// GUEST ACCESS IS INTENTIONAL — this endpoint deliberately does NOT verify a
+// Firebase auth token, unlike api/deepseek-advice.ts (which stays
+// authenticated because it depends on per-user profile context). The Map
+// page's "AI Trend Guidance" is meant to work for logged-out guests too.
+// Removing the auth gate reopens the abuse risk it used to close (unlimited
+// anonymous calls exhausting the DeepSeek quota), so two replacement
+// protections are load-bearing here and must not be removed without a
+// replacement of equal strength:
+//   1. The shared `stationTrendGuidance/{stationId}` Firestore cache (~1.5h
+//      TTL, see `useTrendGuidance`) — the primary protection. Only the
+//      first caller per station per cache window ever reaches this file;
+//      every other guest/user reads Firestore only.
+//   2. The in-memory rate limiter below, which only ever applies to the
+//      cache-miss calls that actually reach this function.
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 const DEEPSEEK_MODEL = "deepseek-v4-flash";
 const FETCH_TIMEOUT_MS = 20000;
 
-const FIREBASE_WEB_API_KEY = process.env.VITE_FIREBASE_API_KEY;
-const AUTH_VERIFY_TIMEOUT_MS = 5000;
-
 /** Hard cap regardless of what the client sends — keeps a single request's
  * token cost bounded even if a caller passes an unexpectedly long history. */
 const MAX_HISTORY_POINTS = 60;
+
+/**
+ * Lightweight global rate limiter for DeepSeek calls that actually reach this
+ * function (i.e. cache misses only — cache hits never get this far). A
+ * simple fixed-window counter, not per-IP: per-IP tracking would need shared
+ * state across serverless instances, which is more complexity than this
+ * endpoint's risk profile warrants. Module-level, so it persists across
+ * invocations on a warm instance, same pattern as the cache in api/news.ts.
+ */
+const RATE_LIMIT_MAX_CALLS = 10;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+let rateLimitWindowStartMs = 0;
+let rateLimitCallsInWindow = 0;
+
+function isRateLimited(): boolean {
+  const now = Date.now();
+  if (now - rateLimitWindowStartMs >= RATE_LIMIT_WINDOW_MS) {
+    rateLimitWindowStartMs = now;
+    rateLimitCallsInWindow = 0;
+  }
+  rateLimitCallsInWindow += 1;
+  return rateLimitCallsInWindow > RATE_LIMIT_MAX_CALLS;
+}
 
 interface JsonResponse {
   status: (code: number) => { json: (body: unknown) => void };
@@ -33,39 +68,6 @@ interface IncomingRequest {
   method?: string;
   headers?: Record<string, string | string[] | undefined>;
   body?: unknown;
-}
-
-function getBearerToken(req: IncomingRequest): string | null {
-  const raw = req.headers?.authorization;
-  const header = Array.isArray(raw) ? raw[0] : raw;
-  if (!header || !header.startsWith("Bearer ")) return null;
-  const token = header.slice("Bearer ".length).trim();
-  return token || null;
-}
-
-async function verifyFirebaseIdToken(idToken: string): Promise<string | null> {
-  if (!FIREBASE_WEB_API_KEY) return null;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), AUTH_VERIFY_TIMEOUT_MS);
-  try {
-    const response = await fetch(
-      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_WEB_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-        signal: controller.signal,
-      },
-    );
-    if (!response.ok) return null;
-    const data = (await response.json()) as { users?: Array<{ localId?: string }> };
-    return data.users?.[0]?.localId ?? null;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timeoutId);
-  }
 }
 
 interface HistoryPoint {
@@ -131,20 +133,16 @@ export default async function handler(req: IncomingRequest, res: JsonResponse) {
     return;
   }
 
-  const idToken = getBearerToken(req);
-  if (!idToken) {
-    res.status(401).json({ ok: false, error: "Missing Authorization: Bearer <idToken> header" });
-    return;
-  }
-  const uid = await verifyFirebaseIdToken(idToken);
-  if (!uid) {
-    res.status(401).json({ ok: false, error: "Invalid or expired auth token" });
-    return;
-  }
-
   const body = req.body;
   if (!isValidBody(body)) {
     res.status(400).json({ ok: false, error: "Invalid request body" });
+    return;
+  }
+
+  // Only cache misses reach this point (see the guest-access note above) —
+  // this is where an actual DeepSeek call, and its cost, would happen.
+  if (isRateLimited()) {
+    res.status(429).json({ ok: false, error: "Too many AI trend guidance requests right now — please try again shortly" });
     return;
   }
 

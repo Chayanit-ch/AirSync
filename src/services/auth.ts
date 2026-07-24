@@ -8,7 +8,8 @@ import {
   type User,
 } from "firebase/auth";
 import { auth } from "../firebase";
-import { reconcileDisplayNameAfterSignup } from "./userProfile";
+import { reconcileDisplayNameAfterSignup, reconcileUserTypeAfterSignup } from "./userProfile";
+import type { UserType } from "../types";
 
 /**
  * Maps Firebase Auth error codes to one of `dict.auth.errors`' keys (see
@@ -51,6 +52,7 @@ export async function signUpWithEmail(
   email: string,
   password: string,
   name: string,
+  userType: UserType,
 ): Promise<User> {
   try {
     const credential = await createUserWithEmailAndPassword(auth, email, password);
@@ -60,6 +62,10 @@ export async function signUpWithEmail(
     // lands, creating the users/{uid} doc with a fallback displayName. Fix
     // it with a single-field updateDoc — never a full-document write here.
     await reconcileDisplayNameAfterSignup(credential.user.uid, name);
+    // userType is display-only (labels/avatars/badges) and never touches
+    // role, which stays hardcoded to "citizen" in buildDefaultUserDocument
+    // and is only ever changed manually via the Firestore Console.
+    await reconcileUserTypeAfterSignup(credential.user.uid, userType);
     return credential.user;
   } catch (error) {
     throw toAuthError(error);

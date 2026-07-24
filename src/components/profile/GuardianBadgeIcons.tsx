@@ -174,3 +174,89 @@ export const AUTHORITY_BADGE_BG_CLASSES: Record<number, string> = {
   4: "bg-orange-600 text-white",
   5: "bg-amber-700 text-white",
 };
+
+/**
+ * Government badge set — a formal official-seal family (concentric
+ * circle/rosette shapes, not the citizen silhouette or the organization
+ * shield), in a navy/indigo palette so it reads as a third, clearly distinct
+ * category at a glance from both the citizen (emerald/slate) and
+ * organization (amber/orange) sets.
+ */
+
+/** Government tier 1 — plain official seal. */
+function GovernmentBadgeTier1({ size = 14, className }: BadgeIconProps) {
+  return (
+    <svg width={size} height={size} className={className} {...commonProps}>
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="12" cy="12" r="3.5" />
+    </svg>
+  );
+}
+
+/** Government tier 2 — seal with a ribbon bar. */
+function GovernmentBadgeTier2({ size = 14, className }: BadgeIconProps) {
+  return (
+    <svg width={size} height={size} className={className} {...commonProps}>
+      <circle cx="12" cy="9" r="6" />
+      <circle cx="12" cy="9" r="2.5" />
+      <path d="M8 14.5L6.5 21l5.5-2.5 5.5 2.5-1.5-6.5" />
+    </svg>
+  );
+}
+
+/** Government tier 3 — seal with an inset star (official insignia). */
+function GovernmentBadgeTier3({ size = 14, className }: BadgeIconProps) {
+  return (
+    <svg width={size} height={size} className={className} {...commonProps}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 8l1.1 2.3 2.5.35-1.8 1.75.42 2.5L12 13.7l-2.22 1.2.42-2.5-1.8-1.75 2.5-.35z" />
+    </svg>
+  );
+}
+
+/** Government tier 4 — seal with star and flanking official ticks. */
+function GovernmentBadgeTier4({ size = 14, className }: BadgeIconProps) {
+  return (
+    <svg width={size} height={size} className={className} {...commonProps}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.8l1.15 2.4 2.6.36-1.9 1.85.45 2.6L12 13.7l-2.3 1.3.45-2.6-1.9-1.85 2.6-.36z" />
+      <path d="M4 12h1.5M18.5 12H20" />
+    </svg>
+  );
+}
+
+/** Government tier 5 — elite official seal (star + double side ticks + outer ring). */
+function GovernmentBadgeTier5({ size = 14, className }: BadgeIconProps) {
+  return (
+    <svg width={size} height={size} className={className} {...commonProps}>
+      <circle cx="12" cy="12" r="9.5" />
+      <circle cx="12" cy="12" r="7.5" />
+      <path d="M12 7.5l1.15 2.4 2.6.36-1.9 1.85.45 2.6L12 13.4l-2.3 1.3.45-2.6-1.9-1.85 2.6-.36z" />
+      <path d="M2.5 12h1.5M20 12h1.5" />
+    </svg>
+  );
+}
+
+export const GOVERNMENT_BADGE_ICONS: Record<number, typeof GovernmentBadgeTier1> = {
+  1: GovernmentBadgeTier1,
+  2: GovernmentBadgeTier2,
+  3: GovernmentBadgeTier3,
+  4: GovernmentBadgeTier4,
+  5: GovernmentBadgeTier5,
+};
+
+export const GOVERNMENT_BADGE_RING_CLASSES: Record<number, string> = {
+  1: "border-slate-500",
+  2: "border-blue-600",
+  3: "border-indigo-600",
+  4: "border-blue-800",
+  5: "border-indigo-900",
+};
+
+export const GOVERNMENT_BADGE_BG_CLASSES: Record<number, string> = {
+  1: "bg-slate-500 text-white",
+  2: "bg-blue-600 text-white",
+  3: "bg-indigo-600 text-white",
+  4: "bg-blue-800 text-white",
+  5: "bg-indigo-900 text-white",
+};

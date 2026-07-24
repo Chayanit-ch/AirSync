@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { doc, getDoc, serverTimestamp, setDoc, Timestamp } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { db } from "../firebase";
 import { getAreaAirQualityHistory } from "../services/airQuality";
 
 /** Middle of the spec's 1-2h cache window. */
@@ -77,12 +77,13 @@ export function useTrendGuidance(
         throw new Error(`No recent history available for station ${stationId}`);
       }
 
-      const idToken = await auth.currentUser?.getIdToken();
-      if (!idToken) throw new Error("No signed-in user available for AI trend guidance request");
-
+      // Intentionally guest-accessible — see the guest-access note atop
+      // api/deepseek-trend.ts. No auth token is sent or required; the shared
+      // Firestore cache above and that endpoint's rate limiter are the
+      // abuse-prevention layer instead.
       const response = await fetch("/api/deepseek-trend", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stationId, stationName, history: recentHistory, language }),
       });
       const data = (await response.json()) as { ok: boolean; guidance?: string; error?: string };

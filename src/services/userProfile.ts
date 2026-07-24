@@ -13,7 +13,7 @@ import {
 import { db } from "../firebase";
 import { SET_RISK_GROUP_MISSION } from "../data/missions";
 import { awardMissionBestEffort } from "./missions";
-import type { DailyContext, NotificationSettings, RiskGroup, UserProfile } from "../types";
+import type { DailyContext, NotificationSettings, RiskGroup, UserProfile, UserType } from "../types";
 
 /**
  * SAFE-WRITE RULES for `users/{uid}` (read this before adding a new function
@@ -56,6 +56,7 @@ function buildDefaultUserDocument(
     email: user.email ?? "",
     photoURL: user.photoURL ?? "",
     role: "citizen",
+    userType: "citizen",
     followedAreaIds: [],
     notificationSettings: {
       pushEnabled: false,
@@ -108,6 +109,28 @@ export async function reconcileDisplayNameAfterSignup(
   }
 }
 
+/**
+ * Reconciles `userType` after signup, mirroring `reconcileDisplayNameAfterSignup`:
+ * `ensureUserDocument` (fired from `AuthContext`'s `onAuthStateChanged`) can
+ * create the document with the default `"citizen"` before the signup call
+ * site's chosen value is known, so this fixes it up with a single-field
+ * `updateDoc()`. Purely cosmetic — never touches `role`.
+ */
+export async function reconcileUserTypeAfterSignup(
+  uid: string,
+  userType: UserType,
+): Promise<void> {
+  try {
+    await updateDoc(userDocRef(uid), {
+      userType,
+      updatedAt: serverTimestamp(),
+    });
+  } catch {
+    // Document not created yet — ensureUserDocument will default to
+    // "citizen"; the user can still change it later via profile editing.
+  }
+}
+
 /** Updates one or more notification settings fields without touching anything else. */
 export async function updateNotificationSettings(
   uid: string,
@@ -133,6 +156,19 @@ export async function updateRiskGroup(uid: string, riskGroup: RiskGroup): Promis
   // (no date suffix, since this mission's `frequency` is "once") means this
   // is a safe no-op on every risk-group change after the first.
   await awardMissionBestEffort(uid, SET_RISK_GROUP_MISSION);
+}
+
+/**
+ * Updates only the `userType` field — the user's own display identity
+ * (citizen/organization/government), editable any time from the Profile
+ * page. Purely cosmetic; has no bearing on `role`, which only an
+ * administrator can change, and only via the Firestore Console.
+ */
+export async function updateUserType(uid: string, userType: UserType): Promise<void> {
+  await updateDoc(userDocRef(uid), {
+    userType,
+    updatedAt: serverTimestamp(),
+  });
 }
 
 /** Updates one or more `dailyContext` fields without touching anything else or the sibling fields. */

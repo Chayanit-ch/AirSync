@@ -238,6 +238,12 @@ export interface KnowledgeArticle {
 
 export type UserRole = "citizen" | "admin" | "authority";
 
+/**
+ * Display-only identity — labels, avatars, badges. Has NO effect on Firestore
+ * permissions; that's `role`'s job alone. Never let app UI write `role`.
+ */
+export type UserType = "citizen" | "organization" | "government";
+
 /** Drives the Home hero card's personalized recommendation matrix — see `utils/recommendation.ts`. */
 export type RiskGroup = "general" | "children" | "elderly" | "respiratory" | "outdoor_worker";
 
@@ -264,6 +270,8 @@ export interface UserProfile {
   email: string;
   photoURL: string;
   role: UserRole;
+  /** Optional because profiles created before this field shipped don't have it — treat missing as `"citizen"`, see `getUserType`. Purely cosmetic; never gates permissions. */
+  userType?: UserType;
   /**
    * NATIONWIDE ROLLOUT (2026-07-19): now stores real Air4Thai `stationID`s
    * (e.g. "27t") that the user follows, nationwide — not the old 5

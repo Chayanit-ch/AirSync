@@ -1,14 +1,21 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Loader2, Lock, Mail, User as UserIcon, Wind } from "lucide-react";
+import { Building2, Eye, EyeOff, Landmark, Loader2, Lock, Mail, User as UserIcon, Wind } from "lucide-react";
 import { AuthError, signInWithEmail, signInWithGoogle, signUpWithEmail } from "../services/auth";
 import { GoogleIcon } from "../components/shared/GoogleIcon";
 import { useAuth } from "../contexts/AuthContext";
 import { useTranslation } from "../hooks/useTranslation";
+import type { UserType } from "../types";
 
 type AuthMode = "login" | "signup";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const USER_TYPE_OPTIONS: { value: UserType; icon: typeof UserIcon }[] = [
+  { value: "citizen", icon: UserIcon },
+  { value: "organization", icon: Building2 },
+  { value: "government", icon: Landmark },
+];
 
 export function AuthPage() {
   const navigate = useNavigate();
@@ -16,6 +23,7 @@ export function AuthPage() {
   const { t } = useTranslation();
   const [mode, setMode] = useState<AuthMode>("login");
   const [name, setName] = useState("");
+  const [userType, setUserType] = useState<UserType>("citizen");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -63,7 +71,7 @@ export function AuthPage() {
     setIsSubmitting(true);
     try {
       if (mode === "signup") {
-        await signUpWithEmail(email, password, name);
+        await signUpWithEmail(email, password, name, userType);
         // updateProfile() mutates the auth user object in place, which may
         // not trigger a re-render on its own — force one so the display
         // name is correct wherever currentUser is read next (e.g. Profile).
@@ -155,6 +163,33 @@ export function AuthPage() {
                 className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-3 pr-3.5 pl-10 text-sm text-gray-700 outline-none placeholder:text-gray-400"
               />
             </div>
+          </div>
+        )}
+
+        {mode === "signup" && (
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              {t("auth.whoAreYou")}
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {USER_TYPE_OPTIONS.map(({ value, icon: Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setUserType(value)}
+                  aria-pressed={userType === value}
+                  className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-xs font-semibold transition-colors ${
+                    userType === value
+                      ? "border-brand-600 bg-brand-50 text-brand-700"
+                      : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                  }`}
+                >
+                  <Icon size={18} />
+                  {t(`auth.userTypes.${value}`)}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-xs text-gray-400">{t("auth.userTypeHint")}</p>
           </div>
         )}
 

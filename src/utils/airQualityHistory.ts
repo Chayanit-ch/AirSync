@@ -45,6 +45,24 @@ function buildWeeklyBuckets(now: Date, labels: BucketLabels): Bucket[] {
   return buckets;
 }
 
+/** ~24h window in eight 3-hour buckets, rolling and ending at `now` (not calendar-aligned) — so the rightmost bucket always covers "right now" and can be compared directly against a live current reading. */
+const HOURLY_BUCKET_COUNT = 8;
+const HOURLY_BUCKET_STEP_MS = 3 * 60 * 60 * 1000;
+
+function buildHourlyBuckets(now: Date): Bucket[] {
+  const buckets: Bucket[] = [];
+  for (let ageIndex = HOURLY_BUCKET_COUNT - 1; ageIndex >= 0; ageIndex--) {
+    const bucketTime = new Date(now.getTime() - ageIndex * HOURLY_BUCKET_STEP_MS);
+    buckets.push({
+      label: `${String(bucketTime.getHours()).padStart(2, "0")}:00`,
+      timestamp: bucketTime.toISOString(),
+      aqi: [],
+      pm25: [],
+    });
+  }
+  return buckets;
+}
+
 function buildMonthlyBuckets(now: Date, labels: BucketLabels): Bucket[] {
   const buckets: Bucket[] = [];
   for (let i = 3; i >= 0; i--) {
@@ -62,24 +80,33 @@ function buildMonthlyBuckets(now: Date, labels: BucketLabels): Bucket[] {
  */
 export function bucketAirQualityRecords(
   records: AirQualityRecord[],
-  period: HistoricalPeriod,
+  period: HistoricalPeriod | "hourly",
   labels: BucketLabels,
 ): HistoricalAQIData[] {
   if (records.length === 0) return [];
 
-  const now = startOfDay(new Date());
+  const nowExact = new Date();
+  const now = startOfDay(nowExact);
   const buckets =
-    period === "daily"
-      ? buildDailyBuckets(now, labels)
-      : period === "weekly"
-        ? buildWeeklyBuckets(now, labels)
-        : buildMonthlyBuckets(now, labels);
+    period === "hourly"
+      ? buildHourlyBuckets(nowExact)
+      : period === "daily"
+        ? buildDailyBuckets(now, labels)
+        : period === "weekly"
+          ? buildWeeklyBuckets(now, labels)
+          : buildMonthlyBuckets(now, labels);
 
   for (const record of records) {
     const recordDate = new Date(record.timestamp);
     let index = -1;
 
-    if (period === "daily") {
+    if (period === "hourly") {
+      const ageMs = nowExact.getTime() - recordDate.getTime();
+      if (ageMs >= 0 && ageMs < HOURLY_BUCKET_COUNT * HOURLY_BUCKET_STEP_MS) {
+        const ageIndex = Math.floor(ageMs / HOURLY_BUCKET_STEP_MS);
+        index = HOURLY_BUCKET_COUNT - 1 - ageIndex;
+      }
+    } else if (period === "daily") {
       const day = startOfDay(recordDate).getTime();
       index = buckets.findIndex((b) => startOfDay(new Date(b.timestamp)).getTime() === day);
     } else if (period === "weekly") {

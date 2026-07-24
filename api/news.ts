@@ -37,22 +37,44 @@ const FEEDS = [
 const CACHE_TTL_MS = 45 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 8000;
 
-// PM2.5 / air-quality / pollution keywords — an article matching any of
-// these is classified `category: "pm25"`.
-const PM25_KEYWORDS = [
-  // English
+// Hard gate: an article is only ever shown if it matches at least one of
+// these core air-quality/pollution terms — including a few weather- and
+// economic-angle phrases that are inherently pollution-tied (temperature
+// inversion causing dust buildup, emission regulation, etc). This is the fix
+// for filtering that was previously too broad: weather and economic/health
+// terms below (HEALTH_KEYWORDS) used to admit articles on their own, which
+// let through generic weather forecasts, general economic news, and
+// unrelated health/demographic stories that happened to mention "children"
+// or "elderly". Now those only sub-categorize an article that already
+// cleared this gate — they can never admit one by themselves.
+const CORE_AIR_QUALITY_KEYWORDS = [
+  // English — air pollution topics
   "pm2.5",
   "pm 2.5",
   "air quality",
   "air pollution",
-  "pollution",
   "aqi",
   "haze",
   "smog",
-  "dust",
-  "wildfire",
+  "dust pollution",
+  "particulate matter",
+  "wildfire smoke",
   "carbon emission",
-  // Thai
+  // English — weather factors tied to air quality (not generic weather)
+  "temperature inversion",
+  "atmospheric inversion",
+  "dust accumulation",
+  "pollution accumulation",
+  "stagnant air",
+  // English — economic/policy topics tied to pollution (not general economy)
+  "economic impact of pollution",
+  "cost of air pollution",
+  "pollution regulation",
+  "emission regulation",
+  "emission policy",
+  "industrial pollution",
+  "industrial emissions",
+  // Thai — air pollution topics
   "ฝุ่น",
   "ฝุ่นละออง",
   "ฝุ่นพิษ",
@@ -61,15 +83,23 @@ const PM25_KEYWORDS = [
   "ค่าฝุ่น",
   "หมอกควัน",
   "มลพิษ",
-  "สิ่งแวดล้อม",
   "ไฟป่า",
   "เผาป่า",
-  "การเผา",
+  // Thai — weather factors tied to air quality
+  "สภาพอากาศปิด",
+  "อุณหภูมิผกผัน",
+  "ฝุ่นสะสม",
+  // Thai — economic/policy topics tied to pollution
+  "ผลกระทบทางเศรษฐกิจจากมลพิษ",
+  "นโยบายด้านมลพิษ",
+  "มาตรการควบคุมมลพิษ",
+  "การปล่อยมลพิษ",
 ];
 
-// Health keywords — checked only if an article didn't already match a PM2.5
-// keyword above, so an article that's both (common — "PM2.5 harms health")
-// is classified `"pm25"`, matching this app's core air-quality focus.
+// Health-impact keywords — only checked once an article has already matched
+// CORE_AIR_QUALITY_KEYWORDS above, so these can no longer admit a generic
+// health/demographic story on their own; they just choose the "health" vs
+// "pm25" category label for an article that's already confirmed relevant.
 const HEALTH_KEYWORDS = [
   "สุขภาพ",
   "โรค",
@@ -117,9 +147,9 @@ function matchesAny(text: string, keywords: string[]): boolean {
 }
 
 function classify(text: string): NewsCategory | null {
-  if (matchesAny(text, PM25_KEYWORDS)) return "pm25";
+  if (!matchesAny(text, CORE_AIR_QUALITY_KEYWORDS)) return null;
   if (matchesAny(text, HEALTH_KEYWORDS)) return "health";
-  return null;
+  return "pm25";
 }
 
 async function fetchFeed(

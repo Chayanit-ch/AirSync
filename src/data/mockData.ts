@@ -1,7 +1,6 @@
 import { Timestamp } from "firebase/firestore";
 import type {
   Alert,
-  HistoricalAQIData,
   KnowledgeArticle,
   MonitoringStation,
   PollutionReport,
@@ -117,19 +116,6 @@ export const monitoringStations: MonitoringStation[] = [
 export const heatmapPoints: [number, number, number][] = monitoringStations.map(
   (s) => [s.location.lat, s.location.lng, Math.min(s.currentAqi / 250, 1)],
 );
-
-// -- 24h AQI trend (Home page chart) -------------------------------------------
-
-export const trend24h: HistoricalAQIData[] = [
-  { period: "hourly", label: "00:00", aqi: 188, pm25: 118, timestamp: "2026-07-17T00:00:00+07:00" },
-  { period: "hourly", label: "03:00", aqi: 210, pm25: 132, timestamp: "2026-07-17T03:00:00+07:00" },
-  { period: "hourly", label: "06:00", aqi: 225, pm25: 141, timestamp: "2026-07-17T06:00:00+07:00" },
-  { period: "hourly", label: "09:00", aqi: 190, pm25: 119, timestamp: "2026-07-17T09:00:00+07:00" },
-  { period: "hourly", label: "12:00", aqi: 152, pm25: 96, timestamp: "2026-07-17T12:00:00+07:00" },
-  { period: "hourly", label: "15:00", aqi: 170, pm25: 106, timestamp: "2026-07-17T15:00:00+07:00" },
-  { period: "hourly", label: "18:00", aqi: 212, pm25: 133, timestamp: "2026-07-17T18:00:00+07:00" },
-  { period: "hourly", label: "21:00", aqi: 205, pm25: 129, timestamp: "2026-07-17T21:00:00+07:00" },
-];
 
 // -- Raw air quality history, mirroring the `airQualityRecords` Firestore
 // collection shape (see services/airQuality.ts). This is area-level data,

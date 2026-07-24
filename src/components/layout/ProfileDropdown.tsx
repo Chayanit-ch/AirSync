@@ -6,8 +6,22 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import { logOut } from "../../services/auth";
 import { getLevelFromPoints, getProgressInCurrentLevel } from "../../utils/gamification";
+import { getUserType } from "../../utils/userType";
 import { UserAvatar } from "../common/UserAvatar";
 import { LevelProgressBar } from "../profile/LevelProgressBar";
+import type { UserType } from "../../types";
+
+const LEVEL_LABEL_KEYS: Record<UserType, string> = {
+  citizen: "profile.guardianLevel",
+  organization: "profile.airProtectionOrgLevel",
+  government: "profile.airStewardLevel",
+};
+
+const LEVEL_TEXT_COLOR_CLASSES: Record<UserType, string> = {
+  citizen: "text-brand-600",
+  organization: "text-amber-600",
+  government: "text-indigo-700",
+};
 
 export function ProfileDropdown() {
   const { currentUser, userProfile, isLoggingOutRef } = useAuth();
@@ -50,8 +64,7 @@ export function ProfileDropdown() {
   const displayName = currentUser.displayName || mockUser.displayName;
   const email = currentUser.email || mockUser.email;
   const points = userProfile?.points ?? mockUser.points;
-  const role = userProfile?.role ?? mockUser.role;
-  const isOrg = role === "authority" || role === "admin";
+  const userType = getUserType(userProfile ?? mockUser);
   const level = getLevelFromPoints(points);
   const progress = getProgressInCurrentLevel(points);
 
@@ -97,11 +110,9 @@ export function ProfileDropdown() {
               <p className="truncate font-bold text-gray-900">{displayName}</p>
               <p className="truncate text-xs text-gray-400">{email}</p>
               <p
-                className={`mt-1 truncate text-xs font-semibold ${isOrg ? "text-amber-600" : "text-brand-600"}`}
+                className={`mt-1 truncate text-xs font-semibold ${LEVEL_TEXT_COLOR_CLASSES[userType]}`}
               >
-                {isOrg
-                  ? t("profile.airProtectionOrgLevel", { level })
-                  : t("profile.guardianLevel", { level })}
+                {t(LEVEL_LABEL_KEYS[userType], { level })}
               </p>
               <div className="mt-1.5">
                 <LevelProgressBar progress={progress} size="sm" />

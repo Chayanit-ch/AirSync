@@ -1,10 +1,13 @@
-import type { UserRole } from "../../types";
+import type { UserType } from "../../types";
 import { getBadgeTier } from "../../utils/gamification";
 import { UserAvatar, type UserAvatarProps } from "../common/UserAvatar";
 import {
   AUTHORITY_BADGE_BG_CLASSES,
   AUTHORITY_BADGE_ICONS,
   AUTHORITY_BADGE_RING_CLASSES,
+  GOVERNMENT_BADGE_BG_CLASSES,
+  GOVERNMENT_BADGE_ICONS,
+  GOVERNMENT_BADGE_RING_CLASSES,
   GUARDIAN_BADGE_BG_CLASSES,
   GUARDIAN_BADGE_ICONS,
   GUARDIAN_BADGE_RING_CLASSES,
@@ -12,23 +15,29 @@ import {
 
 interface LevelAvatarProps extends Pick<UserAvatarProps, "photoURL" | "displayName" | "size"> {
   level: number;
-  role: UserRole;
+  userType: UserType;
 }
 
 /**
  * Wraps the existing `UserAvatar` (never replaces it — a real `photoURL`
  * still renders exactly as it always has) with a level-tiered ring and a
- * small corner badge. Authority/admin accounts progress through the same
- * level system as citizens, but with a completely separate gold/orange
- * institutional badge set (see `GuardianBadgeIcons`) so the two account
- * types are immediately visually distinguishable.
+ * small corner badge. All account types progress through the same level
+ * system, but each `userType` gets a completely separate badge set (see
+ * `GuardianBadgeIcons`) so the three are immediately visually
+ * distinguishable. This is purely cosmetic — it has no relationship to
+ * `role`/Firestore permissions.
  */
-export function LevelAvatar({ photoURL, displayName, size = "md", level, role }: LevelAvatarProps) {
-  const isOrg = role === "authority" || role === "admin";
+export function LevelAvatar({ photoURL, displayName, size = "md", level, userType }: LevelAvatarProps) {
   const tier = getBadgeTier(level);
-  const ringClass = isOrg ? AUTHORITY_BADGE_RING_CLASSES[tier] : GUARDIAN_BADGE_RING_CLASSES[tier];
-  const BadgeIcon = isOrg ? AUTHORITY_BADGE_ICONS[tier] : GUARDIAN_BADGE_ICONS[tier];
-  const badgeBgClass = isOrg ? AUTHORITY_BADGE_BG_CLASSES[tier] : GUARDIAN_BADGE_BG_CLASSES[tier];
+  const badgeSet =
+    userType === "government"
+      ? { ring: GOVERNMENT_BADGE_RING_CLASSES, icon: GOVERNMENT_BADGE_ICONS, bg: GOVERNMENT_BADGE_BG_CLASSES }
+      : userType === "organization"
+        ? { ring: AUTHORITY_BADGE_RING_CLASSES, icon: AUTHORITY_BADGE_ICONS, bg: AUTHORITY_BADGE_BG_CLASSES }
+        : { ring: GUARDIAN_BADGE_RING_CLASSES, icon: GUARDIAN_BADGE_ICONS, bg: GUARDIAN_BADGE_BG_CLASSES };
+  const ringClass = badgeSet.ring[tier];
+  const BadgeIcon = badgeSet.icon[tier];
+  const badgeBgClass = badgeSet.bg[tier];
 
   return (
     <div className={`relative mx-auto w-fit rounded-full border-4 ${ringClass}`}>

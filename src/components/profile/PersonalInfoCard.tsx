@@ -1,14 +1,21 @@
 import { CheckCircle2, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { CommuteMethod, RiskGroup } from "../../types";
+import type { CommuteMethod, RiskGroup, UserType } from "../../types";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "../../hooks/useTranslation";
-import { updateDailyContext, updateHealthNotes, updateRiskGroup } from "../../services/userProfile";
+import {
+  updateDailyContext,
+  updateHealthNotes,
+  updateRiskGroup,
+  updateUserType,
+} from "../../services/userProfile";
 import { resolveRiskGroup } from "../../utils/recommendation";
+import { getUserType } from "../../utils/userType";
 import { ToggleSwitch } from "../shared/ToggleSwitch";
 
 const RISK_GROUPS: RiskGroup[] = ["general", "children", "elderly", "respiratory", "outdoor_worker"];
 const COMMUTE_METHODS: CommuteMethod[] = ["walk", "public_transit", "motorcycle", "car", "other"];
+const USER_TYPES: UserType[] = ["citizen", "organization", "government"];
 const SAVED_CONFIRMATION_DURATION_MS = 3000;
 
 /**
@@ -25,6 +32,7 @@ export function PersonalInfoCard() {
   const uid = currentUser?.uid;
   const controlsDisabled = loading || !uid;
 
+  const [userTypeDraft, setUserTypeDraft] = useState<UserType>("citizen");
   const [riskGroupDraft, setRiskGroupDraft] = useState<RiskGroup>("general");
   const [commuteMethodDraft, setCommuteMethodDraft] = useState<CommuteMethod | "">("");
   const [worksOutdoorsDraft, setWorksOutdoorsDraft] = useState(false);
@@ -40,6 +48,7 @@ export function PersonalInfoCard() {
   // background snapshot update) would clobber whatever the user is
   // currently typing/selecting before they've clicked Save.
   useEffect(() => {
+    setUserTypeDraft(getUserType(userProfile));
     setRiskGroupDraft(resolveRiskGroup(userProfile?.riskGroup));
     setCommuteMethodDraft(userProfile?.dailyContext?.commuteMethod ?? "");
     setWorksOutdoorsDraft(userProfile?.dailyContext?.worksOutdoors ?? false);
@@ -61,6 +70,7 @@ export function PersonalInfoCard() {
     setJustSaved(false);
     try {
       await Promise.all([
+        updateUserType(uid, userTypeDraft),
         updateRiskGroup(uid, riskGroupDraft),
         updateDailyContext(uid, {
           commuteMethod: commuteMethodDraft || undefined,
@@ -84,6 +94,27 @@ export function PersonalInfoCard() {
       </div>
 
       <div className="py-3">
+        <label htmlFor="profile-account-type" className="mb-1.5 block text-sm text-gray-700">
+          {t("profile.accountTypeLabel")}
+        </label>
+        <select
+          id="profile-account-type"
+          name="account-type"
+          value={userTypeDraft}
+          disabled={controlsDisabled}
+          onChange={(e) => setUserTypeDraft(e.target.value as UserType)}
+          className="focus:border-brand-500 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none disabled:opacity-60"
+        >
+          {USER_TYPES.map((type) => (
+            <option key={type} value={type}>
+              {t(`auth.userTypes.${type}`)}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-gray-400">{t("profile.accountTypeHint")}</p>
+      </div>
+
+      <div className="border-t border-gray-100 py-3">
         <label htmlFor="profile-risk-group" className="mb-1.5 block text-sm text-gray-700">
           {t("profile.riskGroupLabel")}
         </label>

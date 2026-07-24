@@ -15,6 +15,7 @@ import { useFollowedAreaSummaries } from "../hooks/useFollowedAreaSummaries";
 import { useMyReports } from "../hooks/useMyReports";
 import { useTranslation } from "../hooks/useTranslation";
 import { logOut } from "../services/auth";
+import { getUserType } from "../utils/userType";
 import type { Report } from "../types";
 
 export function ProfilePage() {
@@ -50,7 +51,7 @@ export function ProfilePage() {
           email={currentUser?.email || mockUser.email}
           photoURL={currentUser?.photoURL}
           points={userProfile?.points ?? mockUser.points}
-          role={userProfile?.role ?? mockUser.role}
+          userType={getUserType(userProfile ?? mockUser)}
           onLogout={handleLogout}
         />
         <MissionsCard />

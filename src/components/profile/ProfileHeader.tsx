@@ -1,7 +1,7 @@
 import { BadgeCheck, Pencil } from "lucide-react";
 import { useTranslation } from "../../hooks/useTranslation";
 import { getLevelFromPoints, getProgressInCurrentLevel } from "../../utils/gamification";
-import type { UserRole } from "../../types";
+import type { UserType } from "../../types";
 import { LevelAvatar } from "./LevelAvatar";
 import { LevelProgressBar } from "./LevelProgressBar";
 
@@ -10,27 +10,44 @@ interface ProfileHeaderProps {
   email: string;
   photoURL?: string | null;
   points: number;
-  role: UserRole;
+  userType: UserType;
   onLogout: () => void;
 }
+
+const LEVEL_LABEL_KEYS: Record<UserType, string> = {
+  citizen: "profile.guardianLevel",
+  organization: "profile.airProtectionOrgLevel",
+  government: "profile.airStewardLevel",
+};
+
+const LEVEL_BADGE_BG_CLASSES: Record<UserType, string> = {
+  citizen: "bg-brand-600",
+  organization: "bg-amber-600",
+  government: "bg-indigo-700",
+};
 
 export function ProfileHeader({
   displayName,
   email,
   photoURL,
   points,
-  role,
+  userType,
   onLogout,
 }: ProfileHeaderProps) {
   const { t } = useTranslation();
-  const isOrg = role === "authority" || role === "admin";
   const level = getLevelFromPoints(points);
   const progress = getProgressInCurrentLevel(points);
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-sm">
       <div className="relative mx-auto w-fit">
-        <LevelAvatar photoURL={photoURL} displayName={displayName} size="lg" level={level} role={role} />
+        <LevelAvatar
+          photoURL={photoURL}
+          displayName={displayName}
+          size="lg"
+          level={level}
+          userType={userType}
+        />
         <button
           type="button"
           disabled
@@ -47,14 +64,10 @@ export function ProfileHeader({
 
       <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
         <span
-          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white ${
-            isOrg ? "bg-amber-600" : "bg-brand-600"
-          }`}
+          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white ${LEVEL_BADGE_BG_CLASSES[userType]}`}
         >
           <BadgeCheck size={14} />
-          {isOrg
-            ? t("profile.airProtectionOrgLevel", { level })
-            : t("profile.guardianLevel", { level })}
+          {t(LEVEL_LABEL_KEYS[userType], { level })}
         </span>
       </div>
 
