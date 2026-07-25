@@ -216,13 +216,23 @@ export function MaskEquipment() {
   );
 }
 
-/** Level 2 unlock — a small hand-sanitizer bottle clipped to the belt, well clear of the hands/weapon/shield slots. */
+/**
+ * Level 2 unlock — a small hand-sanitizer bottle clipped to the right hip,
+ * at x=60-69. Deliberately NOT at the torso's horizontal center (x~46-54,
+ * where it used to sit directly over the chest badge, y58-68 — a real bug,
+ * not just a documentation mismatch): x=60-69 clears the badge horizontally,
+ * stays right of the right arm/hand's own x=71-85 (2px gap), well below the
+ * shield's x=1-25 (opposite side of the body entirely), and short of the
+ * sword/gun's x=82+. Safe in every combination, including shield+weapon+
+ * sanitizer all equipped at once.
+ */
 export function SanitizerEquipment() {
   return (
     <g className="origin-center animate-equip-in">
-      <rect x="48" y="90" width="4" height="5" rx="1" fill="#0369a1" />
-      <rect x="46" y="94" width="8" height="12" rx="2" fill="#0ea5e9" />
-      <rect x="47" y="98" width="6" height="4" rx="1" fill="white" opacity="0.85" />
+      <line x1="60" y1="96" x2="70" y2="96" stroke="#374151" strokeWidth="1.2" opacity="0.6" />
+      <rect x="62" y="87" width="5" height="4" rx="1" fill="#0369a1" />
+      <rect x="60" y="90" width="9" height="12" rx="2" fill="#0ea5e9" />
+      <rect x="61" y="95" width="7" height="4" rx="1" fill="white" opacity="0.85" />
     </g>
   );
 }
