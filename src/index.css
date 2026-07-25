@@ -145,6 +145,11 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 .animate-equip-in {
   animation: equip-in 350ms ease-out;
+  /* Same fill-box reasoning as `.animate-character-blink` below — each
+     equipped piece should pop in from its own center, not the whole
+     character's. */
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 @keyframes character-blink {
@@ -160,6 +165,13 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 .animate-character-blink {
   animation: character-blink 4.5s ease-in-out infinite;
+  /* Without an explicit transform-box, SVG elements scale relative to the
+     whole viewBox's origin, not their own bounding box — so `scaleY(0.1)`
+     on this eyes-only group would stretch/shrink from a point down in the
+     torso instead of from the eyes themselves. `fill-box` anchors the
+     transform to the eyes group's own bbox. */
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 @media (prefers-reduced-motion: reduce) {

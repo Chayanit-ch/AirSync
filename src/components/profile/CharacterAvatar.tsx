@@ -10,10 +10,14 @@ import {
   BasicShoesEquipment,
   BootsEquipment,
   CapeEquipment,
+  CapEquipment,
   CharacterFace,
   GlassesEquipment,
   GunEquipment,
+  HelmetEquipment,
+  MaskEquipment,
   PortraitBackdrop,
+  SanitizerEquipment,
   ShieldEquipment,
   SwordEquipment,
   ThemeUniform,
@@ -70,6 +74,10 @@ export function CharacterAvatar({
   const backdropTint = BACKDROP_TINT_BY_TYPE[userType];
   const skinColor = findHex(SKIN_TONE_OPTIONS, config.skinTone, SKIN_TONE_OPTIONS[0].hex);
   const hairColor = findHex(HAIR_COLOR_OPTIONS, config.hairColor, HAIR_COLOR_OPTIONS[0].hex);
+  // The uniform/cape recolor is purely cosmetic on top of the role color —
+  // `accentColor` (the TRUE role color) is always passed to `ThemeUniform`'s
+  // badge separately, so role identity never depends on this override.
+  const bodyColor = config.uniformColor || accentColor;
   // Randomized once per mounted instance so several characters on screen at
   // once (e.g. a leaderboard) don't all blink in perfect unison.
   const [blinkDelay] = useState(() => -(Math.random() * 5));
@@ -85,15 +93,19 @@ export function CharacterAvatar({
     >
       <PortraitBackdrop tint={backdropTint} />
       {/* Cape renders BEHIND the body (before CharacterFace/ThemeUniform) so it drapes from the shoulders instead of sitting on top of the torso. */}
-      {config.equippedCape && <CapeEquipment color={accentColor} />}
+      {config.equippedCape && <CapeEquipment color={bodyColor} />}
       <CharacterFace
         skinColor={skinColor}
         hairColor={hairColor}
         hairStyle={config.hairStyle || DEFAULT_AVATAR_CONFIG.hairStyle}
         blinkDelay={blinkDelay}
       />
-      <ThemeUniform color={accentColor} />
+      <ThemeUniform bodyColor={bodyColor} badgeAccent={accentColor} />
+      {config.equippedHat === "helmet" && <HelmetEquipment color="#6b7280" />}
+      {config.equippedHat === "cap" && <CapEquipment color={accentColor} />}
       {config.hasGlasses && <GlassesEquipment />}
+      {config.equippedMask && <MaskEquipment />}
+      {config.equippedSanitizer && <SanitizerEquipment />}
       {config.equippedWeapon === "sword" && <SwordEquipment color="#78716c" />}
       {config.equippedWeapon === "gun" && <GunEquipment color="#374151" />}
       {config.equippedShield && <ShieldEquipment color={accentColor} />}

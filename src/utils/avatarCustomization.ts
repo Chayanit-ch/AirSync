@@ -18,6 +18,10 @@ export const SKIN_TONE_OPTIONS: PresetOption[] = [
 export const HAIR_STYLE_OPTIONS: { value: string }[] = [
   { value: "short" },
   { value: "long" },
+  { value: "bob" },
+  { value: "ponytail" },
+  { value: "curly" },
+  { value: "sideShaved" },
   { value: "bald" },
 ];
 
@@ -29,6 +33,20 @@ export const HAIR_COLOR_OPTIONS: PresetOption[] = [
   { value: "gray", hex: "#9ca3af" },
 ];
 
+export const HAT_OPTIONS: { value: "helmet" | "cap" }[] = [
+  { value: "helmet" },
+  { value: "cap" },
+];
+
+/** `null`/missing means "use the role's default color" — see `AvatarConfig.uniformColor`. */
+export const UNIFORM_COLOR_OPTIONS: PresetOption[] = [
+  { value: "charcoal", hex: "#374151" },
+  { value: "crimson", hex: "#991b1b" },
+  { value: "navy", hex: "#1e3a8a" },
+  { value: "teal", hex: "#0f766e" },
+  { value: "violet", hex: "#6d28d9" },
+];
+
 export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
   skinTone: SKIN_TONE_OPTIONS[0].value,
   hairStyle: HAIR_STYLE_OPTIONS[0].value,
@@ -38,6 +56,10 @@ export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
   equippedShield: false,
   equippedCape: false,
   equippedShoes: null,
+  equippedMask: false,
+  equippedSanitizer: false,
+  equippedHat: null,
+  uniformColor: null,
 };
 
 /**
@@ -57,6 +79,10 @@ export interface UnlockedSlots {
   shield: boolean;
   cape: boolean;
   bootsShoes: boolean;
+  mask: boolean;
+  sanitizer: boolean;
+  hat: boolean;
+  uniformColor: boolean;
 }
 
 /**
@@ -65,7 +91,9 @@ export interface UnlockedSlots {
  * adjusted" (per spec) stays a one-line change. Takes an already-computed
  * `level` (from `getLevelFromPoints()`) rather than points, so this file
  * never recalculates level itself. Face options (skin/hair style/hair
- * color) have no threshold — available from level 1 per spec.
+ * color) have no threshold — available from level 1 per spec. `level` is
+ * uncapped (see `getLevelFromPoints`'s doc comment), so `uniformColor` can
+ * sit above the level-5 badge-tier ceiling as a genuine prestige unlock.
  *
  * This is consulted ONLY by the customization screen to gate new
  * selections — never by `CharacterAvatar`, which always renders whatever
@@ -80,5 +108,9 @@ export function getUnlockedSlots(level: number): UnlockedSlots {
     shield: level >= 4,
     cape: level >= 5,
     bootsShoes: level >= 5,
+    mask: level >= 2,
+    sanitizer: level >= 2,
+    hat: level >= 3,
+    uniformColor: level >= 6,
   };
 }

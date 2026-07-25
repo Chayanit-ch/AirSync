@@ -6,7 +6,9 @@ import { updateUserAvatarConfig } from "../../services/userProfile";
 import {
   HAIR_COLOR_OPTIONS,
   HAIR_STYLE_OPTIONS,
+  HAT_OPTIONS,
   SKIN_TONE_OPTIONS,
+  UNIFORM_COLOR_OPTIONS,
   getUnlockedSlots,
 } from "../../utils/avatarCustomization";
 import { CharacterAvatar } from "./CharacterAvatar";
@@ -204,6 +206,67 @@ export function CharacterCustomizationModal({
           </div>
 
           <div>
+            <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.mask")}</p>
+            <div className="flex flex-wrap gap-2">
+              <OptionButton
+                label={t("profile.avatar.on")}
+                ariaLabel={`${t("profile.avatar.mask")}: ${t("profile.avatar.on")}`}
+                isSelected={!!draft.equippedMask}
+                isUnlocked={unlocked.mask}
+                onClick={() => setDraft((d) => ({ ...d, equippedMask: true }))}
+              />
+              <OptionButton
+                label={t("profile.avatar.off")}
+                ariaLabel={`${t("profile.avatar.mask")}: ${t("profile.avatar.off")}`}
+                isSelected={!draft.equippedMask}
+                isUnlocked
+                onClick={() => setDraft((d) => ({ ...d, equippedMask: false }))}
+              />
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.sanitizer")}</p>
+            <div className="flex flex-wrap gap-2">
+              <OptionButton
+                label={t("profile.avatar.on")}
+                ariaLabel={`${t("profile.avatar.sanitizer")}: ${t("profile.avatar.on")}`}
+                isSelected={!!draft.equippedSanitizer}
+                isUnlocked={unlocked.sanitizer}
+                onClick={() => setDraft((d) => ({ ...d, equippedSanitizer: true }))}
+              />
+              <OptionButton
+                label={t("profile.avatar.off")}
+                ariaLabel={`${t("profile.avatar.sanitizer")}: ${t("profile.avatar.off")}`}
+                isSelected={!draft.equippedSanitizer}
+                isUnlocked
+                onClick={() => setDraft((d) => ({ ...d, equippedSanitizer: false }))}
+              />
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.hat")}</p>
+            <div className="flex flex-wrap gap-2">
+              {HAT_OPTIONS.map((opt) => (
+                <OptionButton
+                  key={opt.value}
+                  label={t(`profile.avatar.hats.${opt.value}`)}
+                  isSelected={draft.equippedHat === opt.value}
+                  isUnlocked={unlocked.hat}
+                  onClick={() => setDraft((d) => ({ ...d, equippedHat: opt.value }))}
+                />
+              ))}
+              <OptionButton
+                label={t("profile.avatar.hats.none")}
+                isSelected={!draft.equippedHat}
+                isUnlocked
+                onClick={() => setDraft((d) => ({ ...d, equippedHat: null }))}
+              />
+            </div>
+          </div>
+
+          <div>
             <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.weapon")}</p>
             <div className="flex flex-wrap gap-2">
               <OptionButton
@@ -288,6 +351,28 @@ export function CharacterCustomizationModal({
                 isUnlocked
                 onClick={() => setDraft((d) => ({ ...d, equippedShoes: null }))}
               />
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.uniformColor")}</p>
+            <div className="flex flex-wrap gap-2">
+              <OptionButton
+                label={t("profile.avatar.uniformColorDefault")}
+                isSelected={!draft.uniformColor}
+                isUnlocked
+                onClick={() => setDraft((d) => ({ ...d, uniformColor: null }))}
+              />
+              {UNIFORM_COLOR_OPTIONS.map((opt) => (
+                <OptionButton
+                  key={opt.value}
+                  label={t(`profile.avatar.uniformColors.${opt.value}`)}
+                  swatch={opt.hex}
+                  isSelected={draft.uniformColor === opt.hex}
+                  isUnlocked={unlocked.uniformColor}
+                  onClick={() => setDraft((d) => ({ ...d, uniformColor: opt.hex }))}
+                />
+              ))}
             </div>
           </div>
         </div>

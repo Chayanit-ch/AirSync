@@ -324,6 +324,14 @@ export interface AvatarConfig {
   equippedShield: boolean;
   equippedCape: boolean;
   equippedShoes: "basic" | "boots" | null;
+  /** Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `false`. */
+  equippedMask?: boolean;
+  /** Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `false`. */
+  equippedSanitizer?: boolean;
+  /** Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `null`. */
+  equippedHat?: "helmet" | "cap" | null;
+  /** Recolors the uniform + cape only — the chest badge always renders in the true role color (see `ThemeUniform`) so identity stays readable regardless. `null`/missing means "use the role's default color". */
+  uniformColor?: string | null;
 }
 
 export interface UserProfile {
