@@ -84,6 +84,8 @@ export function CharacterAvatar({
       className={`${animate ? "animate-character-float" : ""} ${className ?? ""}`}
     >
       <PortraitBackdrop tint={backdropTint} />
+      {/* Cape renders BEHIND the body (before CharacterFace/ThemeUniform) so it drapes from the shoulders instead of sitting on top of the torso. */}
+      {config.equippedCape && <CapeEquipment color={accentColor} />}
       <CharacterFace
         skinColor={skinColor}
         hairColor={hairColor}
@@ -95,7 +97,6 @@ export function CharacterAvatar({
       {config.equippedWeapon === "sword" && <SwordEquipment color="#78716c" />}
       {config.equippedWeapon === "gun" && <GunEquipment color="#374151" />}
       {config.equippedShield && <ShieldEquipment color={accentColor} />}
-      {config.equippedCape && <CapeEquipment color={accentColor} />}
       {config.equippedShoes === "basic" && <BasicShoesEquipment color="#374151" />}
       {config.equippedShoes === "boots" && <BootsEquipment color={accentColor} />}
     </svg>
