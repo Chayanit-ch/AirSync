@@ -221,6 +221,7 @@ export const th = {
     statusHistoryTitle: "ประวัติการดำเนินการ",
     statusHistoryUpdatedByAuthority: "อัปเดตโดยเจ้าหน้าที่",
     statusHistoryUpdatedByOrganization: "อัปเดตโดย {name}",
+    aiAnalysisTitle: "การวิเคราะห์จาก AI",
   },
   leaderboard: {
     pageTitle: "อันดับองค์กร",

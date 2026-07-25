@@ -173,6 +173,8 @@ export interface Report {
   customTypeDescription?: string | null;
   description: string;
   imageUrls: string[];
+  /** Set by `analyzeReportImageBestEffort` shortly after creation, only when the report has at least one image and the Gemini call succeeds — absent (never an empty string) otherwise, so the UI can gate purely on truthiness. */
+  aiImageAnalysis?: string;
   latitude: number;
   longitude: number;
   locationLabel: string;

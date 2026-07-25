@@ -55,9 +55,11 @@ export interface CreateReportInput {
  * `auth.currentUser` here — never accepted from the caller — so a spoofed
  * value can't be passed in, matching the Firestore rule that requires
  * `request.resource.data.reportedBy == request.auth.uid`. `status` is always
- * "pending".
+ * "pending". Returns the new document's ID so the caller can kick off the
+ * best-effort image analysis (see `analyzeReportImageBestEffort`) against
+ * the right doc.
  */
-export async function createReport(data: CreateReportInput): Promise<void> {
+export async function createReport(data: CreateReportInput): Promise<string> {
   const uid = auth.currentUser?.uid;
   if (!uid) {
     // Internal-only guard — ReportForm already disables submission while
@@ -66,7 +68,7 @@ export async function createReport(data: CreateReportInput): Promise<void> {
     throw new Error("Report submission requires a signed-in user");
   }
 
-  await addDoc(collection(db, "reports"), {
+  const docRef = await addDoc(collection(db, "reports"), {
     reportedBy: uid,
     type: data.type,
     // Firestore rejects `undefined` field values outright, so this is always
@@ -86,6 +88,61 @@ export async function createReport(data: CreateReportInput): Promise<void> {
   // Best-effort: the report itself is already saved above, so a gamification
   // hiccup here must never surface as a failed submission to the user.
   await awardMissionBestEffort(uid, REPORT_POLLUTION_MISSION);
+
+  return docRef.id;
+}
+
+interface AnalyzeReportImageParams {
+  imageUrl: string;
+  description: string;
+  reportType: ReportType;
+  customTypeDescription?: string;
+  language: "th" | "en";
+}
+
+/**
+ * Fire-and-forget: analyzes a report's (first) attached photo via Gemini
+ * and writes the result to `reports/{reportId}.aiImageAnalysis` — a
+ * single-field `updateDoc()`, never a whole-document overwrite. Callers
+ * must NOT `await` this from a user-facing action (see `ReportForm`) — the
+ * whole point is that report submission doesn't wait on it. Any failure
+ * (Gemini error, timeout, an auth/permission problem on the follow-up
+ * write) is logged loudly and otherwise swallowed: the field is simply
+ * never written, which is also exactly what makes `ReportDetailModal`'s "AI
+ * Analysis" section correctly stay hidden — see the note on
+ * `Report.aiImageAnalysis`.
+ */
+export async function analyzeReportImageBestEffort(
+  reportId: string,
+  params: AnalyzeReportImageParams,
+): Promise<void> {
+  try {
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) throw new Error("No signed-in user available for image analysis request");
+
+    const response = await fetch("/api/gemini-vision", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+      body: JSON.stringify({
+        imageUrl: params.imageUrl,
+        description: params.description,
+        reportType: params.reportType,
+        customTypeDescription: params.customTypeDescription,
+        language: params.language,
+      }),
+    });
+    const data = (await response.json()) as { ok: boolean; analysis?: string; error?: string };
+    if (!data.ok || !data.analysis) {
+      throw new Error(data.error ?? `Image analysis request failed with HTTP ${response.status}`);
+    }
+
+    await updateDoc(doc(db, "reports", reportId), {
+      aiImageAnalysis: data.analysis,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.warn(`AI image analysis unavailable for report ${reportId}:`, error);
+  }
 }
 
 /**

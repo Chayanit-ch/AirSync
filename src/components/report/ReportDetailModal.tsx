@@ -1,4 +1,4 @@
-import { History, MapPin, X } from "lucide-react";
+import { History, MapPin, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { OrganizationDirectoryEntry, Report, StatusHistoryEntry } from "../../types";
 import { getReportTypeLabel, subscribeToStatusHistory, updateReportStatus } from "../../services/reports";
@@ -163,6 +163,16 @@ export function ReportDetailModal({ report, onClose }: ReportDetailModalProps) {
                 />
               ))}
             </div>
+          </div>
+        )}
+
+        {report.aiImageAnalysis && (
+          <div className="mb-4 rounded-xl border border-brand-100 bg-brand-50 p-3">
+            <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-brand-700">
+              <Sparkles size={13} className="shrink-0" />
+              {t("report.aiAnalysisTitle")}
+            </p>
+            <p className="text-sm text-gray-700">{report.aiImageAnalysis}</p>
           </div>
         )}
 

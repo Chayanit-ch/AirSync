@@ -2,7 +2,7 @@ import { CheckCircle2, ChevronDown, CircleAlert, LocateFixed, Loader2 } from "lu
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "../../hooks/useTranslation";
-import { createReport } from "../../services/reports";
+import { analyzeReportImageBestEffort, createReport } from "../../services/reports";
 import { uploadImage } from "../../services/cloudinary";
 import type { ReportType } from "../../types";
 import { ImageUploader, type SelectedImage } from "./ImageUploader";
@@ -18,7 +18,7 @@ type FormErrors = Partial<
 
 export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
   const { currentUser, loading: authLoading } = useAuth();
-  const { t, dict } = useTranslation();
+  const { t, dict, language } = useTranslation();
 
   const [type, setType] = useState<ReportType | "">("");
   const [customTypeDescription, setCustomTypeDescription] = useState("");
@@ -109,7 +109,7 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
 
     setIsSubmitting(true);
     try {
-      await createReport({
+      const reportId = await createReport({
         type: type as ReportType,
         customTypeDescription: type === "other" ? customTypeDescription.trim() : undefined,
         description: description.trim(),
@@ -119,6 +119,20 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
         contactEmail: email.trim() || null,
         imageUrls,
       });
+
+      // Deliberately NOT awaited — the report is already saved above, and
+      // the whole point of this being async is that submission never waits
+      // on Gemini. Only ever fires once per report, and only when there's
+      // an image (see the "Budget" requirement on analyzeReportImageBestEffort).
+      if (imageUrls.length > 0) {
+        void analyzeReportImageBestEffort(reportId, {
+          imageUrl: imageUrls[0],
+          description: description.trim(),
+          reportType: type as ReportType,
+          customTypeDescription: type === "other" ? customTypeDescription.trim() : undefined,
+          language,
+        });
+      }
 
       setType("");
       setCustomTypeDescription("");

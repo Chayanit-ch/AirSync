@@ -224,6 +224,7 @@ export const en: typeof th = {
     statusHistoryTitle: "Status history",
     statusHistoryUpdatedByAuthority: "Updated by an authority account",
     statusHistoryUpdatedByOrganization: "Updated by {name}",
+    aiAnalysisTitle: "AI Analysis",
   },
   leaderboard: {
     pageTitle: "Organization Leaderboard",
