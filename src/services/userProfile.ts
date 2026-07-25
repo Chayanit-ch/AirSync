@@ -14,7 +14,7 @@ import { db } from "../firebase";
 import { SET_RISK_GROUP_MISSION } from "../data/missions";
 import { awardMissionBestEffort } from "./missions";
 import { syncOrganizationDirectoryEntry } from "./organizationDirectory";
-import type { DailyContext, NotificationSettings, RiskGroup, UserProfile, UserType } from "../types";
+import type { AvatarConfig, DailyContext, NotificationSettings, RiskGroup, UserProfile, UserType } from "../types";
 
 /**
  * SAFE-WRITE RULES for `users/{uid}` (read this before adding a new function
@@ -214,6 +214,22 @@ export async function updateDailyContext(
 export async function updateHealthNotes(uid: string, healthNotes: string): Promise<void> {
   await updateDoc(userDocRef(uid), {
     healthNotes,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Overwrites the whole `avatarConfig` field with the user's latest
+ * character-customization choices. Writing the whole object in one go (not
+ * dot-notation per sub-field) is safe here — `avatarConfig` is a single
+ * Firestore field, so this never touches any sibling field on the document,
+ * and it's always the account owner writing their own draft in one
+ * deliberate Save action (see `CharacterCustomizationModal`), never a
+ * read-modify-write race between devices the way `followedAreaIds` is.
+ */
+export async function updateUserAvatarConfig(uid: string, avatarConfig: AvatarConfig): Promise<void> {
+  await updateDoc(userDocRef(uid), {
+    avatarConfig,
     updatedAt: serverTimestamp(),
   });
 }

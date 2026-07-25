@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfileHeader, LEVEL_LABEL_KEYS } from "../components/profile/ProfileHeader";
 import { CharacterAvatar } from "../components/profile/CharacterAvatar";
+import { CharacterCustomizationModal } from "../components/profile/CharacterCustomizationModal";
 import { MissionsCard } from "../components/profile/MissionsCard";
 import { PM25StatsCard } from "../components/profile/PM25StatsCard";
 import { ReportHistorySection } from "../components/profile/ReportHistorySection";
@@ -19,6 +20,7 @@ import { logOut } from "../services/auth";
 import { syncOrganizationDirectoryEntry } from "../services/organizationDirectory";
 import { getLevelFromPoints } from "../utils/gamification";
 import { getUserType } from "../utils/userType";
+import { resolveAvatarConfig } from "../utils/avatarCustomization";
 import type { Report } from "../types";
 
 export function ProfilePage() {
@@ -27,6 +29,7 @@ export function ProfilePage() {
   const navigate = useNavigate();
   const { stations, allStations, isLoading: stationsLoading } = useAllStations();
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [isCustomizingCharacter, setIsCustomizingCharacter] = useState(false);
 
   async function handleLogout() {
     isLoggingOutRef.current = true;
@@ -79,11 +82,18 @@ export function ProfilePage() {
             })}
           </p>
           <CharacterAvatar
+            avatarConfig={userProfile?.avatarConfig}
             userType={getUserType(userProfile ?? mockUser)}
-            level={getLevelFromPoints(userProfile?.points ?? mockUser.points)}
             animate
             className="mx-auto"
           />
+          <button
+            type="button"
+            onClick={() => setIsCustomizingCharacter(true)}
+            className="bg-brand-600 hover:bg-brand-700 mt-3 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-colors"
+          >
+            {t("profile.avatar.customizeButton")}
+          </button>
         </div>
         <MissionsCard />
         <AlertPreferencesCard stations={stations} stationCatalog={allStations} />
@@ -115,6 +125,14 @@ export function ProfilePage() {
       </div>
 
       <ReportDetailModal report={selectedReport} onClose={() => setSelectedReport(null)} />
+      <CharacterCustomizationModal
+        open={isCustomizingCharacter}
+        uid={currentUser?.uid}
+        userType={getUserType(userProfile ?? mockUser)}
+        level={getLevelFromPoints(userProfile?.points ?? mockUser.points)}
+        currentConfig={resolveAvatarConfig(userProfile?.avatarConfig)}
+        onClose={() => setIsCustomizingCharacter(false)}
+      />
     </div>
   );
 }

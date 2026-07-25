@@ -1,62 +1,75 @@
 import { useState } from "react";
-import type { UserType } from "../../types";
-import { getBadgeTier } from "../../utils/gamification";
+import type { AvatarConfig, UserType } from "../../types";
 import {
-  ArmorEquipment,
+  DEFAULT_AVATAR_CONFIG,
+  HAIR_COLOR_OPTIONS,
+  SKIN_TONE_OPTIONS,
+  resolveAvatarConfig,
+} from "../../utils/avatarCustomization";
+import {
+  BasicShoesEquipment,
+  BootsEquipment,
   CapeEquipment,
-  CitizenBody,
-  GovernmentBody,
-  MaskEquipment,
-  OrganizationBody,
+  CharacterFace,
+  GlassesEquipment,
+  GunEquipment,
+  PortraitBackdrop,
   ShieldEquipment,
+  SwordEquipment,
+  ThemeUniform,
 } from "./characterParts";
 
 interface CharacterAvatarProps {
+  /** Possibly-`undefined` straight from `userProfile.avatarConfig` — resolved internally, so every caller can pass it through as-is. */
+  avatarConfig: AvatarConfig | undefined | null;
   userType: UserType;
-  level: number;
   size?: number;
-  /** Off for compact contexts (e.g. a leaderboard row) where a floating/blinking character would be distracting at small size. */
   animate?: boolean;
   className?: string;
 }
 
-const BODY_BY_TYPE: Record<UserType, typeof CitizenBody> = {
-  citizen: CitizenBody,
-  organization: OrganizationBody,
-  government: GovernmentBody,
-};
-
-/** A darker/contrasting shade of each theme's palette — the equipment set is drawn once and recolored per theme through this, rather than redrawn per `userType`. */
+/** A darker/contrasting shade of each theme's palette, reused for both the always-on uniform/badge and for equipment pieces (so gear visually matches the wearer's role). */
 const ACCENT_COLOR_BY_TYPE: Record<UserType, string> = {
   citizen: "#047857",
   organization: "#c2410c",
   government: "#1e1b4b",
 };
 
+const BACKDROP_TINT_BY_TYPE: Record<UserType, string> = {
+  citizen: "#a7f3d0",
+  organization: "#fed7aa",
+  government: "#c7d2fe",
+};
+
+function findHex(options: { value: string; hex: string }[], value: string, fallback: string): string {
+  return options.find((o) => o.value === value)?.hex ?? fallback;
+}
+
 const VIEWBOX_WIDTH = 100;
 const VIEWBOX_HEIGHT = 160;
 
 /**
- * Full-body layered-SVG character — a second, richer representation of
- * `userType` + level alongside the existing corner-badge `LevelAvatar`
- * (never a replacement for it, and never a replacement for the real-photo
- * `UserAvatar` used anywhere identity matters). Equipment stacks
- * cumulatively as `getBadgeTier(level)` rises — a level-3 character always
- * shows the mask AND the armor, never just the latest piece. See
- * `characterParts.tsx` for the actual shapes and `index.css` for the
- * `animate-character-float`/`animate-equip-in`/`animate-character-blink`
- * keyframes this renders with.
+ * Full-body character, portrait-framed, built entirely from the user's own
+ * saved `avatarConfig` — this component never looks at level/points itself
+ * and never auto-equips anything. That's deliberate: it's what makes an
+ * already-equipped item permanent even if points/level later drop (see
+ * `getUnlockedSlots`'s doc comment for the split between "unlocked" and
+ * "equipped"). `userType` only drives the always-on uniform color + badge,
+ * independent of customization, so role stays identifiable regardless of
+ * how (or whether) the user has customized their face.
  */
 export function CharacterAvatar({
+  avatarConfig,
   userType,
-  level,
   size = 120,
   animate = true,
   className,
 }: CharacterAvatarProps) {
-  const tier = getBadgeTier(level);
-  const BodyComponent = BODY_BY_TYPE[userType];
+  const config = resolveAvatarConfig(avatarConfig);
   const accentColor = ACCENT_COLOR_BY_TYPE[userType];
+  const backdropTint = BACKDROP_TINT_BY_TYPE[userType];
+  const skinColor = findHex(SKIN_TONE_OPTIONS, config.skinTone, SKIN_TONE_OPTIONS[0].hex);
+  const hairColor = findHex(HAIR_COLOR_OPTIONS, config.hairColor, HAIR_COLOR_OPTIONS[0].hex);
   // Randomized once per mounted instance so several characters on screen at
   // once (e.g. a leaderboard) don't all blink in perfect unison.
   const [blinkDelay] = useState(() => -(Math.random() * 5));
@@ -70,11 +83,21 @@ export function CharacterAvatar({
       aria-hidden="true"
       className={`${animate ? "animate-character-float" : ""} ${className ?? ""}`}
     >
-      <BodyComponent blinkDelay={blinkDelay} />
-      {tier >= 2 && <MaskEquipment accentColor={accentColor} />}
-      {tier >= 3 && <ArmorEquipment accentColor={accentColor} />}
-      {tier >= 4 && <ShieldEquipment accentColor={accentColor} />}
-      {tier >= 5 && <CapeEquipment accentColor={accentColor} />}
+      <PortraitBackdrop tint={backdropTint} />
+      <CharacterFace
+        skinColor={skinColor}
+        hairColor={hairColor}
+        hairStyle={config.hairStyle || DEFAULT_AVATAR_CONFIG.hairStyle}
+        blinkDelay={blinkDelay}
+      />
+      <ThemeUniform color={accentColor} />
+      {config.hasGlasses && <GlassesEquipment />}
+      {config.equippedWeapon === "sword" && <SwordEquipment color="#78716c" />}
+      {config.equippedWeapon === "gun" && <GunEquipment color="#374151" />}
+      {config.equippedShield && <ShieldEquipment color={accentColor} />}
+      {config.equippedCape && <CapeEquipment color={accentColor} />}
+      {config.equippedShoes === "basic" && <BasicShoesEquipment color="#374151" />}
+      {config.equippedShoes === "boots" && <BootsEquipment color={accentColor} />}
     </svg>
   );
 }

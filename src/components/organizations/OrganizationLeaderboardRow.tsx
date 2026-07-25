@@ -35,8 +35,15 @@ export function OrganizationLeaderboardRow({
         level={level}
         userType="organization"
       />
-      {/* Alongside the real-identity avatar above, never replacing it — small and unanimated so a whole list of these stays calm. */}
-      <CharacterAvatar userType="organization" level={level} size={40} animate={false} />
+      {/*
+        Alongside the real-identity avatar above, never replacing it — small
+        and unanimated so a whole list of these stays calm. `avatarConfig`
+        isn't mirrored into `organizationProfiles` (would need denormalizing
+        every viewer's own customization into the public directory doc,
+        out of scope here) — `undefined` renders the theme-correct default
+        character rather than nothing.
+      */}
+      <CharacterAvatar avatarConfig={undefined} userType="organization" size={40} animate={false} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-gray-900">{organization.displayName}</p>
         {summary.count > 0 ? (

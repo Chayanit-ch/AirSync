@@ -305,6 +305,27 @@ export interface NotificationSettings {
  * queried fresh from `airQualityRecords` (see services/airQuality.ts) so
  * there's no personal array here that a stale write could ever clobber.
  */
+/**
+ * A user's own explicit character customization choices — see
+ * `utils/avatarCustomization.ts` for the preset option lists, defaults, and
+ * the level-based unlock logic. Reaching a level never auto-populates this;
+ * it's only ever written by the user's own Save action in
+ * `CharacterCustomizationModal` (see `updateUserAvatarConfig`), and
+ * `CharacterAvatar` renders exactly what's here — no re-derivation from
+ * level at render time, so an already-equipped item is never revoked just
+ * because points later dropped.
+ */
+export interface AvatarConfig {
+  skinTone: string;
+  hairStyle: string;
+  hairColor: string;
+  hasGlasses: boolean;
+  equippedWeapon?: "sword" | "gun" | null;
+  equippedShield: boolean;
+  equippedCape: boolean;
+  equippedShoes: "basic" | "boots" | null;
+}
+
 export interface UserProfile {
   uid: string;
   displayName: string;
@@ -337,6 +358,8 @@ export interface UserProfile {
    * `updateHealthNotes`.
    */
   healthNotes?: string;
+  /** Optional — missing/undefined means the user hasn't customized their character yet; treat as `DEFAULT_AVATAR_CONFIG`, see `resolveAvatarConfig`. */
+  avatarConfig?: AvatarConfig;
   /** Cumulative gamification points, only ever changed via `increment()` — see `services/missions.ts`. Guardian level is derived from this at render time (see `utils/gamification.ts`), never stored separately. */
   points: number;
   createdAt: Timestamp;
