@@ -192,16 +192,27 @@ export interface LiveAirQualityResult {
 }
 
 /**
- * Fire-and-forget upsert of freshly-fetched live records into Firestore's
- * `airQualityRecords` collection, so history accumulates naturally as real
- * users open the app — deliberately no cron job / scheduled function (not
- * available on Vercel's free tier without extra setup). Deterministic
- * per-hour doc IDs make repeated writes a natural upsert instead of piling
- * up duplicates.
+ * Upserts only the given stations' records into Firestore's
+ * `airQualityRecords` collection — callers pass an explicit allow-list
+ * (`allowedStationIds`) so this can never again turn into a blanket
+ * ~170-document write on every fetch (see the 2026-07-25 quota incident:
+ * this used to upsert every record it was given, unconditionally, and got
+ * called from every page mount plus a 5-minute poll). Deterministic
+ * per-hour doc IDs prevent duplicate documents from piling up, but note
+ * that does NOT reduce the write-quota cost of a redundant call — Firestore
+ * bills/limits per `setDoc()` call regardless of whether the data actually
+ * changed, so callers are still responsible for not calling this more often
+ * than the data could plausibly have changed (see `getLiveAirQuality`'s
+ * cache and `useUpsertFollowedStationHistory`/`MapEventsHandler`'s
+ * same-set skip).
  */
-async function upsertLiveRecords(records: AirQualityRecord[]): Promise<void> {
+async function upsertLiveRecords(
+  records: AirQualityRecord[],
+  allowedStationIds: Set<string>,
+): Promise<void> {
+  const toWrite = records.filter((record) => allowedStationIds.has(record.areaId));
   await Promise.all(
-    records.map(async (record) => {
+    toWrite.map(async (record) => {
       const hourKey = record.timestamp.slice(0, 13); // e.g. "2026-07-18T21"
       const docId = `${record.areaId}_${hourKey}`;
       try {
@@ -214,23 +225,45 @@ async function upsertLiveRecords(records: AirQualityRecord[]): Promise<void> {
 }
 
 /**
- * De-dupes concurrent `getLiveAirQuality()` calls into one in-flight request.
- * `useAllStations()` is called independently by every page/section that
- * needs station data (Map, Home's hero card, Home's followed-areas section,
- * Profile), each with its own `useEffect` — without this, a page that mounts
- * several of them at once (e.g. Home) fired that many *separate* `/api/air4thai`
- * requests simultaneously. Cleared once the request settles (success or
- * failure) so the next mount/navigation still gets a fresh fetch — this only
- * collapses calls that were already in flight together, it's not a
- * long-lived cache.
+ * Upserts history for exactly the given station IDs (a user's followed
+ * areas, or whatever's in the Map's current viewport) — the only path that
+ * ever writes to `airQualityRecords` from the client. No-op for signed-out
+ * visitors (Firestore rules reject unauthenticated writes here anyway) and
+ * for an empty list, so callers don't need to guard either case themselves.
+ * Reuses `getLiveAirQuality()`'s short cache, so calling this from several
+ * places in quick succession (e.g. Home's followed-areas hook and the Map
+ * page both mounting) doesn't force an extra `/api/air4thai` round-trip.
+ */
+export async function upsertStationHistory(stationIds: string[]): Promise<void> {
+  if (!auth.currentUser || stationIds.length === 0) return;
+  const { records } = await getLiveAirQuality();
+  await upsertLiveRecords(records, new Set(stationIds));
+}
+
+/**
+ * De-dupes concurrent `getLiveAirQuality()` calls into one in-flight request,
+ * AND short-circuits to the last result for `LIVE_CACHE_TTL_MS` after it
+ * settles. `useAllStations()` is called independently by every page/section
+ * that needs station data (Map, Home's hero card, Home's followed-areas
+ * section, Profile) plus the alerts banner's 5-minute poll — without the
+ * in-flight dedup, a page that mounts several of them at once (e.g. Home)
+ * fired that many *separate* `/api/air4thai` requests simultaneously; without
+ * the short cache, switching between pages a few times a minute re-fetched
+ * (and, before 2026-07-25, re-upserted ~170 documents) every single time even
+ * though Air4Thai's own data hadn't meaningfully changed.
  */
 let inFlightLiveAirQuality: Promise<LiveAirQualityResult> | null = null;
+const LIVE_CACHE_TTL_MS = 2 * 60 * 1000;
+let cachedLiveAirQuality: { result: LiveAirQualityResult; fetchedAtMs: number } | null = null;
 
 /**
  * Live, current-moment air quality nationwide — for the Home hero card
  * (nearest-station search), the Map's station markers, and Profile's station
- * search, always fetched fresh through the `/api/air4thai` Vercel proxy,
- * never Firestore (that's what `getAreaAirQualityHistory` above is for).
+ * search, fetched through the `/api/air4thai` Vercel proxy (cached briefly
+ * client-side, see above), never Firestore (that's what
+ * `getAreaAirQualityHistory` above is for). This function itself never
+ * writes anything — see `upsertStationHistory` for the one explicit, scoped
+ * write path.
  *
  * Unlike the old 5-hard-coded-areas version, this returns whatever Air4Thai
  * actually has fresh data for right now (real stations only) — callers that
@@ -241,10 +274,18 @@ let inFlightLiveAirQuality: Promise<LiveAirQualityResult> | null = null;
  * `console.warn` — never silently.
  */
 export function getLiveAirQuality(): Promise<LiveAirQualityResult> {
+  if (cachedLiveAirQuality && Date.now() - cachedLiveAirQuality.fetchedAtMs < LIVE_CACHE_TTL_MS) {
+    return Promise.resolve(cachedLiveAirQuality.result);
+  }
   if (inFlightLiveAirQuality) return inFlightLiveAirQuality;
-  inFlightLiveAirQuality = fetchLiveAirQuality().finally(() => {
-    inFlightLiveAirQuality = null;
-  });
+  inFlightLiveAirQuality = fetchLiveAirQuality()
+    .then((result) => {
+      cachedLiveAirQuality = { result, fetchedAtMs: Date.now() };
+      return result;
+    })
+    .finally(() => {
+      inFlightLiveAirQuality = null;
+    });
   return inFlightLiveAirQuality;
 }
 
@@ -274,16 +315,11 @@ async function fetchLiveAirQuality(): Promise<LiveAirQualityResult> {
       );
     }
 
-    // Don't block rendering on the Firestore write — the caller already has
-    // everything it needs. Skipped entirely for signed-out visitors: Firestore
-    // rules reject unauthenticated writes to this collection, and now that
-    // this covers ~170 nationwide stations (not 2), attempting it for every
-    // guest page load would fire ~170 doomed writes and log ~170
-    // "Missing or insufficient permissions" errors per load for nothing.
-    if (auth.currentUser) {
-      void upsertLiveRecords(data.records);
-    }
-
+    // No Firestore write here at all — this used to blanket-upsert every
+    // record it fetched (~170 documents) on every call, including from the
+    // alerts banner's 5-minute poll, and blew through the daily write quota
+    // from a single active user (see the 2026-07-25 incident). Writing is
+    // now the caller's explicit responsibility — see `upsertStationHistory`.
     return {
       records: data.records,
       stations: data.stations,

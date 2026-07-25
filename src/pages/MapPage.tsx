@@ -14,7 +14,7 @@ import { SourceDebugCounter } from "../components/map/SourceDebugCounter";
 import { useAllStations } from "../hooks/useAllStations";
 import { useUserLocation } from "../hooks/useUserLocation";
 import { useTranslation } from "../hooks/useTranslation";
-import { getWaqiStationsInBounds } from "../services/airQuality";
+import { getWaqiStationsInBounds, upsertStationHistory } from "../services/airQuality";
 import { dedupeWaqiStations, findNearestStation } from "../utils/geo";
 import { searchStations } from "../utils/stationSearch";
 import { resolveSource } from "../utils/dataSource";
@@ -89,6 +89,12 @@ function WaqiViewportSupplement({
   onBoundsChange: (bounds: ViewportBounds) => void;
 }) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Skips redundant `airQualityRecords` writes when the viewport shifts
+  // slightly but still contains the same set of stations (e.g. a small pan)
+  // — this is the only thing standing between "write on every moveend" and
+  // the write-quota problem this replaced (see `upsertLiveRecords`'s doc
+  // comment: even an identical re-write still counts as a write).
+  const lastUpsertedViewportKey = useRef<string | null>(null);
 
   const checkAndFetch = useCallback(async () => {
     const bounds = map.getBounds();
@@ -100,7 +106,7 @@ function WaqiViewportSupplement({
 
     if (stationsLoading) return;
 
-    const hasAir4ThaiInView = air4thaiStations.some(
+    const air4thaiInView = air4thaiStations.filter(
       (station) =>
         station.location.lat >= south &&
         station.location.lat <= north &&
@@ -108,10 +114,21 @@ function WaqiViewportSupplement({
         station.location.lng <= east,
     );
 
+    if (air4thaiInView.length > 0) {
+      const viewportKey = air4thaiInView
+        .map((s) => s.id)
+        .sort()
+        .join(",");
+      if (viewportKey !== lastUpsertedViewportKey.current) {
+        lastUpsertedViewportKey.current = viewportKey;
+        void upsertStationHistory(air4thaiInView.map((s) => s.id));
+      }
+    }
+
     const waqiStations = await getWaqiStationsInBounds({ south, west, north, east });
     const deduped = dedupeWaqiStations(air4thaiStations, waqiStations);
     onWaqiStations(deduped);
-    onEmptyViewportChange(!hasAir4ThaiInView && deduped.length === 0);
+    onEmptyViewportChange(!(air4thaiInView.length > 0) && deduped.length === 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [air4thaiStations, stationsLoading]);
 

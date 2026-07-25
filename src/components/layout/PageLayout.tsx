@@ -9,6 +9,7 @@ import { TourOverlay } from "../onboarding/TourOverlay";
 import { AirQualityAlertBanner } from "../AirQualityAlertBanner";
 import { DailySummaryModal } from "../DailySummaryModal";
 import { useOnboardingTour } from "../../contexts/OnboardingTourContext";
+import { useUpsertFollowedStationHistory } from "../../hooks/useUpsertFollowedStationHistory";
 
 const SIDEBAR_COLLAPSED_STORAGE_KEY = "airsync-sidebar-collapsed";
 
@@ -36,6 +37,7 @@ export function PageLayout() {
   const { isActive: isTourActive } = useOnboardingTour();
   const location = useLocation();
   const navigate = useNavigate();
+  useUpsertFollowedStationHistory();
 
   useEffect(() => {
     window.localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(sidebarCollapsed));
