@@ -18,7 +18,8 @@ interface ProfileHeaderProps {
   onLogout: () => void;
 }
 
-const LEVEL_LABEL_KEYS: Record<UserType, string> = {
+/** Exported so other profile-area components (e.g. `CharacterAvatar`'s card in `ProfilePage`) can label a level the same way without duplicating this map. */
+export const LEVEL_LABEL_KEYS: Record<UserType, string> = {
   citizen: "profile.guardianLevel",
   organization: "profile.airProtectionOrgLevel",
   government: "profile.airStewardLevel",

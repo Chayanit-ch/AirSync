@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ProfileHeader } from "../components/profile/ProfileHeader";
+import { ProfileHeader, LEVEL_LABEL_KEYS } from "../components/profile/ProfileHeader";
+import { CharacterAvatar } from "../components/profile/CharacterAvatar";
 import { MissionsCard } from "../components/profile/MissionsCard";
 import { PM25StatsCard } from "../components/profile/PM25StatsCard";
 import { ReportHistorySection } from "../components/profile/ReportHistorySection";
@@ -16,6 +17,7 @@ import { useMyReports } from "../hooks/useMyReports";
 import { useTranslation } from "../hooks/useTranslation";
 import { logOut } from "../services/auth";
 import { syncOrganizationDirectoryEntry } from "../services/organizationDirectory";
+import { getLevelFromPoints } from "../utils/gamification";
 import { getUserType } from "../utils/userType";
 import type { Report } from "../types";
 
@@ -70,6 +72,19 @@ export function ProfilePage() {
           userType={getUserType(userProfile ?? mockUser)}
           onLogout={handleLogout}
         />
+        <div className="rounded-2xl border border-gray-100 bg-white p-4 text-center shadow-sm">
+          <p className="mb-2 text-sm font-semibold text-gray-700">
+            {t(LEVEL_LABEL_KEYS[getUserType(userProfile ?? mockUser)], {
+              level: getLevelFromPoints(userProfile?.points ?? mockUser.points),
+            })}
+          </p>
+          <CharacterAvatar
+            userType={getUserType(userProfile ?? mockUser)}
+            level={getLevelFromPoints(userProfile?.points ?? mockUser.points)}
+            animate
+            className="mx-auto"
+          />
+        </div>
         <MissionsCard />
         <AlertPreferencesCard stations={stations} stationCatalog={allStations} />
         <PersonalInfoCard />

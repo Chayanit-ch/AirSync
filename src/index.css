@@ -117,3 +117,55 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .animate-slide-down-in {
   animation: slide-down-in 220ms ease-out;
 }
+
+@keyframes character-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-character-float {
+  animation: character-float 3s ease-in-out infinite;
+}
+
+@keyframes equip-in {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-equip-in {
+  animation: equip-in 350ms ease-out;
+}
+
+@keyframes character-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.1);
+  }
+}
+
+.animate-character-blink {
+  animation: character-blink 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-character-float,
+  .animate-equip-in,
+  .animate-character-blink {
+    animation: none;
+  }
+}

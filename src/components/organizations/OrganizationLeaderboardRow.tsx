@@ -1,6 +1,7 @@
 import type { OrganizationDirectoryEntry, OrganizationRatingSummary } from "../../types";
 import { useTranslation } from "../../hooks/useTranslation";
 import { getLevelFromPoints } from "../../utils/gamification";
+import { CharacterAvatar } from "../profile/CharacterAvatar";
 import { LevelAvatar } from "../profile/LevelAvatar";
 import { StarRating } from "../shared/StarRating";
 
@@ -34,6 +35,8 @@ export function OrganizationLeaderboardRow({
         level={level}
         userType="organization"
       />
+      {/* Alongside the real-identity avatar above, never replacing it — small and unanimated so a whole list of these stays calm. */}
+      <CharacterAvatar userType="organization" level={level} size={40} animate={false} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-gray-900">{organization.displayName}</p>
         {summary.count > 0 ? (
