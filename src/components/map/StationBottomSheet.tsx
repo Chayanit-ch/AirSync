@@ -58,13 +58,13 @@ export function StationBottomSheet({
     setSheetState((prev) => (prev === "expanded" ? "peek" : "expanded"));
   }
 
-  function handleHandlePointerDown(e: ReactPointerEvent<HTMLDivElement>) {
+  function handleHandlePointerDown(e: ReactPointerEvent<HTMLButtonElement>) {
     if (sheetState !== "expanded") return;
     dragStartYRef.current = e.clientY;
     e.currentTarget.setPointerCapture(e.pointerId);
   }
 
-  function handleHandlePointerMove(e: ReactPointerEvent<HTMLDivElement>) {
+  function handleHandlePointerMove(e: ReactPointerEvent<HTMLButtonElement>) {
     if (dragStartYRef.current === null) return;
     setDragOffset(Math.max(0, e.clientY - dragStartYRef.current));
   }
@@ -124,22 +124,29 @@ export function StationBottomSheet({
         }
       >
         <div className="shrink-0">
-          {/* Drag handle — draggable (and tappable) on mobile to collapse the
-              sheet to the peek bar above; purely decorative (no interaction
-              target) on the desktop docked panel. Real devices found this
-              6px-tall bar too easy to miss/mis-tap on its own, so it's now a
-              secondary affordance alongside the explicit chevron button below. */}
-          <div
+          {/* Collapse control — merged with the drag handle into one
+              centered, big tap target (draggable and tappable) on mobile.
+              Deliberately kept at top-CENTER, not top-right: the map's
+              Layers/Locate/Zoom controls live at `top-3 right-3` over the
+              map, and a top-right collapse button here ended up directly
+              beneath them once the sheet grew tall (e.g. with the AI trend
+              guidance box expanded) — close enough on shorter phone
+              viewports to overlap/mis-tap. Center-top has no such conflict
+              regardless of sheet height or viewport size. Purely decorative
+              (no interaction target) on the desktop docked panel. */}
+          <button
+            type="button"
             onClick={toggleSheetState}
             onPointerDown={handleHandlePointerDown}
             onPointerMove={handleHandlePointerMove}
             onPointerUp={handleHandlePointerUp}
             onPointerCancel={handleHandlePointerUp}
-            role="button"
-            tabIndex={0}
             aria-label={t("map.collapseStationDetails")}
-            className="mx-auto mb-2 h-1.5 w-10 touch-none rounded-full bg-gray-200 lg:hidden"
-          />
+            className="mx-auto mb-1.5 flex h-6 w-16 touch-none items-center justify-center gap-1 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 lg:hidden"
+          >
+            <span className="h-1.5 w-6 rounded-full bg-gray-300" />
+            <ChevronDown size={14} />
+          </button>
 
           <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -151,25 +158,11 @@ export function StationBottomSheet({
               {t(`map.sourceDetail.${source}`)}
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <span
-              className={`flex shrink-0 items-center justify-center rounded-full p-1.5 ${meta.softBgClass}`}
-            >
-              <ShieldCheck size={16} className={meta.textClass} />
-            </span>
-            {/* Explicit, clearly-visible collapse button — top-right corner
-                of the sheet, mobile only. A real tap target (not a thin
-                drag bar) so users always have an obvious way to collapse
-                without relying on a drag gesture. */}
-            <button
-              type="button"
-              onClick={toggleSheetState}
-              aria-label={t("map.collapseStationDetails")}
-              className="flex shrink-0 items-center justify-center rounded-full bg-gray-100 p-1.5 text-gray-600 hover:bg-gray-200 lg:hidden"
-            >
-              <ChevronDown size={16} />
-            </button>
-          </div>
+          <span
+            className={`flex shrink-0 items-center justify-center rounded-full p-1.5 ${meta.softBgClass}`}
+          >
+            <ShieldCheck size={16} className={meta.textClass} />
+          </span>
           </div>
         </div>
 
