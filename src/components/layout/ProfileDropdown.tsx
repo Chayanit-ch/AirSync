@@ -6,7 +6,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import { logOut } from "../../services/auth";
 import { getLevelFromPoints, getProgressInCurrentLevel } from "../../utils/gamification";
-import { getUserType } from "../../utils/userType";
+import { getUserType, isPendingGovernmentVerification } from "../../utils/userType";
 import { UserAvatar } from "../common/UserAvatar";
 import { LevelProgressBar } from "../profile/LevelProgressBar";
 import type { UserType } from "../../types";
@@ -67,6 +67,7 @@ export function ProfileDropdown() {
   const userType = getUserType(userProfile ?? mockUser);
   const level = getLevelFromPoints(points);
   const progress = getProgressInCurrentLevel(points);
+  const isPendingVerification = isPendingGovernmentVerification(userProfile ?? mockUser);
 
   function goTo(path: string) {
     setIsOpen(false);
@@ -110,9 +111,11 @@ export function ProfileDropdown() {
               <p className="truncate font-bold text-gray-900">{displayName}</p>
               <p className="truncate text-xs text-gray-400">{email}</p>
               <p
-                className={`mt-1 truncate text-xs font-semibold ${LEVEL_TEXT_COLOR_CLASSES[userType]}`}
+                className={`mt-1 truncate text-xs font-semibold ${
+                  isPendingVerification ? "text-gray-400" : LEVEL_TEXT_COLOR_CLASSES[userType]
+                }`}
               >
-                {t(LEVEL_LABEL_KEYS[userType], { level })}
+                {isPendingVerification ? t("profile.pendingVerification") : t(LEVEL_LABEL_KEYS[userType], { level })}
               </p>
               <div className="mt-1.5">
                 <LevelProgressBar progress={progress} size="sm" />

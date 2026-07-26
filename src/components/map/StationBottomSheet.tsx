@@ -108,33 +108,40 @@ export function StationBottomSheet({
 
       {/* Full sheet — bottom sheet on mobile (hidden while peeking, via
           `sheetState`), always shown on desktop's docked right-side panel
-          (`lg:block` wins over the mobile `hidden` at the `lg:` breakpoint). */}
+          (`lg:flex` wins over the mobile `hidden` at the `lg:` breakpoint).
+          Capped to `max-h-[75vh]` on mobile (uncapped on desktop, where the
+          parent already bounds height via `lg:top-0 lg:bottom-0`) and split
+          into a `shrink-0` header + a `flex-1 overflow-y-auto` body below —
+          otherwise long content (e.g. the AI trend guidance box) could grow
+          the whole sheet taller than the viewport with nothing to scroll,
+          pushing the collapse button above the top edge and out of reach. */}
       <div
-        className={`${sheetState === "peek" ? "hidden" : "block"} h-full overflow-y-auto rounded-t-2xl border border-gray-100 bg-white px-4 pt-2 pb-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] lg:block lg:rounded-none lg:rounded-l-2xl lg:border-r-0 lg:shadow-[-4px_0_20px_rgba(0,0,0,0.08)]`}
+        className={`${sheetState === "peek" ? "hidden" : "flex"} max-h-[75vh] flex-col overflow-hidden rounded-t-2xl border border-gray-100 bg-white px-4 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] lg:flex lg:h-full lg:max-h-none lg:rounded-none lg:rounded-l-2xl lg:border-r-0 lg:shadow-[-4px_0_20px_rgba(0,0,0,0.08)]`}
         style={
           dragOffset > 0
             ? { transform: `translateY(${dragOffset}px)` }
             : { transform: "translateY(0)", transition: "transform 200ms ease-out" }
         }
       >
-        {/* Drag handle — draggable (and tappable) on mobile to collapse the
-            sheet to the peek bar above; purely decorative (no interaction
-            target) on the desktop docked panel. Real devices found this
-            6px-tall bar too easy to miss/mis-tap on its own, so it's now a
-            secondary affordance alongside the explicit chevron button below. */}
-        <div
-          onClick={toggleSheetState}
-          onPointerDown={handleHandlePointerDown}
-          onPointerMove={handleHandlePointerMove}
-          onPointerUp={handleHandlePointerUp}
-          onPointerCancel={handleHandlePointerUp}
-          role="button"
-          tabIndex={0}
-          aria-label={t("map.collapseStationDetails")}
-          className="mx-auto mb-2 h-1.5 w-10 touch-none rounded-full bg-gray-200 lg:hidden"
-        />
+        <div className="shrink-0">
+          {/* Drag handle — draggable (and tappable) on mobile to collapse the
+              sheet to the peek bar above; purely decorative (no interaction
+              target) on the desktop docked panel. Real devices found this
+              6px-tall bar too easy to miss/mis-tap on its own, so it's now a
+              secondary affordance alongside the explicit chevron button below. */}
+          <div
+            onClick={toggleSheetState}
+            onPointerDown={handleHandlePointerDown}
+            onPointerMove={handleHandlePointerMove}
+            onPointerUp={handleHandlePointerUp}
+            onPointerCancel={handleHandlePointerUp}
+            role="button"
+            tabIndex={0}
+            aria-label={t("map.collapseStationDetails")}
+            className="mx-auto mb-2 h-1.5 w-10 touch-none rounded-full bg-gray-200 lg:hidden"
+          />
 
-        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <h3 className="truncate font-bold text-gray-800">
               {station.name}
@@ -163,8 +170,10 @@ export function StationBottomSheet({
               <ChevronDown size={16} />
             </button>
           </div>
+          </div>
         </div>
 
+        <div className="flex-1 overflow-y-auto pb-4">
         <div className="mt-3 grid grid-cols-2 gap-3">
           {showAqiPrimary ? (
             <div className={`rounded-xl border-l-4 p-3 ${meta.softBgClass} ${meta.borderClass}`}>
@@ -279,6 +288,7 @@ export function StationBottomSheet({
             ) : null}
           </div>
         )}
+        </div>
       </div>
     </>
   );

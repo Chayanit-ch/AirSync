@@ -141,10 +141,15 @@ export async function reconcileUserTypeAfterSignup(
   userType: UserType,
 ): Promise<void> {
   try {
-    await updateDoc(userDocRef(uid), {
+    const fields: Record<string, string | FieldValue> = {
       userType,
       updatedAt: serverTimestamp(),
-    });
+    };
+    // Signup always starts from buildDefaultUserDocument's hardcoded
+    // "citizen" default, so choosing "government" here is always a fresh
+    // transition — no need to compare against a previous value.
+    if (userType === "government") fields.governmentVerificationStatus = "pending";
+    await updateDoc(userDocRef(uid), fields);
     await syncOrganizationDirectoryFromLatestDoc(uid);
   } catch {
     // Document not created yet — ensureUserDocument will default to
@@ -184,12 +189,27 @@ export async function updateRiskGroup(uid: string, riskGroup: RiskGroup): Promis
  * (citizen/organization/government), editable any time from the Profile
  * page. Purely cosmetic; has no bearing on `role`, which only an
  * administrator can change, and only via the Firestore Console.
+ *
+ * `previousUserType` is required so this can tell a genuine switch *into*
+ * "government" (which should reset `governmentVerificationStatus` to
+ * "pending") apart from an unrelated re-save while already "government" —
+ * `PersonalInfoCard`'s Save button calls this every time regardless of
+ * whether the dropdown actually changed, and blindly re-pending on every
+ * save would keep bouncing an already-approved account back to pending.
  */
-export async function updateUserType(uid: string, userType: UserType): Promise<void> {
-  await updateDoc(userDocRef(uid), {
+export async function updateUserType(
+  uid: string,
+  userType: UserType,
+  previousUserType: UserType,
+): Promise<void> {
+  const fields: Record<string, string | FieldValue> = {
     userType,
     updatedAt: serverTimestamp(),
-  });
+  };
+  if (userType === "government" && previousUserType !== "government") {
+    fields.governmentVerificationStatus = "pending";
+  }
+  await updateDoc(userDocRef(uid), fields);
   await syncOrganizationDirectoryFromLatestDoc(uid);
 }
 

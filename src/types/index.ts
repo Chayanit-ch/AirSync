@@ -342,6 +342,8 @@ export interface UserProfile {
   role: UserRole;
   /** Optional because profiles created before this field shipped don't have it — treat missing as `"citizen"`, see `getUserType`. Purely cosmetic; never gates permissions. */
   userType?: UserType;
+  /** Optional — missing/anything but `"approved"` means the government badge shows as "Pending Verification" instead of the full official badge (see `isPendingGovernmentVerification`). Set to `"pending"` automatically whenever `userType` becomes `"government"`; only an administrator flips it to `"approved"`, manually via the Firestore Console (same as `role: authority` today). Purely cosmetic, like `userType` — never gates permissions. */
+  governmentVerificationStatus?: "pending" | "approved";
   /**
    * NATIONWIDE ROLLOUT (2026-07-19): now stores real Air4Thai `stationID`s
    * (e.g. "27t") that the user follows, nationwide — not the old 5

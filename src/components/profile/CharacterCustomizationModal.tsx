@@ -118,8 +118,8 @@ export function CharacterCustomizationModal({
     >
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      <div className="relative z-10 max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white p-4 shadow-xl lg:rounded-2xl">
-        <div className="mb-3 flex items-start justify-between gap-2">
+      <div className="relative z-10 flex max-h-[85vh] w-full max-w-lg flex-col rounded-t-2xl bg-white shadow-xl lg:rounded-2xl">
+        <div className="flex shrink-0 items-start justify-between gap-2 p-4 pb-0">
           <h2 id="character-customization-title" className="text-lg font-bold text-gray-900">
             {t("profile.avatar.modalTitle")}
           </h2>
@@ -133,10 +133,15 @@ export function CharacterCustomizationModal({
           </button>
         </div>
 
-        <div className="mb-4 flex justify-center rounded-xl border border-gray-100 bg-gray-50 py-3">
+        {/* Sticky preview — stays fixed while only the options body below
+            scrolls, so changing an option never requires scrolling back up
+            to see the result (see the modal's max-h-[85vh] + flex-col split
+            above, and the flex-1 overflow-y-auto body below). */}
+        <div className="mx-4 mt-3 mb-1 flex shrink-0 justify-center rounded-xl border border-gray-100 bg-gray-50 py-3">
           <CharacterAvatar avatarConfig={draft} userType={userType} size={140} />
         </div>
 
+        <div className="flex-1 overflow-y-auto p-4 pt-3">
         <div className="flex flex-col gap-4 text-sm">
           <div>
             <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.skinTone")}</p>
@@ -392,6 +397,7 @@ export function CharacterCustomizationModal({
               {t("profile.savedConfirmation")}
             </p>
           )}
+        </div>
         </div>
       </div>
     </div>

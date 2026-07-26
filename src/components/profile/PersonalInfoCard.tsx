@@ -70,7 +70,7 @@ export function PersonalInfoCard() {
     setJustSaved(false);
     try {
       await Promise.all([
-        updateUserType(uid, userTypeDraft),
+        updateUserType(uid, userTypeDraft, getUserType(userProfile)),
         updateRiskGroup(uid, riskGroupDraft),
         updateDailyContext(uid, {
           commuteMethod: commuteMethodDraft || undefined,

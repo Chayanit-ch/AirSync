@@ -286,8 +286,12 @@ export function MapPage() {
       </MapContainer>
 
       {/* Top-left control stack — capped to a sensible width on desktop so it
-          doesn't stretch edge-to-edge across a much wider map. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-400 flex flex-col gap-2 p-3 lg:max-w-sm">
+          doesn't stretch edge-to-edge across a much wider map. `pr-16`
+          reserves room for `MapControls`' top-right column (Layers/Locate/
+          Zoom, ~64px including margin) on every breakpoint, so this stack
+          never extends underneath it regardless of the two subtrees'
+          relative z-index/stacking-context precedence. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-400 flex flex-col gap-2 p-3 pr-16 lg:max-w-sm">
         <div className="pointer-events-auto">
           <MapSearchBar value={searchQuery} onChange={setSearchQuery} />
         </div>

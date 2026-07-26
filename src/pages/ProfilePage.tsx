@@ -1,3 +1,4 @@
+import { Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfileHeader, LEVEL_LABEL_KEYS } from "../components/profile/ProfileHeader";
@@ -9,6 +10,7 @@ import { ReportHistorySection } from "../components/profile/ReportHistorySection
 import { AlertPreferencesCard } from "../components/profile/AlertPreferencesCard";
 import { PersonalInfoCard } from "../components/profile/PersonalInfoCard";
 import { FollowedAreasGrid } from "../components/home/FollowedAreasGrid";
+import { OrganizationLeaderboardModal } from "../components/organizations/OrganizationLeaderboardModal";
 import { ReportDetailModal } from "../components/report/ReportDetailModal";
 import { currentUser as mockUser } from "../data/mockData";
 import { useAuth } from "../contexts/AuthContext";
@@ -19,7 +21,7 @@ import { useTranslation } from "../hooks/useTranslation";
 import { logOut } from "../services/auth";
 import { syncOrganizationDirectoryEntry } from "../services/organizationDirectory";
 import { getLevelFromPoints } from "../utils/gamification";
-import { getUserType } from "../utils/userType";
+import { getUserType, isPendingGovernmentVerification } from "../utils/userType";
 import { resolveAvatarConfig } from "../utils/avatarCustomization";
 import type { Report } from "../types";
 
@@ -30,6 +32,7 @@ export function ProfilePage() {
   const { stations, allStations, isLoading: stationsLoading } = useAllStations();
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isCustomizingCharacter, setIsCustomizingCharacter] = useState(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
   async function handleLogout() {
     isLoggingOutRef.current = true;
@@ -73,13 +76,24 @@ export function ProfilePage() {
           photoURL={currentUser?.photoURL}
           points={userProfile?.points ?? mockUser.points}
           userType={getUserType(userProfile ?? mockUser)}
+          governmentVerificationStatus={userProfile?.governmentVerificationStatus}
           onLogout={handleLogout}
         />
+        <button
+          type="button"
+          onClick={() => setIsLeaderboardOpen(true)}
+          className="flex items-center justify-center gap-2 rounded-xl bg-amber-500 py-3.5 font-semibold text-white shadow-sm transition-colors hover:bg-amber-600"
+        >
+          <Trophy size={19} />
+          {t("leaderboard.viewButton")}
+        </button>
         <div className="rounded-2xl border border-gray-100 bg-white p-4 text-center shadow-sm">
           <p className="mb-2 text-sm font-semibold text-gray-700">
-            {t(LEVEL_LABEL_KEYS[getUserType(userProfile ?? mockUser)], {
-              level: getLevelFromPoints(userProfile?.points ?? mockUser.points),
-            })}
+            {isPendingGovernmentVerification(userProfile ?? mockUser)
+              ? t("profile.pendingVerification")
+              : t(LEVEL_LABEL_KEYS[getUserType(userProfile ?? mockUser)], {
+                  level: getLevelFromPoints(userProfile?.points ?? mockUser.points),
+                })}
           </p>
           <CharacterAvatar
             avatarConfig={userProfile?.avatarConfig}
@@ -125,6 +139,7 @@ export function ProfilePage() {
       </div>
 
       <ReportDetailModal report={selectedReport} onClose={() => setSelectedReport(null)} />
+      <OrganizationLeaderboardModal open={isLeaderboardOpen} onClose={() => setIsLeaderboardOpen(false)} />
       <CharacterCustomizationModal
         open={isCustomizingCharacter}
         uid={currentUser?.uid}

@@ -52,7 +52,6 @@ export const en: typeof th = {
     map: "Map",
     report: "Report",
     alerts: "Alerts",
-    leaderboard: "Leaderboard",
     profile: "Profile",
   },
   topbar: {
@@ -241,6 +240,7 @@ export const en: typeof th = {
     ratingFailed: "Couldn't submit your rating. Please try again",
     loginToRate: "Log in to rate this organization",
     cannotRateSelf: "You can't rate your own organization account",
+    viewButton: "View Organization Leaderboard",
   },
   alerts: {
     pageTitle: "News & alerts",
@@ -280,6 +280,8 @@ export const en: typeof th = {
     airStewardLevel: "Air Steward Level {level}",
     accountTypeLabel: "Account type",
     accountTypeHint: "Shown on your profile as a label and badge — doesn't change what you can do in the app.",
+    pendingVerification: "Pending Verification",
+    pendingVerificationExplanation: "Your account is currently awaiting verification by our team.",
     avatar: {
       customizeButton: "Customize Character",
       modalTitle: "Customize Your Character",

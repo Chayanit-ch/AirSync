@@ -1,3 +1,4 @@
+import { Hourglass } from "lucide-react";
 import type { UserType } from "../../types";
 import { getBadgeTier } from "../../utils/gamification";
 import { UserAvatar, type UserAvatarProps } from "../common/UserAvatar";
@@ -16,6 +17,8 @@ import {
 interface LevelAvatarProps extends Pick<UserAvatarProps, "photoURL" | "displayName" | "size"> {
   level: number;
   userType: UserType;
+  /** True for a `"government"` account not yet approved by an administrator — see `isPendingGovernmentVerification`. Overrides the normal tiered badge with a neutral gray ring + hourglass, regardless of `level`. */
+  isPendingVerification?: boolean;
 }
 
 /**
@@ -27,8 +30,27 @@ interface LevelAvatarProps extends Pick<UserAvatarProps, "photoURL" | "displayNa
  * distinguishable. This is purely cosmetic — it has no relationship to
  * `role`/Firestore permissions.
  */
-export function LevelAvatar({ photoURL, displayName, size = "md", level, userType }: LevelAvatarProps) {
+export function LevelAvatar({
+  photoURL,
+  displayName,
+  size = "md",
+  level,
+  userType,
+  isPendingVerification,
+}: LevelAvatarProps) {
   const tier = getBadgeTier(level);
+
+  if (isPendingVerification) {
+    return (
+      <div className="relative mx-auto w-fit rounded-full border-4 border-gray-300">
+        <UserAvatar photoURL={photoURL} displayName={displayName} size={size} />
+        <span className="absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full bg-gray-400 text-white ring-2 ring-white">
+          <Hourglass size={14} />
+        </span>
+      </div>
+    );
+  }
+
   const badgeSet =
     userType === "government"
       ? { ring: GOVERNMENT_BADGE_RING_CLASSES, icon: GOVERNMENT_BADGE_ICONS, bg: GOVERNMENT_BADGE_BG_CLASSES }

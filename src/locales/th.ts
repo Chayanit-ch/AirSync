@@ -49,7 +49,6 @@ export const th = {
     map: "แผนที่",
     report: "แจ้งเหตุ",
     alerts: "ข่าวสาร",
-    leaderboard: "อันดับองค์กร",
     profile: "โปรไฟล์",
   },
   topbar: {
@@ -238,6 +237,7 @@ export const th = {
     ratingFailed: "ไม่สามารถส่งคะแนนได้ กรุณาลองใหม่อีกครั้ง",
     loginToRate: "เข้าสู่ระบบเพื่อให้คะแนนองค์กรนี้",
     cannotRateSelf: "คุณไม่สามารถให้คะแนนบัญชีองค์กรของตัวเองได้",
+    viewButton: "ดูอันดับองค์กร",
   },
   alerts: {
     pageTitle: "การแจ้งเตือนข่าว",
@@ -277,6 +277,8 @@ export const th = {
     airStewardLevel: "ผู้พิทักษ์อากาศภาครัฐ ระดับ {level}",
     accountTypeLabel: "ประเภทบัญชี",
     accountTypeHint: "แสดงเป็นป้ายชื่อและตราสัญลักษณ์บนโปรไฟล์ของคุณเท่านั้น ไม่มีผลต่อสิทธิ์การใช้งานในแอป",
+    pendingVerification: "รอการยืนยันตัวตน",
+    pendingVerificationExplanation: "บัญชีของคุณกำลังรอการตรวจสอบจากทีมงานของเรา",
     avatar: {
       customizeButton: "ปรับแต่งตัวละคร",
       modalTitle: "ปรับแต่งตัวละครของคุณ",

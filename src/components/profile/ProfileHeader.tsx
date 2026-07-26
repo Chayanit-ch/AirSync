@@ -1,8 +1,9 @@
-import { BadgeCheck, Pencil } from "lucide-react";
+import { BadgeCheck, Hourglass, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "../../hooks/useTranslation";
 import { getLevelFromPoints, getProgressInCurrentLevel } from "../../utils/gamification";
 import { getOrganizationRatingSummary } from "../../services/organizationRatings";
+import { isPendingGovernmentVerification } from "../../utils/userType";
 import type { OrganizationRatingSummary, UserType } from "../../types";
 import { LevelAvatar } from "./LevelAvatar";
 import { LevelProgressBar } from "./LevelProgressBar";
@@ -15,6 +16,7 @@ interface ProfileHeaderProps {
   photoURL?: string | null;
   points: number;
   userType: UserType;
+  governmentVerificationStatus?: "pending" | "approved";
   onLogout: () => void;
 }
 
@@ -38,11 +40,13 @@ export function ProfileHeader({
   photoURL,
   points,
   userType,
+  governmentVerificationStatus,
   onLogout,
 }: ProfileHeaderProps) {
   const { t } = useTranslation();
   const level = getLevelFromPoints(points);
   const progress = getProgressInCurrentLevel(points);
+  const isPendingVerification = isPendingGovernmentVerification({ userType, governmentVerificationStatus });
 
   const [ratingSummary, setRatingSummary] = useState<OrganizationRatingSummary | null>(null);
   useEffect(() => {
@@ -66,6 +70,7 @@ export function ProfileHeader({
           size="lg"
           level={level}
           userType={userType}
+          isPendingVerification={isPendingVerification}
         />
         <button
           type="button"
@@ -82,12 +87,19 @@ export function ProfileHeader({
       <p className="text-sm text-gray-400">{email}</p>
 
       <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
-        <span
-          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white ${LEVEL_BADGE_BG_CLASSES[userType]}`}
-        >
-          <BadgeCheck size={14} />
-          {t(LEVEL_LABEL_KEYS[userType], { level })}
-        </span>
+        {isPendingVerification ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-gray-400 px-3 py-1 text-xs font-semibold text-white">
+            <Hourglass size={14} />
+            {t("profile.pendingVerification")}
+          </span>
+        ) : (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold text-white ${LEVEL_BADGE_BG_CLASSES[userType]}`}
+          >
+            <BadgeCheck size={14} />
+            {t(LEVEL_LABEL_KEYS[userType], { level })}
+          </span>
+        )}
         {userType === "organization" && ratingSummary && ratingSummary.count > 0 && (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-gray-100 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-600">
             <StarRating value={ratingSummary.average} size={13} />
@@ -96,6 +108,9 @@ export function ProfileHeader({
           </span>
         )}
       </div>
+      {isPendingVerification && (
+        <p className="mt-2 text-xs text-gray-400">{t("profile.pendingVerificationExplanation")}</p>
+      )}
 
       <div className="mt-3 grid grid-cols-2 divide-x divide-gray-100 rounded-xl border border-gray-100 bg-gray-50 py-2.5">
         <div className="text-center">
