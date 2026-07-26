@@ -132,46 +132,54 @@ export function MissionsCard() {
           return (
             <div
               key={mission.id}
-              className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3"
+              className="flex flex-col gap-2 rounded-xl border border-gray-100 bg-gray-50 p-3"
             >
-              <div className="bg-brand-50 text-brand-600 flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
-                <Icon size={17} />
+              <div className="flex items-start gap-3">
+                <div className="bg-brand-50 text-brand-600 flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
+                  <Icon size={17} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-2 text-sm font-semibold break-words text-gray-800">
+                    {t(mission.titleKey)}
+                  </p>
+                  <p className="mt-0.5 line-clamp-2 text-xs break-words text-gray-400">
+                    {t(mission.descriptionKey)}
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-gray-800">{t(mission.titleKey)}</p>
-                <p className="text-xs text-gray-400">{t(mission.descriptionKey)}</p>
-              </div>
-              <span className="text-brand-600 shrink-0 text-xs font-bold">
-                {t("missions.pointsBadge", { points: mission.points })}
-              </span>
-              {mission.auto ? (
-                done && (
-                  <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-emerald-600">
-                    <CheckCircle2 size={15} />
-                    {t("missions.completedAutomatically")}
-                  </span>
-                )
-              ) : (
-                <button
-                  type="button"
-                  disabled={!uid || done || pendingMissionId === mission.id}
-                  onClick={() => handleComplete(mission)}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                    done
-                      ? "bg-emerald-50 text-emerald-600"
-                      : "bg-brand-600 hover:bg-brand-700 text-white disabled:opacity-40"
-                  }`}
-                >
-                  {done ? (
-                    <span className="flex items-center gap-1">
-                      <CheckCircle2 size={14} />
-                      {t("missions.completed")}
+              <div className="flex items-center justify-between gap-2 pl-12">
+                <span className="text-brand-600 shrink-0 text-xs font-bold">
+                  {t("missions.pointsBadge", { points: mission.points })}
+                </span>
+                {mission.auto ? (
+                  done && (
+                    <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-emerald-600">
+                      <CheckCircle2 size={15} />
+                      {t("missions.completedAutomatically")}
                     </span>
-                  ) : (
-                    t("missions.markComplete")
-                  )}
-                </button>
-              )}
+                  )
+                ) : (
+                  <button
+                    type="button"
+                    disabled={!uid || done || pendingMissionId === mission.id}
+                    onClick={() => handleComplete(mission)}
+                    className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      done
+                        ? "bg-emerald-50 text-emerald-600"
+                        : "bg-brand-600 hover:bg-brand-700 text-white disabled:opacity-40"
+                    }`}
+                  >
+                    {done ? (
+                      <span className="flex items-center gap-1">
+                        <CheckCircle2 size={14} />
+                        {t("missions.completed")}
+                      </span>
+                    ) : (
+                      t("missions.markComplete")
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
