@@ -1,12 +1,14 @@
 import { CircleAlert } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "../../hooks/useTranslation";
-import { getKnowledgeArticles } from "../../services/knowledgeArticles";
 import { ARTICLE_CATEGORY_META } from "../../utils/article";
 import type { ArticleFilter } from "./CategoryFilter";
 import type { KnowledgeArticle } from "../../types";
 
 interface KnowledgeArticlesSectionProps {
+  /** Fetched once by `AlertsPage` (shared with the featured-article lookup) rather than re-fetched here. `null` while loading. */
+  articles: KnowledgeArticle[] | null;
+  error: boolean;
   /** Same category filter + search bar driving the RSS section above it — one filter bar, both sections respond. */
   filter: ArticleFilter;
   searchQuery: string;
@@ -17,26 +19,9 @@ interface KnowledgeArticlesSectionProps {
  * list — reads `knowledgeArticles/{id}` via `getKnowledgeArticles()` (see
  * `scripts/seed-articles.ts` for how these are seeded/managed).
  */
-export function KnowledgeArticlesSection({ filter, searchQuery }: KnowledgeArticlesSectionProps) {
+export function KnowledgeArticlesSection({ articles, error, filter, searchQuery }: KnowledgeArticlesSectionProps) {
   const { t, dict } = useTranslation();
-  const [articles, setArticles] = useState<KnowledgeArticle[] | null>(null);
-  const [error, setError] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    let cancelled = false;
-    getKnowledgeArticles()
-      .then((data) => {
-        if (!cancelled) setArticles(data);
-      })
-      .catch((err) => {
-        console.error("Failed to load knowledgeArticles from Firestore", err);
-        if (!cancelled) setError(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const visibleArticles = useMemo(() => {
     if (!articles) return [];

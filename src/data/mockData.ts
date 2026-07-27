@@ -1,7 +1,6 @@
 import { Timestamp } from "firebase/firestore";
 import type {
   Alert,
-  KnowledgeArticle,
   MonitoringStation,
   PollutionReport,
   UserProfile,
@@ -211,21 +210,8 @@ export const alerts: Alert[] = [
   },
 ];
 
-// -- Knowledge articles / news feed (Alerts page) -------------------------------
-
-export const featuredArticle: KnowledgeArticle = {
-  id: "article-001",
-  title: "รับมือวิกฤตคุณภาพอากาศย่ำแย่ ฉบับปี 2026",
-  excerpt:
-    "รวมแนวทางป้องกันและรับมือฝุ่น PM2.5 สำหรับประชาชนในพื้นที่สมุทรสาครช่วงวิกฤตหมอกควัน",
-  category: "prevention",
-  imageUrl: "https://picsum.photos/seed/airsync-featured/800/450",
-  readTimeMinutes: 10,
-  publishedAt: "2026-07-16T09:00:00+07:00",
-  isFeatured: true,
-};
-
-// The old mock `knowledgeArticles` list is gone — the Alerts page now reads
-// real documents from Firestore's `knowledgeArticles` collection instead
-// (see `services/knowledgeArticles.ts` / `KnowledgeArticlesSection`).
-// `featuredArticle` above is a separate, still-mock hero banner, untouched.
+// The old mock `knowledgeArticles` list (and the mock `featuredArticle` hero)
+// are gone — the Alerts page now reads real documents, including the
+// featured hero pick via the `isFeatured` field, from Firestore's
+// `knowledgeArticles` collection instead (see `services/knowledgeArticles.ts`
+// / `AlertsPage` / `KnowledgeArticlesSection`).
