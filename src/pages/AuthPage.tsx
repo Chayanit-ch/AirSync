@@ -106,146 +106,127 @@ export function AuthPage() {
   }
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-120 flex-col justify-center gap-6 overflow-y-auto p-6">
-      <div className="flex flex-col items-center gap-1.5">
-        <div className="flex items-center gap-1.5">
-          <Wind size={30} className="text-brand-600" strokeWidth={2.5} />
-          <span className="text-brand-700 text-2xl font-bold tracking-tight">
-            AirSync
-          </span>
+    <div className="mx-auto flex h-full w-full max-w-120 flex-col overflow-y-auto p-6">
+      {/*
+        `m-auto` centers this block vertically the same way `justify-center`
+        on the parent would — but unlike `justify-center`, it degrades
+        gracefully when content is taller than the viewport: the auto
+        margins just collapse to 0 and the block starts flush at the top,
+        scrollable normally. `justify-center` on an overflowing flex
+        container instead clips the overflow evenly off *both* ends, and
+        since scroll can't go negative, the top portion (the logo) became
+        permanently unreachable on tall desktop forms.
+      */}
+      <div className="m-auto flex w-full flex-col gap-6 py-6">
+        <div className="flex flex-col items-center gap-1.5">
+          <div className="flex items-center gap-1.5">
+            <Wind size={30} className="text-brand-600" strokeWidth={2.5} />
+            <span className="text-brand-700 text-2xl font-bold tracking-tight">
+              AirSync
+            </span>
+          </div>
+          <p className="text-sm text-gray-400">{t("auth.tagline")}</p>
         </div>
-        <p className="text-sm text-gray-400">{t("auth.tagline")}</p>
-      </div>
 
-      <div className="flex items-center overflow-hidden rounded-full border border-gray-200 bg-gray-50 p-1 text-xs font-semibold sm:text-sm">
-        <button
-          type="button"
-          onClick={() => switchMode("login")}
-          className={`min-w-0 flex-1 rounded-full px-1 py-2 text-center transition-colors ${
-            mode === "login" ? "bg-brand-600 text-white" : "text-gray-500"
-          }`}
-        >
-          {t("auth.login")}
-        </button>
-        <button
-          type="button"
-          onClick={() => switchMode("signup")}
-          className={`min-w-0 flex-1 rounded-full px-1 py-2 text-center transition-colors ${
-            mode === "signup" ? "bg-brand-600 text-white" : "text-gray-500"
-          }`}
-        >
-          {t("auth.signup")}
-        </button>
-      </div>
+        <div className="flex items-center overflow-hidden rounded-full border border-gray-200 bg-gray-50 p-1 text-xs font-semibold sm:text-sm">
+          <button
+            type="button"
+            onClick={() => switchMode("login")}
+            className={`min-w-0 flex-1 rounded-full px-1 py-2 text-center transition-colors ${
+              mode === "login" ? "bg-brand-600 text-white" : "text-gray-500"
+            }`}
+          >
+            {t("auth.login")}
+          </button>
+          <button
+            type="button"
+            onClick={() => switchMode("signup")}
+            className={`min-w-0 flex-1 rounded-full px-1 py-2 text-center transition-colors ${
+              mode === "signup" ? "bg-brand-600 text-white" : "text-gray-500"
+            }`}
+          >
+            {t("auth.signup")}
+          </button>
+        </div>
 
-      <form
-        onSubmit={handleSubmit}
-        noValidate
-        className="flex flex-col gap-3.5 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
-      >
-        {mode === "signup" && (
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          className="flex flex-col gap-3.5 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+        >
+          {mode === "signup" && (
+            <div>
+              <label htmlFor="auth-name" className="mb-1.5 block text-sm font-medium text-gray-700">
+                {t("auth.name")}
+              </label>
+              <div className="relative">
+                <UserIcon
+                  size={18}
+                  className="absolute top-1/2 left-3.5 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  id="auth-name"
+                  name="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  type="text"
+                  placeholder={t("auth.namePlaceholder")}
+                  className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-3 pr-3.5 pl-10 text-sm text-gray-700 outline-none placeholder:text-gray-400"
+                />
+              </div>
+            </div>
+          )}
+
+          {mode === "signup" && (
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                {t("auth.whoAreYou")}
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {USER_TYPE_OPTIONS.map(({ value, icon: Icon }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setUserType(value)}
+                    aria-pressed={userType === value}
+                    className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-xs font-semibold transition-colors ${
+                      userType === value
+                        ? "border-brand-600 bg-brand-50 text-brand-700"
+                        : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Icon size={18} />
+                    {t(`auth.userTypes.${value}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
-            <label htmlFor="auth-name" className="mb-1.5 block text-sm font-medium text-gray-700">
-              {t("auth.name")}
+            <label htmlFor="auth-email" className="mb-1.5 block text-sm font-medium text-gray-700">
+              {t("auth.email")}
             </label>
             <div className="relative">
-              <UserIcon
+              <Mail
                 size={18}
                 className="absolute top-1/2 left-3.5 -translate-y-1/2 text-gray-400"
               />
               <input
-                id="auth-name"
-                name="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                type="text"
-                placeholder={t("auth.namePlaceholder")}
+                id="auth-email"
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                placeholder={t("auth.emailPlaceholder")}
                 className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-3 pr-3.5 pl-10 text-sm text-gray-700 outline-none placeholder:text-gray-400"
               />
             </div>
           </div>
-        )}
 
-        {mode === "signup" && (
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">
-              {t("auth.whoAreYou")}
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {USER_TYPE_OPTIONS.map(({ value, icon: Icon }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setUserType(value)}
-                  aria-pressed={userType === value}
-                  className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-xs font-semibold transition-colors ${
-                    userType === value
-                      ? "border-brand-600 bg-brand-50 text-brand-700"
-                      : "border-gray-200 text-gray-500 hover:bg-gray-50"
-                  }`}
-                >
-                  <Icon size={18} />
-                  {t(`auth.userTypes.${value}`)}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div>
-          <label htmlFor="auth-email" className="mb-1.5 block text-sm font-medium text-gray-700">
-            {t("auth.email")}
-          </label>
-          <div className="relative">
-            <Mail
-              size={18}
-              className="absolute top-1/2 left-3.5 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              id="auth-email"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              type="email"
-              placeholder={t("auth.emailPlaceholder")}
-              className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-3 pr-3.5 pl-10 text-sm text-gray-700 outline-none placeholder:text-gray-400"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="auth-password" className="mb-1.5 block text-sm font-medium text-gray-700">
-            {t("auth.password")}
-          </label>
-          <div className="relative">
-            <Lock
-              size={18}
-              className="absolute top-1/2 left-3.5 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              id="auth-password"
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type={showPassword ? "text" : "password"}
-              placeholder={t("auth.passwordPlaceholder")}
-              className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-3 pr-10 pl-10 text-sm text-gray-700 outline-none placeholder:text-gray-400"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((s) => !s)}
-              aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
-              className="absolute top-1/2 right-3.5 -translate-y-1/2 text-gray-400"
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-        </div>
-
-        {mode === "signup" && (
-          <div>
-            <label htmlFor="auth-confirm-password" className="mb-1.5 block text-sm font-medium text-gray-700">
-              {t("auth.confirmPassword")}
+            <label htmlFor="auth-password" className="mb-1.5 block text-sm font-medium text-gray-700">
+              {t("auth.password")}
             </label>
             <div className="relative">
               <Lock
@@ -253,55 +234,86 @@ export function AuthPage() {
                 className="absolute top-1/2 left-3.5 -translate-y-1/2 text-gray-400"
               />
               <input
-                id="auth-confirm-password"
-                name="confirm-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                id="auth-password"
+                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 type={showPassword ? "text" : "password"}
-                placeholder={t("auth.confirmPasswordPlaceholder")}
-                className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-3 pr-3.5 pl-10 text-sm text-gray-700 outline-none placeholder:text-gray-400"
+                placeholder={t("auth.passwordPlaceholder")}
+                className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-3 pr-10 pl-10 text-sm text-gray-700 outline-none placeholder:text-gray-400"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
+                className="absolute top-1/2 right-3.5 -translate-y-1/2 text-gray-400"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
-        )}
 
-        {error && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600">
-            {error}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={isBusy}
-          className="bg-brand-600 hover:bg-brand-700 flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold text-white shadow-sm transition-colors disabled:opacity-60"
-        >
-          {isSubmitting && <Loader2 size={18} className="animate-spin" />}
-          {mode === "signup" ? t("auth.signup") : t("auth.login")}
-        </button>
-      </form>
-
-      <div className="flex items-center gap-3">
-        <div className="h-px flex-1 bg-gray-200" />
-        <span className="text-xs text-gray-400">{t("auth.or")}</span>
-        <div className="h-px flex-1 bg-gray-200" />
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          disabled={isBusy}
-          className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3.5 font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-60"
-        >
-          {isGoogleLoading ? (
-            <Loader2 size={18} className="animate-spin" />
-          ) : (
-            <GoogleIcon size={18} />
+          {mode === "signup" && (
+            <div>
+              <label htmlFor="auth-confirm-password" className="mb-1.5 block text-sm font-medium text-gray-700">
+                {t("auth.confirmPassword")}
+              </label>
+              <div className="relative">
+                <Lock
+                  size={18}
+                  className="absolute top-1/2 left-3.5 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  id="auth-confirm-password"
+                  name="confirm-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  type={showPassword ? "text" : "password"}
+                  placeholder={t("auth.confirmPasswordPlaceholder")}
+                  className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-3 pr-3.5 pl-10 text-sm text-gray-700 outline-none placeholder:text-gray-400"
+                />
+              </div>
+            </div>
           )}
-          {t("auth.googleLogin")}
-        </button>
-        <p className="text-center text-xs text-gray-400">{t("auth.googleOrgEmailHint")}</p>
+
+          {error && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={isBusy}
+            className="bg-brand-600 hover:bg-brand-700 flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold text-white shadow-sm transition-colors disabled:opacity-60"
+          >
+            {isSubmitting && <Loader2 size={18} className="animate-spin" />}
+            {mode === "signup" ? t("auth.signup") : t("auth.login")}
+          </button>
+        </form>
+
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-gray-200" />
+          <span className="text-xs text-gray-400">{t("auth.or")}</span>
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={isBusy}
+            className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3.5 font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-60"
+          >
+            {isGoogleLoading ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <GoogleIcon size={18} />
+            )}
+            {t("auth.googleLogin")}
+          </button>
+          <p className="text-center text-xs text-gray-400">{t("auth.googleOrgEmailHint")}</p>
+        </div>
       </div>
     </div>
   );
