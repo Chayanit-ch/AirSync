@@ -1,7 +1,7 @@
 import { CircleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "../../hooks/useTranslation";
-import { ARTICLE_CATEGORY_META } from "../../utils/article";
+import { ARTICLE_CATEGORY_META, getLocalizedArticleText } from "../../utils/article";
 import type { ArticleFilter } from "./CategoryFilter";
 import type { KnowledgeArticle } from "../../types";
 
@@ -20,7 +20,7 @@ interface KnowledgeArticlesSectionProps {
  * `scripts/seed-articles.ts` for how these are seeded/managed).
  */
 export function KnowledgeArticlesSection({ articles, error, filter, searchQuery }: KnowledgeArticlesSectionProps) {
-  const { t, dict } = useTranslation();
+  const { t, dict, language } = useTranslation();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const visibleArticles = useMemo(() => {
@@ -28,13 +28,14 @@ export function KnowledgeArticlesSection({ articles, error, filter, searchQuery 
     const query = searchQuery.trim().toLowerCase();
     return articles.filter((article) => {
       const matchesFilter = filter === "all" || article.category === filter;
+      const localized = getLocalizedArticleText(article, language);
       const matchesSearch =
         query === "" ||
-        article.title.toLowerCase().includes(query) ||
-        article.excerpt.toLowerCase().includes(query);
+        localized.title.toLowerCase().includes(query) ||
+        localized.excerpt.toLowerCase().includes(query);
       return matchesFilter && matchesSearch;
     });
-  }, [articles, filter, searchQuery]);
+  }, [articles, filter, searchQuery, language]);
 
   function toggleExpanded(id: string) {
     setExpandedIds((prev) => {
@@ -69,10 +70,11 @@ export function KnowledgeArticlesSection({ articles, error, filter, searchQuery 
         <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-3">
           {visibleArticles.map((article) => {
             const meta = ARTICLE_CATEGORY_META[article.category];
+            const localized = getLocalizedArticleText(article, language);
             // Only offer "read full article" when there's genuinely more
             // text than the excerpt already shown — otherwise the button
             // would expand into a exact copy of what's already visible.
-            const hasFullContent = Boolean(article.content && article.content !== article.excerpt);
+            const hasFullContent = Boolean(localized.content && localized.content !== localized.excerpt);
             const isExpanded = expandedIds.has(article.id);
             return (
               <div
@@ -81,7 +83,7 @@ export function KnowledgeArticlesSection({ articles, error, filter, searchQuery 
               >
                 <img
                   src={article.imageUrl}
-                  alt={article.title}
+                  alt={localized.title}
                   className="h-20 w-20 shrink-0 rounded-xl object-cover"
                 />
                 <div className="min-w-0 flex-1">
@@ -93,9 +95,9 @@ export function KnowledgeArticlesSection({ articles, error, filter, searchQuery 
                       {t("alerts.readTime", { minutes: article.readTimeMinutes })}
                     </span>
                   </div>
-                  <h3 className="mt-1 text-sm font-bold text-gray-800">{article.title}</h3>
+                  <h3 className="mt-1 text-sm font-bold text-gray-800">{localized.title}</h3>
                   <p className={`mt-0.5 text-xs text-gray-500 ${isExpanded ? "" : "line-clamp-2"}`}>
-                    {isExpanded && hasFullContent ? article.content : article.excerpt}
+                    {isExpanded && hasFullContent ? localized.content : localized.excerpt}
                   </p>
                   {hasFullContent && (
                     <button

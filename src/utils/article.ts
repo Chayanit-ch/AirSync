@@ -1,4 +1,5 @@
-import type { ArticleCategory } from "../types";
+import type { LanguageCode } from "../contexts/LanguageContext";
+import type { ArticleCategory, KnowledgeArticle } from "../types";
 
 interface CategoryMeta {
   pillClass: string;
@@ -24,3 +25,19 @@ export const ARTICLE_CATEGORY_META: Record<ArticleCategory, CategoryMeta> = {
     textClass: "text-blue-600",
   },
 };
+
+/**
+ * `titleEn`/`excerptEn`/`contentEn` are optional per-article translations
+ * (not every seeded article has them yet) — falls back to the Thai field
+ * when the English one is missing so switching language never blanks a card.
+ */
+export function getLocalizedArticleText(article: KnowledgeArticle, language: LanguageCode) {
+  if (language === "en") {
+    return {
+      title: article.titleEn || article.title,
+      excerpt: article.excerptEn || article.excerpt,
+      content: article.contentEn || article.content,
+    };
+  }
+  return { title: article.title, excerpt: article.excerpt, content: article.content };
+}

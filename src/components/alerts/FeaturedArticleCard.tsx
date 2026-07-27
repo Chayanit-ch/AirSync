@@ -1,16 +1,17 @@
 import { useState } from "react";
 import type { KnowledgeArticle } from "../../types";
 import { useTranslation } from "../../hooks/useTranslation";
-import { ARTICLE_CATEGORY_META } from "../../utils/article";
+import { ARTICLE_CATEGORY_META, getLocalizedArticleText } from "../../utils/article";
 
 export function FeaturedArticleCard({
   article,
 }: {
   article: KnowledgeArticle;
 }) {
-  const { t, dict } = useTranslation();
+  const { t, dict, language } = useTranslation();
   const meta = ARTICLE_CATEGORY_META[article.category];
   const [expanded, setExpanded] = useState(false);
+  const localized = getLocalizedArticleText(article, language);
 
   return (
     <button
@@ -20,7 +21,7 @@ export function FeaturedArticleCard({
     >
       <img
         src={article.imageUrl}
-        alt={article.title}
+        alt={localized.title}
         className="h-40 w-full object-cover"
       />
       <div className="p-4">
@@ -35,12 +36,12 @@ export function FeaturedArticleCard({
           </span>
         </div>
         <h2 className="mt-2 text-lg leading-snug font-bold text-gray-900">
-          {article.title}
+          {localized.title}
         </h2>
         <p
           className={`mt-2 text-sm text-gray-500 ${expanded ? "" : "line-clamp-2"}`}
         >
-          {expanded ? (article.content ?? article.excerpt) : article.excerpt}
+          {expanded ? (localized.content ?? localized.excerpt) : localized.excerpt}
         </p>
         <span className="text-brand-600 mt-2 inline-block text-xs font-semibold">
           {expanded ? t("alerts.showLess") : t("alerts.readFullKnowledge")}
