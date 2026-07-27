@@ -54,6 +54,14 @@ body,
   height: 100%;
 }
 
+html {
+  /* Light-only app (no dark: variants anywhere) — pin the UA color scheme
+     so browsers/OSes in dark mode don't apply dark form controls/scrollbars
+     on top of the hardcoded light colors. See matching <meta name="color-scheme">
+     in index.html. */
+  color-scheme: light;
+}
+
 body {
   margin: 0;
   background-color: #f3f4f6;

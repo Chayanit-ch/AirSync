@@ -484,7 +484,6 @@ export const th = {
     confirmPassword: "ยืนยันรหัสผ่าน",
     confirmPasswordPlaceholder: "ยืนยันรหัสผ่าน",
     whoAreYou: "คุณคือใคร?",
-    userTypeHint: "มีผลแค่กับป้ายชื่อและตราสัญลักษณ์ของคุณเท่านั้น ไม่ได้ให้สิทธิ์เพิ่มเติมใดๆ",
     userTypes: {
       citizen: "ประชาชนทั่วไป",
       organization: "องค์กร",

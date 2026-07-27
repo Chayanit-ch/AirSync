@@ -117,11 +117,11 @@ export function AuthPage() {
         <p className="text-sm text-gray-400">{t("auth.tagline")}</p>
       </div>
 
-      <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 p-1 text-sm font-semibold">
+      <div className="flex items-center overflow-hidden rounded-full border border-gray-200 bg-gray-50 p-1 text-xs font-semibold sm:text-sm">
         <button
           type="button"
           onClick={() => switchMode("login")}
-          className={`flex-1 rounded-full py-2 transition-colors ${
+          className={`min-w-0 flex-1 rounded-full px-1 py-2 text-center transition-colors ${
             mode === "login" ? "bg-brand-600 text-white" : "text-gray-500"
           }`}
         >
@@ -130,7 +130,7 @@ export function AuthPage() {
         <button
           type="button"
           onClick={() => switchMode("signup")}
-          className={`flex-1 rounded-full py-2 transition-colors ${
+          className={`min-w-0 flex-1 rounded-full px-1 py-2 text-center transition-colors ${
             mode === "signup" ? "bg-brand-600 text-white" : "text-gray-500"
           }`}
         >
@@ -189,7 +189,6 @@ export function AuthPage() {
                 </button>
               ))}
             </div>
-            <p className="mt-1.5 text-xs text-gray-400">{t("auth.userTypeHint")}</p>
           </div>
         )}
 

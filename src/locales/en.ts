@@ -487,7 +487,6 @@ export const en: typeof th = {
     confirmPassword: "Confirm password",
     confirmPasswordPlaceholder: "Confirm password",
     whoAreYou: "Who are you?",
-    userTypeHint: "This only changes your label and badge — it doesn't grant any extra permissions.",
     userTypes: {
       citizen: "Citizen",
       organization: "Organization",

@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!--
+      AirSync only has a light theme — no dark: variants exist anywhere in
+      the app. Without this, browsers apply their default dark UA styling
+      (black page background, dark form controls) on top of the hardcoded
+      light-mode colors when the OS/browser is set to dark mode, producing
+      broken contrast. Forcing color-scheme: light keeps rendering
+      consistent regardless of the user's system theme.
+    -->
+    <meta name="color-scheme" content="light" />
     <title>AirSync</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
