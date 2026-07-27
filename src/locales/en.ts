@@ -259,10 +259,6 @@ export const en: typeof th = {
     filterPm25: "PM2.5",
     filterHealth: "Health",
     readTime: "{minutes} min read",
-    newsletterTitle: "Stay in the loop",
-    newsletterSubtitle: "Get the latest air quality news sent straight to you",
-    newsletterCta: "Sign me up",
-    newsletterComingSoon: "Newsletter sign-up is coming soon",
     categories: {
       prevention: "Prevention",
       pm25: "PM2.5",

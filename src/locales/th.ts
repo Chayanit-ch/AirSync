@@ -256,10 +256,6 @@ export const th = {
     filterPm25: "PM 2.5",
     filterHealth: "สุขภาพ",
     readTime: "อ่าน {minutes} นาที",
-    newsletterTitle: "ติดตามข่าวสาร รวดเร็ว ทันใจ",
-    newsletterSubtitle: "หากต้องการรับข้อมูลข่าวสารทั้งหมดเราจะส่งตรงถึงคุณ",
-    newsletterCta: "ฉันต้องการ",
-    newsletterComingSoon: "ระบบสมัครรับข่าวสารจะพร้อมใช้งานเร็วๆ นี้",
     categories: {
       prevention: "การป้องกัน",
       pm25: "PM 2.5",

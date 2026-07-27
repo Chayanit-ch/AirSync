@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { KnowledgeArticle } from "../../types";
 import { useTranslation } from "../../hooks/useTranslation";
 import { ARTICLE_CATEGORY_META } from "../../utils/article";
@@ -9,9 +10,14 @@ export function FeaturedArticleCard({
 }) {
   const { t, dict } = useTranslation();
   const meta = ARTICLE_CATEGORY_META[article.category];
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+    <button
+      type="button"
+      onClick={() => setExpanded((prev) => !prev)}
+      className="hover:border-brand-200 block w-full cursor-pointer overflow-hidden rounded-2xl border border-gray-100 bg-white text-left shadow-sm transition hover:shadow-md"
+    >
       <img
         src={article.imageUrl}
         alt={article.title}
@@ -31,7 +37,15 @@ export function FeaturedArticleCard({
         <h2 className="mt-2 text-lg leading-snug font-bold text-gray-900">
           {article.title}
         </h2>
+        <p
+          className={`mt-2 text-sm text-gray-500 ${expanded ? "" : "line-clamp-2"}`}
+        >
+          {expanded ? (article.content ?? article.excerpt) : article.excerpt}
+        </p>
+        <span className="text-brand-600 mt-2 inline-block text-xs font-semibold">
+          {expanded ? t("alerts.showLess") : t("alerts.readFullKnowledge")}
+        </span>
       </div>
-    </div>
+    </button>
   );
 }

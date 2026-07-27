@@ -4,7 +4,6 @@ import { CategoryFilter, type ArticleFilter } from "../components/alerts/Categor
 import { FeaturedArticleCard } from "../components/alerts/FeaturedArticleCard";
 import { KnowledgeArticlesSection } from "../components/alerts/KnowledgeArticlesSection";
 import { NewsFeedSection } from "../components/alerts/NewsFeedSection";
-import { NewsletterCard } from "../components/alerts/NewsletterCard";
 import { featuredArticle } from "../data/mockData";
 import { useTranslation } from "../hooks/useTranslation";
 
@@ -25,8 +24,6 @@ export function AlertsPage() {
       <NewsFeedSection filter={filter} searchQuery={searchQuery} />
 
       <KnowledgeArticlesSection filter={filter} searchQuery={searchQuery} />
-
-      <NewsletterCard />
     </div>
   );
 }
