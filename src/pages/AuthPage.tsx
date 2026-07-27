@@ -288,19 +288,22 @@ export function AuthPage() {
         <div className="h-px flex-1 bg-gray-200" />
       </div>
 
-      <button
-        type="button"
-        onClick={handleGoogleLogin}
-        disabled={isBusy}
-        className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3.5 font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-60"
-      >
-        {isGoogleLoading ? (
-          <Loader2 size={18} className="animate-spin" />
-        ) : (
-          <GoogleIcon size={18} />
-        )}
-        {t("auth.googleLogin")}
-      </button>
+      <div className="flex flex-col gap-1.5">
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          disabled={isBusy}
+          className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3.5 font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-60"
+        >
+          {isGoogleLoading ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : (
+            <GoogleIcon size={18} />
+          )}
+          {t("auth.googleLogin")}
+        </button>
+        <p className="text-center text-xs text-gray-400">{t("auth.googleOrgEmailHint")}</p>
+      </div>
     </div>
   );
 }

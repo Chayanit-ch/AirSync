@@ -497,6 +497,8 @@ export const en: typeof th = {
     hidePassword: "Hide password",
     or: "or",
     googleLogin: "Continue with Google",
+    googleOrgEmailHint:
+      "If you're using a work or organization email and run into trouble signing in with Google, please use email and password instead.",
     genericError: "Something went wrong. Please try again",
     errorName: "Please enter your name",
     errorEmail: "Please enter your email",
