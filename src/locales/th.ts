@@ -270,7 +270,7 @@ export const th = {
     editPhotoComingSoon: "แก้ไขรูปโปรไฟล์จะพร้อมใช้งานเร็วๆ นี้",
     guardianLevel: "ผู้พิทักษ์อากาศระดับ {level}",
     airProtectionOrgLevel: "องค์กรพิทักษ์อากาศ ระดับ {level}",
-    airStewardLevel: "ผู้พิทักษ์อากาศภาครัฐ ระดับ {level}",
+    airStewardLevel: "ผู้ตรวจการอากาศ ระดับ {level}",
     accountTypeLabel: "ประเภทบัญชี",
     accountTypeHint: "แสดงเป็นป้ายชื่อและตราสัญลักษณ์บนโปรไฟล์ของคุณเท่านั้น ไม่มีผลต่อสิทธิ์การใช้งานในแอป",
     pendingVerification: "รอการยืนยันตัวตน",
