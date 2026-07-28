@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { AreaAirQualitySummary, GeoPoint, MonitoringStation } from "../types";
 import { useAllStations } from "./useAllStations";
+import { useStationWithTemperatureFallback } from "./useStationWithTemperatureFallback";
 import { useTranslation } from "./useTranslation";
 import { useUserLocation, type UserLocationStatus } from "./useUserLocation";
 import {
@@ -11,6 +12,9 @@ import {
 } from "../services/airQuality";
 import { dedupeWaqiStations, findNearestStation, haversineDistanceKm } from "../utils/geo";
 
+/** `station.temperature` here has already gone through the Air4Thai/WAQI ->
+ * OpenWeather fallback (see `useStationWithTemperatureFallback`) — this just
+ * reads it straight through, `undefined` renders as "No Data". */
 function toAreaSummary(station: MonitoringStation): AreaAirQualitySummary {
   const areaName =
     station.district && station.province
@@ -23,6 +27,7 @@ function toAreaSummary(station: MonitoringStation): AreaAirQualitySummary {
     avgAqi: station.currentAqi,
     avgPm25: station.currentPm25,
     severity: station.severity,
+    temperature: station.temperature,
   };
 }
 
@@ -103,6 +108,25 @@ export function useNearestStationHero(): NearestStationHeroResult {
     [stations],
   );
 
+  // The station that will actually be shown this render, computed with the
+  // same priority order as the return branches below — used only to drive
+  // `useStationWithTemperatureFallback` immediately following, so its
+  // OpenWeather fetch fires as soon as the real display station is known
+  // instead of waiting for a second render. `null` while still loading
+  // (locating, or WAQI not yet settled).
+  const displayStation: MonitoringStation | null =
+    status === "granted" && coords
+      ? nearestAir4Thai && !needsWaqi
+        ? nearestAir4Thai.station
+        : needsWaqi && !waqiSettled
+          ? null
+          : (waqiStation ?? nearestAir4Thai?.station ?? null)
+      : defaultStationFallback.station;
+
+  // Only ever fetches OpenWeather for this one display station, never the
+  // whole nationwide batch — see the quota note on `getOpenWeatherFallback`.
+  const enrichedDisplayStation = useStationWithTemperatureFallback(displayStation);
+
   if (stationsLoading || status === "locating") {
     return {
       area: null,
@@ -118,7 +142,7 @@ export function useNearestStationHero(): NearestStationHeroResult {
   if (status === "granted" && coords) {
     if (nearestAir4Thai && !needsWaqi) {
       return {
-        area: toAreaSummary(nearestAir4Thai.station),
+        area: toAreaSummary(enrichedDisplayStation ?? nearestAir4Thai.station),
         isLoading: false,
         isLive: stationsAreLive,
         distanceKm: nearestAir4Thai.distanceKm,
@@ -142,7 +166,7 @@ export function useNearestStationHero(): NearestStationHeroResult {
 
     if (waqiStation) {
       return {
-        area: toAreaSummary(waqiStation),
+        area: toAreaSummary(enrichedDisplayStation ?? waqiStation),
         isLoading: false,
         isLive: true,
         distanceKm: haversineDistanceKm(coords, waqiStation.location),
@@ -156,7 +180,7 @@ export function useNearestStationHero(): NearestStationHeroResult {
       // WAQI had nothing nearby either — still show the distant Air4Thai
       // reading rather than nothing, honestly flagged out of range.
       return {
-        area: toAreaSummary(nearestAir4Thai.station),
+        area: toAreaSummary(enrichedDisplayStation ?? nearestAir4Thai.station),
         isLoading: false,
         isLive: stationsAreLive,
         distanceKm: nearestAir4Thai.distanceKm,
@@ -176,7 +200,7 @@ export function useNearestStationHero(): NearestStationHeroResult {
   // raw station ID (there's no real name to fall back to) — rendering that
   // straight was the "raw station code" regression. Substitute a translated
   // "unavailable" label instead of trusting `.name` blindly.
-  const fallbackArea = toAreaSummary(defaultStationFallback.station);
+  const fallbackArea = toAreaSummary(enrichedDisplayStation ?? defaultStationFallback.station);
   if (!defaultStationFallback.isLive) {
     fallbackArea.areaName = t("common.stationUnavailable", { id: DEFAULT_STATION_ID });
   }

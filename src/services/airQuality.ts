@@ -488,3 +488,50 @@ export async function getWaqiStationsInBounds(bounds: {
   );
   return data?.ok && data.stations ? data.stations : [];
 }
+
+const OPENWEATHER_PROXY_URL = "/api/openweather";
+const OPENWEATHER_TIMEOUT_MS = 8000;
+
+interface OpenWeatherProxyResponse {
+  ok: boolean;
+  weather?: { temperature: number; humidity: number } | null;
+  error?: string;
+}
+
+/**
+ * Last-resort temperature/humidity source, queried only for a single
+ * already-displayed station whose `temperature` is missing from both
+ * Air4Thai and WAQI (see the priority order in `useNearestStationHero` and
+ * `MapPage`'s selected-station enrichment) — never for a whole station
+ * batch, to keep OpenWeather call volume low. Returns `null` on any failure
+ * (network, missing API key, quota exceeded) so callers fall through to
+ * "No Data" honestly — this must never throw.
+ */
+export async function getOpenWeatherFallback(
+  point: GeoPoint,
+): Promise<{ temperature: number; humidity: number } | null> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), OPENWEATHER_TIMEOUT_MS);
+    let response: Response;
+    try {
+      response = await fetch(`${OPENWEATHER_PROXY_URL}?lat=${point.lat}&lng=${point.lng}`, {
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    if (!response.ok) throw new Error(`/api/openweather responded with HTTP ${response.status}`);
+    const data = (await response.json()) as OpenWeatherProxyResponse;
+    if (!data.ok || !data.weather) {
+      console.warn(
+        `OpenWeather temperature fallback unavailable for (${point.lat}, ${point.lng})${data.error ? `: ${data.error}` : ""}.`,
+      );
+      return null;
+    }
+    return data.weather;
+  } catch (error) {
+    console.warn("OpenWeather temperature fallback request failed.", error);
+    return null;
+  }
+}

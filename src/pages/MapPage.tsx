@@ -12,6 +12,7 @@ import { StationBottomSheet } from "../components/map/StationBottomSheet";
 import { SourceLegend } from "../components/map/SourceLegend";
 import { SourceDebugCounter } from "../components/map/SourceDebugCounter";
 import { useAllStations } from "../hooks/useAllStations";
+import { useStationWithTemperatureFallback } from "../hooks/useStationWithTemperatureFallback";
 import { useUserLocation } from "../hooks/useUserLocation";
 import { useTranslation } from "../hooks/useTranslation";
 import { getWaqiStationsInBounds, upsertStationHistory } from "../services/airQuality";
@@ -200,6 +201,7 @@ export function MapPage() {
   }, [stations, viewportBounds]);
 
   const [selectedStation, setSelectedStation] = useState<MonitoringStation | null>(null);
+  const displayedStation = useStationWithTemperatureFallback(selectedStation);
   const [hasAutoSelected, setHasAutoSelected] = useState(false);
   const [searchParams] = useSearchParams();
 
@@ -318,9 +320,9 @@ export function MapPage() {
 
       {/* Bottom sheet on mobile; docked right-side panel on desktop (more
           screen space to work with than a phone-width bottom sheet). */}
-      {selectedStation && (
+      {displayedStation && (
         <div className="absolute inset-x-0 bottom-0 z-400 lg:inset-x-auto lg:top-0 lg:right-0 lg:bottom-0 lg:w-96">
-          <StationBottomSheet station={selectedStation} mode={activeLayer} />
+          <StationBottomSheet station={displayedStation} mode={activeLayer} />
         </div>
       )}
     </div>

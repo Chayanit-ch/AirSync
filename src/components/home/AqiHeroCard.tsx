@@ -92,11 +92,21 @@ export function AqiHeroCard({
         )}
       </div>
       <div className="flex flex-col divide-y divide-gray-100 bg-white">
-        <div className="px-4 py-3">
-          <p className="text-xs text-gray-400">PM 2.5</p>
-          <p className="mt-0.5 text-sm font-bold text-gray-800">
-            {area.avgPm25.toFixed(1)} µg/m³
-          </p>
+        <div className="grid grid-cols-2 divide-x divide-gray-100">
+          <div className="px-4 py-3">
+            <p className="text-xs text-gray-400">PM 2.5</p>
+            <p className="mt-0.5 text-sm font-bold text-gray-800">
+              {area.avgPm25.toFixed(1)} µg/m³
+            </p>
+          </div>
+          <div className="px-4 py-3">
+            <p className="text-xs text-gray-400">{t("common.temperature")}</p>
+            <p className="mt-0.5 text-sm font-bold text-gray-800">
+              {area.temperature != null
+                ? `${area.temperature} ${t("common.degrees")}`
+                : t("common.noData")}
+            </p>
+          </div>
         </div>
         {/* Full-width, wrapping block — personalized recommendations run
             longer than the old one-liner, so this can no longer share a

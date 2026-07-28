@@ -88,8 +88,10 @@ export interface MonitoringStation {
   location: GeoPoint;
   currentAqi: number;
   currentPm25: number;
-  /** Optional because the real Air4Thai feed doesn't report temperature — only mock stations have it. */
+  /** Optional because the real Air4Thai feed doesn't report temperature — only mock stations have it, or stations filled in via the OpenWeather fallback (see `getOpenWeatherFallback` in `services/airQuality.ts`). */
   temperature?: number;
+  /** Optional, same reasons as `temperature` — never sourced from Air4Thai/WAQI, only mock stations or the OpenWeather fallback. */
+  humidity?: number;
   severity: AQISeverityLevel;
   lastUpdated: string;
   source?: DataSource;
@@ -121,6 +123,8 @@ export interface AreaAirQualitySummary {
   avgAqi: number;
   avgPm25: number;
   severity: AQISeverityLevel;
+  /** Optional — Air4Thai/WAQI rarely report it; see `MonitoringStation.temperature` and the OpenWeather fallback in `services/airQuality.ts`. */
+  temperature?: number;
 }
 
 export type IncidentType =
