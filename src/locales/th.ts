@@ -476,7 +476,7 @@ export const th = {
     login: "เข้าสู่ระบบ",
     signup: "สมัครสมาชิก",
     name: "ชื่อ",
-    namePlaceholder: "ชื่อ-นามสกุล",
+    namePlaceholder: "ชื่อผู้ใช้งาน",
     email: "อีเมล",
     emailPlaceholder: "อีเมล...",
     password: "รหัสผ่าน",
