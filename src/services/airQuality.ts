@@ -498,40 +498,67 @@ interface OpenWeatherProxyResponse {
   error?: string;
 }
 
+// Concurrent callers for the same (rounded) coordinate share one in-flight
+// request instead of each firing their own — the Followed Areas grid can
+// mount several cards at once, and two followed areas often resolve to the
+// same or a neighboring station. Rounded to 2 decimals to line up with
+// `api/openweather.ts`'s own cache-key rounding (~1.1km), so this is a real
+// dedup against what the server would treat as the same lookup, not just an
+// approximation. Cleared as soon as the request settles — this coalesces a
+// single render's burst, it's not a standing TTL cache (the server already
+// has one of those).
+const inFlightOpenWeatherRequests = new Map<
+  string,
+  Promise<{ temperature: number; humidity: number } | null>
+>();
+
 /**
- * Last-resort temperature/humidity source, queried only for a single
- * already-displayed station whose `temperature` is missing from both
- * Air4Thai and WAQI (see the priority order in `useNearestStationHero` and
- * `MapPage`'s selected-station enrichment) — never for a whole station
- * batch, to keep OpenWeather call volume low. Returns `null` on any failure
- * (network, missing API key, quota exceeded) so callers fall through to
- * "No Data" honestly — this must never throw.
+ * Last-resort temperature/humidity source, used only as a fallback for
+ * stations whose `temperature` is missing from both Air4Thai and WAQI (see
+ * `useNearestStationHero`, `MapPage`'s selected-station enrichment, and the
+ * Followed Areas grid) — never for the whole nationwide station batch, to
+ * keep OpenWeather call volume low. Returns `null` on any failure (network,
+ * missing API key, quota exceeded) so callers fall through to "No Data"
+ * honestly — this must never throw.
  */
 export async function getOpenWeatherFallback(
   point: GeoPoint,
 ): Promise<{ temperature: number; humidity: number } | null> {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), OPENWEATHER_TIMEOUT_MS);
-    let response: Response;
+  const key = `${point.lat.toFixed(2)},${point.lng.toFixed(2)}`;
+  const inFlight = inFlightOpenWeatherRequests.get(key);
+  if (inFlight) return inFlight;
+
+  const request = (async () => {
     try {
-      response = await fetch(`${OPENWEATHER_PROXY_URL}?lat=${point.lat}&lng=${point.lng}`, {
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timeoutId);
-    }
-    if (!response.ok) throw new Error(`/api/openweather responded with HTTP ${response.status}`);
-    const data = (await response.json()) as OpenWeatherProxyResponse;
-    if (!data.ok || !data.weather) {
-      console.warn(
-        `OpenWeather temperature fallback unavailable for (${point.lat}, ${point.lng})${data.error ? `: ${data.error}` : ""}.`,
-      );
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), OPENWEATHER_TIMEOUT_MS);
+      let response: Response;
+      try {
+        response = await fetch(`${OPENWEATHER_PROXY_URL}?lat=${point.lat}&lng=${point.lng}`, {
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+      if (!response.ok) {
+        throw new Error(`/api/openweather responded with HTTP ${response.status}`);
+      }
+      const data = (await response.json()) as OpenWeatherProxyResponse;
+      if (!data.ok || !data.weather) {
+        console.warn(
+          `OpenWeather temperature fallback unavailable for (${point.lat}, ${point.lng})${data.error ? `: ${data.error}` : ""}.`,
+        );
+        return null;
+      }
+      return data.weather;
+    } catch (error) {
+      console.warn("OpenWeather temperature fallback request failed.", error);
       return null;
+    } finally {
+      inFlightOpenWeatherRequests.delete(key);
     }
-    return data.weather;
-  } catch (error) {
-    console.warn("OpenWeather temperature fallback request failed.", error);
-    return null;
-  }
+  })();
+
+  inFlightOpenWeatherRequests.set(key, request);
+  return request;
 }

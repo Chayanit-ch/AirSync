@@ -44,6 +44,14 @@ export function useFollowedAreaSummaries(
       avgAqi: station.currentAqi,
       avgPm25: station.currentPm25,
       severity: station.severity,
+      // isLive-gated: when a followed station is missing from the live batch,
+      // `station` here is `resolveStationReading`'s synthetic fallback, whose
+      // `location` is silently the *default* station's coordinates, not this
+      // area's — passing that through would fetch and show a real-looking
+      // OpenWeather temperature for the wrong place. Leaving both undefined
+      // degrades to the same honest "No Data" the offline name already gets.
+      temperature: isLive ? station.temperature : undefined,
+      location: isLive ? station.location : undefined,
     };
   });
 

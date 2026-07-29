@@ -125,6 +125,8 @@ export interface AreaAirQualitySummary {
   severity: AQISeverityLevel;
   /** Optional — Air4Thai/WAQI rarely report it; see `MonitoringStation.temperature` and the OpenWeather fallback in `services/airQuality.ts`. */
   temperature?: number;
+  /** The underlying station's coordinates — only needed by callers that may still have to run the OpenWeather fallback themselves (e.g. per-card in `FollowedAreasGrid`) because `temperature` came back empty. */
+  location?: GeoPoint;
 }
 
 export type IncidentType =

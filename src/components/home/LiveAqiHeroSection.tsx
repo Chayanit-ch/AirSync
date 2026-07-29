@@ -26,6 +26,7 @@ export function LiveAqiHeroSection() {
     riskGroup: resolveRiskGroup(userProfile?.riskGroup),
     dailyContext: userProfile?.dailyContext,
     healthNotes: userProfile?.healthNotes,
+    temperature: area?.temperature,
     language,
   });
 

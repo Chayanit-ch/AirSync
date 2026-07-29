@@ -14,6 +14,8 @@ interface UseAiAdviceParams {
   riskGroup: RiskGroup;
   dailyContext?: DailyContext;
   healthNotes?: string;
+  /** Optional extra context — see the OpenWeather fallback in `services/airQuality.ts`. Omitted from the DeepSeek payload entirely when absent, never sent as `null`/`0`. */
+  temperature?: number;
   language: "th" | "en";
 }
 
@@ -61,7 +63,7 @@ export function useAiAdvice(params: UseAiAdviceParams): AiAdviceState {
     inFlightRef.current = true;
     setIsLoading(true);
     try {
-      const { aqi, pm25, severity, riskGroup, dailyContext, healthNotes, language } =
+      const { aqi, pm25, severity, riskGroup, dailyContext, healthNotes, temperature, language } =
         paramsRef.current;
       const idToken = await auth.currentUser?.getIdToken();
       if (!idToken) throw new Error("No signed-in user available for AI advice request");
@@ -69,7 +71,18 @@ export function useAiAdvice(params: UseAiAdviceParams): AiAdviceState {
       const response = await fetch("/api/deepseek-advice", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ aqi, pm25, severity, riskGroup, dailyContext, healthNotes, language }),
+        body: JSON.stringify({
+          aqi,
+          pm25,
+          severity,
+          riskGroup,
+          dailyContext,
+          healthNotes,
+          language,
+          // Omitted entirely (not `null`/`0`) when unavailable — see the
+          // "no placeholder values" rule on `UseAiAdviceParams.temperature`.
+          ...(temperature != null ? { temperature } : {}),
+        }),
       });
       const data = (await response.json()) as {
         ok: boolean;

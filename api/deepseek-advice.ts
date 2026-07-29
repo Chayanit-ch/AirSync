@@ -96,6 +96,8 @@ interface AdviceRequestBody {
   dailyContext?: DailyContext;
   /** User-provided free text — sent to DeepSeek because it's needed to personalize advice, never logged or stored by this function. No email/name/uid is ever included in this request body by design. */
   healthNotes?: string;
+  /** Optional — the client (see `useAiAdvice`) omits this field entirely rather than sending `null`/`0` when temperature is genuinely unavailable, so its presence here always means a real reading. */
+  temperature?: number;
   language: "th" | "en";
 }
 
@@ -115,6 +117,7 @@ Rules you must follow exactly:
 - Each section must be roughly 3-4 sentences — concise, not a long essay.
 - Never give specific medical advice: no drug names, no dosages, no diagnoses. You may suggest consulting a healthcare professional if symptoms worsen, and nothing more specific than that.
 - Base your advice only on the context given to you. Do not invent facts.
+- If a current temperature is provided, treat it as optional extra context, not a mandatory topic: only mention heat-related precautions (hydration, avoiding prolonged sun exposure, etc.) when the temperature is unusually high or otherwise meaningfully affects the advice alongside air quality. If temperature is within a normal range, or not provided at all, don't mention it — stick to air-quality advice as usual.
 - The first section is practical actions to consider today or this week, based on the current AQI/conditions and the user's personal context.
 - The second section is sustainable habits and behavioral changes (transportation choices, environmental practices, exposure-reduction habits, energy usage).
 - Respond in EXACTLY this plain-text format, with no JSON, no markdown, and nothing before, between, or after these two blocks other than what's shown:
@@ -142,6 +145,10 @@ function buildUserPrompt(body: AdviceRequestBody): string {
   const dc = body.dailyContext;
   const lines = [
     `Current air quality: AQI ${body.aqi} (${body.severity}), PM2.5 ${body.pm25} µg/m³.`,
+    // Omitted (not "unknown"/0) whenever the client didn't send it — see the
+    // `temperature` field comment on `AdviceRequestBody`. A missing line
+    // here, not a placeholder value, is what tells the model it's unavailable.
+    ...(body.temperature != null ? [`Current temperature: ${body.temperature}°C.`] : []),
     `Risk group: ${body.riskGroup}.`,
     `Commute method: ${dc?.commuteMethod ?? (body.language === "th" ? "ไม่ระบุ" : "not specified")}.`,
     `Works outdoors: ${yesNo(dc?.worksOutdoors, body.language)}.`,
@@ -160,6 +167,7 @@ function isValidBody(body: unknown): body is AdviceRequestBody {
     typeof b.pm25 === "number" &&
     typeof b.severity === "string" &&
     typeof b.riskGroup === "string" &&
+    (b.temperature === undefined || typeof b.temperature === "number") &&
     (b.language === "th" || b.language === "en")
   );
 }
