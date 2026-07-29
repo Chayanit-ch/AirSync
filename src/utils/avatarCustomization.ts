@@ -38,13 +38,28 @@ export const HAT_OPTIONS: { value: "helmet" | "cap" }[] = [
   { value: "cap" },
 ];
 
-/** `null`/missing means "use the role's default color" — see `AvatarConfig.uniformColor`. */
+/** `null`/missing means "use the role's default color" — see `AvatarConfig.uniformColor`. Also reused as-is for the per-piece `weaponColor`/`shieldColor`/`hatColor`/`shoesColor` pickers (same 5 swatches, same "default" convention), rather than maintaining a near-duplicate list per equipment slot. */
 export const UNIFORM_COLOR_OPTIONS: PresetOption[] = [
   { value: "charcoal", hex: "#374151" },
   { value: "crimson", hex: "#991b1b" },
   { value: "navy", hex: "#1e3a8a" },
   { value: "teal", hex: "#0f766e" },
   { value: "violet", hex: "#6d28d9" },
+];
+
+/** No level threshold — same "always available from level 1" precedent as skin tone/hair style/color (see `getUnlockedSlots`'s doc comment): these are personalization, not power progression. */
+export const EXPRESSION_OPTIONS: { value: string }[] = [
+  { value: "happy" },
+  { value: "neutral" },
+  { value: "serious" },
+  { value: "angry" },
+  { value: "surprised" },
+];
+
+/** `null`/missing means plain/solid (no overlay) — see `AvatarConfig.uniformPattern`. Same "always available from level 1" precedent as expressions above. */
+export const UNIFORM_PATTERN_OPTIONS: { value: string }[] = [
+  { value: "stripes" },
+  { value: "chevron" },
 ];
 
 export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
@@ -60,6 +75,12 @@ export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
   equippedSanitizer: false,
   equippedHat: null,
   uniformColor: null,
+  expression: EXPRESSION_OPTIONS[0].value,
+  uniformPattern: null,
+  weaponColor: null,
+  shieldColor: null,
+  hatColor: null,
+  shoesColor: null,
 };
 
 /**

@@ -4,11 +4,13 @@ import type { AvatarConfig, UserType } from "../../types";
 import { useTranslation } from "../../hooks/useTranslation";
 import { updateUserAvatarConfig } from "../../services/userProfile";
 import {
+  EXPRESSION_OPTIONS,
   HAIR_COLOR_OPTIONS,
   HAIR_STYLE_OPTIONS,
   HAT_OPTIONS,
   SKIN_TONE_OPTIONS,
   UNIFORM_COLOR_OPTIONS,
+  UNIFORM_PATTERN_OPTIONS,
   getUnlockedSlots,
 } from "../../utils/avatarCustomization";
 import { CharacterAvatar } from "./CharacterAvatar";
@@ -109,6 +111,41 @@ export function CharacterCustomizationModal({
     );
   }
 
+  /** Reused for every per-piece color override (weapon/shield/hat/shoes) — same "Default" + 5-swatch layout as the existing Uniform Color row, since they all share `UNIFORM_COLOR_OPTIONS` and the same "`null` means built-in default" convention. Never level-gated: a piece's color only matters once the piece itself is equipped, and equipping it already required the right level. */
+  function ColorPickerRow({
+    labelKey,
+    value,
+    onChange,
+  }: {
+    labelKey: string;
+    value: string | null | undefined;
+    onChange: (hex: string | null) => void;
+  }) {
+    return (
+      <div>
+        <p className="mb-1.5 font-semibold text-gray-700">{t(labelKey)}</p>
+        <div className="flex flex-wrap gap-2">
+          <OptionButton
+            label={t("profile.avatar.uniformColorDefault")}
+            isSelected={!value}
+            isUnlocked
+            onClick={() => onChange(null)}
+          />
+          {UNIFORM_COLOR_OPTIONS.map((opt) => (
+            <OptionButton
+              key={opt.value}
+              label={t(`profile.avatar.uniformColors.${opt.value}`)}
+              swatch={opt.hex}
+              isSelected={value === opt.hex}
+              isUnlocked
+              onClick={() => onChange(opt.hex)}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="fixed inset-0 z-1000 flex items-end justify-center lg:items-center"
@@ -154,6 +191,21 @@ export function CharacterCustomizationModal({
                   isSelected={draft.skinTone === opt.value}
                   isUnlocked
                   onClick={() => setDraft((d) => ({ ...d, skinTone: opt.value }))}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.expression")}</p>
+            <div className="flex flex-wrap gap-2">
+              {EXPRESSION_OPTIONS.map((opt) => (
+                <OptionButton
+                  key={opt.value}
+                  label={t(`profile.avatar.expressions.${opt.value}`)}
+                  isSelected={(draft.expression || "happy") === opt.value}
+                  isUnlocked
+                  onClick={() => setDraft((d) => ({ ...d, expression: opt.value }))}
                 />
               ))}
             </div>
@@ -271,6 +323,14 @@ export function CharacterCustomizationModal({
             </div>
           </div>
 
+          {draft.equippedHat && (
+            <ColorPickerRow
+              labelKey="profile.avatar.hatColor"
+              value={draft.hatColor}
+              onChange={(hex) => setDraft((d) => ({ ...d, hatColor: hex }))}
+            />
+          )}
+
           <div>
             <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.weapon")}</p>
             <div className="flex flex-wrap gap-2">
@@ -295,6 +355,14 @@ export function CharacterCustomizationModal({
             </div>
           </div>
 
+          {draft.equippedWeapon && (
+            <ColorPickerRow
+              labelKey="profile.avatar.weaponColor"
+              value={draft.weaponColor}
+              onChange={(hex) => setDraft((d) => ({ ...d, weaponColor: hex }))}
+            />
+          )}
+
           <div>
             <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.shield")}</p>
             <div className="flex flex-wrap gap-2">
@@ -314,6 +382,14 @@ export function CharacterCustomizationModal({
               />
             </div>
           </div>
+
+          {draft.equippedShield && (
+            <ColorPickerRow
+              labelKey="profile.avatar.shieldColor"
+              value={draft.shieldColor}
+              onChange={(hex) => setDraft((d) => ({ ...d, shieldColor: hex }))}
+            />
+          )}
 
           <div>
             <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.cape")}</p>
@@ -356,6 +432,35 @@ export function CharacterCustomizationModal({
                 isUnlocked
                 onClick={() => setDraft((d) => ({ ...d, equippedShoes: null }))}
               />
+            </div>
+          </div>
+
+          {draft.equippedShoes && (
+            <ColorPickerRow
+              labelKey="profile.avatar.shoesColor"
+              value={draft.shoesColor}
+              onChange={(hex) => setDraft((d) => ({ ...d, shoesColor: hex }))}
+            />
+          )}
+
+          <div>
+            <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.uniformPattern")}</p>
+            <div className="flex flex-wrap gap-2">
+              <OptionButton
+                label={t("profile.avatar.uniformPatternNone")}
+                isSelected={!draft.uniformPattern}
+                isUnlocked
+                onClick={() => setDraft((d) => ({ ...d, uniformPattern: null }))}
+              />
+              {UNIFORM_PATTERN_OPTIONS.map((opt) => (
+                <OptionButton
+                  key={opt.value}
+                  label={t(`profile.avatar.uniformPatterns.${opt.value}`)}
+                  isSelected={draft.uniformPattern === opt.value}
+                  isUnlocked
+                  onClick={() => setDraft((d) => ({ ...d, uniformPattern: opt.value }))}
+                />
+              ))}
             </div>
           </div>
 

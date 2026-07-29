@@ -82,8 +82,8 @@ const VIEWBOX_HEIGHT = 160;
 /** Below this render size, per-instance `<defs>`/glow/aura effects are skipped entirely (see `showLevelEffects`) — sized to exclude `OrganizationLeaderboardRow`'s `size=40` list avatars (which can render many at once) while including the main Profile avatar and the customization modal's preview. */
 const LEVEL_EFFECTS_MIN_SIZE = 80;
 
-/** Upper-body pivot (torso top-center) — the whole head/neck/torso/arms/cape/equipment subtree rotates together as one rigid body. */
-const UPPER_BODY_ROTATION = "rotate(-9 50 46)";
+/** Upper-body pivot (torso top-center) — the whole head/neck/torso/arms/cape/equipment subtree rotates together as one rigid body. Kept upright (no tilt) per feedback that a leaning torso read as "off-balance" rather than dynamic — the "ready stance" comes entirely from the legs splaying apart below (see `LEFT_LEG_ROTATION`/`RIGHT_LEG_ROTATION`). */
+const UPPER_BODY_ROTATION = "rotate(0 50 46)";
 /** Left-leg pivot (top-center of the left leg rect: x=36 w=11 -> center 41.5). Positive angle swings the foot outward/left in SVG's y-down rotation convention (verified by rendering — the opposite sign visibly crossed the legs toward each other instead of apart). */
 const LEFT_LEG_ROTATION = "rotate(12 41.5 100)";
 /** Right-leg pivot (top-center of the right leg rect: x=53 w=11 -> center 58.5) — negative angle swings the foot outward/right, and a slightly smaller magnitude than the left leg for a "weight on the back foot" asymmetric stance rather than a symmetric akimbo look. */
@@ -126,6 +126,13 @@ export function CharacterAvatar({
   // `accentColor` (the TRUE role color) is always passed to `ThemeUniform`'s
   // badge separately, so role identity never depends on this override.
   const bodyColor = config.uniformColor || accentColor;
+  // Per-piece color overrides — same "`null`/missing means use the built-in
+  // default" convention as `uniformColor` above, just one field per slot
+  // instead of one shared color for everything.
+  const weaponColor = config.weaponColor || (config.equippedWeapon === "sword" ? "#78716c" : "#374151");
+  const shieldColor = config.shieldColor || accentColor;
+  const hatColor = config.hatColor || (config.equippedHat === "helmet" ? "#6b7280" : accentColor);
+  const shoesColor = config.shoesColor || (config.equippedShoes === "boots" ? accentColor : "#374151");
   // Randomized once per mounted instance so several characters on screen at
   // once (e.g. a leaderboard) don't all blink in perfect unison.
   const [blinkDelay] = useState(() => -(Math.random() * 5));
@@ -196,12 +203,14 @@ export function CharacterAvatar({
           hairColor={hairColor}
           hairStyle={config.hairStyle || DEFAULT_AVATAR_CONFIG.hairStyle}
           blinkDelay={blinkDelay}
+          expression={config.expression || "happy"}
         />
         <ThemeUniform
           bodyColor={bodyColor}
           badgeAccent={accentColor}
           torsoX={silhouette.torsoX}
           torsoWidth={silhouette.torsoWidth}
+          pattern={config.uniformPattern}
         />
         {showPauldrons && (
           <>
@@ -223,9 +232,9 @@ export function CharacterAvatar({
           <circle cx="50" cy="21" r="14" fill={`url(#${accentGlowId})`} />
         )}
         {config.equippedHat === "helmet" && (
-          <HelmetEquipment color="#6b7280" metallicSheenId={metallicSheenId} />
+          <HelmetEquipment color={hatColor} metallicSheenId={metallicSheenId} />
         )}
-        {config.equippedHat === "cap" && <CapEquipment color={accentColor} />}
+        {config.equippedHat === "cap" && <CapEquipment color={hatColor} />}
         {config.hasGlasses && <GlassesEquipment />}
         {config.equippedMask && <MaskEquipment />}
         {config.equippedSanitizer && <SanitizerEquipment />}
@@ -233,23 +242,23 @@ export function CharacterAvatar({
           <circle cx="90" cy="65" r="12" fill={`url(#${accentGlowId})`} />
         )}
         {config.equippedWeapon === "sword" && (
-          <SwordEquipment color="#78716c" metallicSheenId={metallicSheenId} />
+          <SwordEquipment color={weaponColor} metallicSheenId={metallicSheenId} />
         )}
         {config.equippedWeapon === "gun" && (
-          <GunEquipment color="#374151" metallicSheenId={metallicSheenId} />
+          <GunEquipment color={weaponColor} metallicSheenId={metallicSheenId} />
         )}
-        {config.equippedShield && <ShieldEquipment color={accentColor} metallicSheenId={metallicSheenId} />}
+        {config.equippedShield && <ShieldEquipment color={shieldColor} metallicSheenId={metallicSheenId} />}
       </g>
 
       <g transform={LEFT_LEG_ROTATION}>
         <LeftLeg skinColor={skinColor} />
-        {config.equippedShoes === "basic" && <BasicShoesLeft color="#374151" />}
-        {config.equippedShoes === "boots" && <BootsLeft color={accentColor} />}
+        {config.equippedShoes === "basic" && <BasicShoesLeft color={shoesColor} />}
+        {config.equippedShoes === "boots" && <BootsLeft color={shoesColor} />}
       </g>
       <g transform={RIGHT_LEG_ROTATION}>
         <RightLeg skinColor={skinColor} />
-        {config.equippedShoes === "basic" && <BasicShoesRight color="#374151" />}
-        {config.equippedShoes === "boots" && <BootsRight color={accentColor} />}
+        {config.equippedShoes === "basic" && <BasicShoesRight color={shoesColor} />}
+        {config.equippedShoes === "boots" && <BootsRight color={shoesColor} />}
       </g>
     </svg>
   );

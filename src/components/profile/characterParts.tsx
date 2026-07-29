@@ -60,6 +60,8 @@ export interface FaceProps {
   hairStyle: string;
   /** Random per-instance delay (seconds, expected negative) so multiple on-screen characters don't blink in lockstep. */
   blinkDelay: number;
+  /** One of `EXPRESSION_OPTIONS` (see `utils/avatarCustomization.ts`) — drives `Expression`'s mouth/eyebrow shape below. */
+  expression: string;
 }
 
 interface EquipmentProps {
@@ -154,16 +156,63 @@ function torsoSlice(torsoX: number, torsoWidth: number, fracStart: number, fracE
  * so the whole figure reads as one coherant lighting scheme rather than
  * per-part arbitrary choices.
  */
+/**
+ * Optional torso pattern overlay — one of `UNIFORM_PATTERN_OPTIONS` (see
+ * `utils/avatarCustomization.ts`), `null`/undefined renders nothing (plain/
+ * solid uniform, the original look). Parameterized off the same
+ * `torsoX`/`torsoWidth` as the base shape so it scales with silhouette tier
+ * automatically, and kept a safe margin inside the taper's own edges
+ * (0.15-0.85 fraction range, not 0-1) so a diagonal stripe can never poke
+ * outside the tapered silhouette.
+ */
+function UniformPattern({
+  pattern,
+  torsoX,
+  torsoWidth,
+}: {
+  pattern: string | null | undefined;
+  torsoX: number;
+  torsoWidth: number;
+}) {
+  if (pattern === "stripes") {
+    const xAt = (fraction: number) => torsoX + torsoWidth * fraction;
+    return (
+      <g stroke="#ffffff" strokeOpacity="0.3" strokeWidth="2.2">
+        <line x1={xAt(0.22)} y1="48" x2={xAt(0.14)} y2="100" />
+        <line x1={xAt(0.5)} y1="48" x2={xAt(0.42)} y2="100" />
+        <line x1={xAt(0.78)} y1="48" x2={xAt(0.7)} y2="100" />
+      </g>
+    );
+  }
+  if (pattern === "chevron") {
+    const xAt = (fraction: number) => torsoX + torsoWidth * fraction;
+    return (
+      <path
+        d={`M ${xAt(0.25)} 80 L 50 92 L ${xAt(0.75)} 80`}
+        fill="none"
+        stroke="#ffffff"
+        strokeOpacity="0.4"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    );
+  }
+  return null;
+}
+
 export function ThemeUniform({
   bodyColor,
   badgeAccent,
   torsoX = 30,
   torsoWidth = 40,
+  pattern,
 }: {
   bodyColor: string;
   badgeAccent: string;
   torsoX?: number;
   torsoWidth?: number;
+  pattern?: string | null;
 }) {
   return (
     <g>
@@ -172,6 +221,7 @@ export function ThemeUniform({
       <path d={torsoSlice(torsoX, torsoWidth, 0, 0.25)} fill="#ffffff" opacity="0.14" />
       {/* shadow: right edge, deliberately wider than the highlight so the two don't read as symmetric */}
       <path d={torsoSlice(torsoX, torsoWidth, 0.6, 1)} fill="#000000" opacity="0.16" />
+      <UniformPattern pattern={pattern} torsoX={torsoX} torsoWidth={torsoWidth} />
       <path
         d="M50 58l2.2 4.5 5 .7-3.6 3.5.85 5-4.45-2.3-4.45 2.3.85-5-3.6-3.5 5-.7z"
         fill="white"
@@ -286,25 +336,37 @@ function Hair({ hairStyle, hairColor }: { hairStyle: string; hairColor: string }
       fill={hairColor}
     />
   );
+  // A soft glossy streak near the crown — a single arc, no fill, reused by
+  // every style that includes `cap` — cheap way to make flat-colored hair
+  // read as hair rather than a plain painted dome.
+  const capShine = (
+    <path d="M40 18 A10 7 0 0 1 53 15" fill="none" stroke="#ffffff" strokeOpacity="0.35" strokeWidth="1.6" strokeLinecap="round" />
+  );
 
   if (hairStyle === "long") {
+    // Tapered quads (straight lines only) instead of straight-sided rects —
+    // wider where they meet the cap, narrowing to a soft point at the tip,
+    // for a more natural "flowing strand" silhouette than a blunt rect end.
     return (
       <g>
         {cap}
-        <rect x="32" y="20" width="8" height="28" rx="4" fill={hairColor} />
-        <rect x="60" y="20" width="8" height="28" rx="4" fill={hairColor} />
+        {capShine}
+        <path d="M32 20 L40 20 L37 46 L34 50 Z" fill={hairColor} />
+        <path d="M60 20 L68 20 L66 50 L63 46 Z" fill={hairColor} />
       </g>
     );
   }
 
   if (hairStyle === "bob") {
     // Shorter, boxier side hair ending blunt near the jaw (y~41) instead of
-    // draping past the shoulders like "long".
+    // draping past the shoulders like "long" — tapered slightly inward at
+    // the bottom corners rather than a hard rect end.
     return (
       <g>
         {cap}
-        <rect x="33" y={HAIR_CAP_BASELINE} width="9" height="18" rx="2" fill={hairColor} />
-        <rect x="58" y={HAIR_CAP_BASELINE} width="9" height="18" rx="2" fill={hairColor} />
+        {capShine}
+        <path d={`M33 ${HAIR_CAP_BASELINE} L42 ${HAIR_CAP_BASELINE} L40 41 L35 41 Z`} fill={hairColor} />
+        <path d={`M58 ${HAIR_CAP_BASELINE} L67 ${HAIR_CAP_BASELINE} L65 41 L60 41 Z`} fill={hairColor} />
       </g>
     );
   }
@@ -315,6 +377,7 @@ function Hair({ hairStyle, hairColor }: { hairStyle: string; hairColor: string }
     return (
       <g>
         {cap}
+        {capShine}
         <circle cx="64" cy="20" r="3" fill={hairColor} />
         <rect x="64" y="18" width="7" height="20" rx="3.5" fill={hairColor} />
         <rect x="65" y="36" width="5" height="14" rx="2.5" fill={hairColor} />
@@ -323,14 +386,16 @@ function Hair({ hairStyle, hairColor }: { hairStyle: string; hairColor: string }
   }
 
   if (hairStyle === "curly") {
-    // Cap plus rounded bumps along the top edge for texture — every bump
-    // stays at y<=22, well clear of the eyes.
+    // Cap plus rounded bumps along the top edge for texture — staggered
+    // sizes/positions (not identical circles) for a less uniform, more
+    // natural curl pattern. Every bump stays well clear of the eyes.
     return (
       <g>
         {cap}
-        <circle cx="40" cy="16" r="6" fill={hairColor} />
-        <circle cx="50" cy="12" r="6" fill={hairColor} />
-        <circle cx="60" cy="16" r="6" fill={hairColor} />
+        <circle cx="38" cy="17" r="5.5" fill={hairColor} />
+        <circle cx="46" cy="12" r="6.5" fill={hairColor} />
+        <circle cx="54" cy="11" r="6.5" fill={hairColor} />
+        <circle cx="62" cy="17" r="5.5" fill={hairColor} />
       </g>
     );
   }
@@ -350,7 +415,12 @@ function Hair({ hairStyle, hairColor }: { hairStyle: string; hairColor: string }
   }
 
   // short
-  return cap;
+  return (
+    <g>
+      {cap}
+      {capShine}
+    </g>
+  );
 }
 
 /**
@@ -360,7 +430,49 @@ function Hair({ hairStyle, hairColor }: { hairStyle: string; hairColor: string }
  * see `BasicShoesLeft`/`BasicShoesRight`/`BootsLeft`/`BootsRight`, which
  * render on top of this same footprint from `LeftLeg`/`RightLeg`.
  */
-export function CharacterFace({ skinColor, hairColor, hairStyle, blinkDelay }: FaceProps) {
+/**
+ * Mouth + eyebrows for one of `EXPRESSION_OPTIONS` — kept to straight lines,
+ * simple arcs, and one small circle (never hand-chained bezier curves, same
+ * rule the rest of this file follows) so every mood stays easy to verify by
+ * eye. Eyebrows sit at y<=25, clear of the eyes' own top edge (y=26).
+ */
+function Expression({ expression }: { expression: string }) {
+  const stroke = "#292524";
+  if (expression === "neutral") {
+    return <line x1="46" y1="36" x2="54" y2="36" stroke={stroke} strokeWidth="1.2" strokeLinecap="round" />;
+  }
+  if (expression === "serious") {
+    return (
+      <g stroke={stroke} strokeLinecap="round">
+        <line x1="46" y1="36" x2="54" y2="36" strokeWidth="1.2" />
+        <line x1="41" y1="23.5" x2="46" y2="24.5" strokeWidth="1.1" />
+        <line x1="59" y1="23.5" x2="54" y2="24.5" strokeWidth="1.1" />
+      </g>
+    );
+  }
+  if (expression === "angry") {
+    return (
+      <g stroke={stroke} strokeLinecap="round">
+        <path d="M46 37c1.3 -1 2.7 -1 4 -1s2.7 0 4 1" strokeWidth="1.2" fill="none" />
+        <line x1="41" y1="22" x2="46.5" y2="24.5" strokeWidth="1.3" />
+        <line x1="59" y1="22" x2="53.5" y2="24.5" strokeWidth="1.3" />
+      </g>
+    );
+  }
+  if (expression === "surprised") {
+    return (
+      <g stroke={stroke} strokeLinecap="round">
+        <circle cx="50" cy="36" r="2.2" fill="none" strokeWidth="1.1" />
+        <path d="M41 22.5c1.5 -1.5 3.5 -1.5 5 -1" strokeWidth="1.1" fill="none" />
+        <path d="M59 22.5c-1.5 -1.5 -3.5 -1.5 -5 -1" strokeWidth="1.1" fill="none" />
+      </g>
+    );
+  }
+  // happy (default)
+  return <path d="M46 35c1.3 1.2 2.7 1.2 4 1.2s2.7 0 4-1.2" stroke={stroke} strokeWidth="1.2" fill="none" strokeLinecap="round" />;
+}
+
+export function CharacterFace({ skinColor, hairColor, hairStyle, blinkDelay, expression }: FaceProps) {
   return (
     <g>
       {/* neck — bridges the gap between head (bottom at y=43) and torso (top at y=46) */}
@@ -377,7 +489,7 @@ export function CharacterFace({ skinColor, hairColor, hairStyle, blinkDelay }: F
         <circle cx="44" cy="28" r="2" fill="#292524" />
         <circle cx="56" cy="28" r="2" fill="#292524" />
       </g>
-      <path d="M46 35c1.3 1.2 2.7 1.2 4 1.2s2.7 0 4-1.2" stroke="#292524" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      <Expression expression={expression} />
       <Hair hairStyle={hairStyle} hairColor={hairColor} />
     </g>
   );
@@ -502,8 +614,13 @@ export function SwordEquipment({ color, metallicSheenId }: MetallicEquipmentProp
       {metallicSheenId && (
         <path d="M85 76 L85 50 L87 44 L89 50 L89 76 Z" fill={`url(#${metallicSheenId})`} transform="rotate(15 87 60)" />
       )}
-      <rect x="82" y="76" width="10" height="4" rx="1.5" fill={color} transform="rotate(15 87 78)" />
+      {/* fuller — a thin center groove line for extra blade detail */}
+      <line x1="87" y1="50" x2="87" y2="74" stroke="#9ca3af" strokeWidth="0.6" opacity="0.7" transform="rotate(15 87 60)" />
+      {/* crossguard, wider than the hilt for a proper "guard" silhouette instead of a plain narrow bar */}
+      <path d="M79 76 L95 76 L95 79.5 L79 79.5 Z" fill={color} transform="rotate(15 87 78)" />
       <rect x="85" y="80" width="4" height="9" rx="1.5" fill="#92400e" transform="rotate(15 87 85)" />
+      {/* pommel */}
+      <circle cx="87" cy="90.5" r="2.3" fill={color} transform="rotate(15 87 85)" />
     </g>
   );
 }
@@ -512,9 +629,15 @@ export function SwordEquipment({ color, metallicSheenId }: MetallicEquipmentProp
 export function GunEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
   return (
     <g className="origin-center animate-equip-in">
-      <rect x="84" y="84" width="15" height="6" rx="2" fill={color} />
-      {metallicSheenId && <rect x="84" y="84" width="15" height="6" rx="2" fill={`url(#${metallicSheenId})`} />}
-      <rect x="94" y="88" width="5" height="8" rx="1.5" fill={color} />
+      {/* barrel */}
+      <rect x="84" y="84" width="15" height="5" rx="2" fill={color} />
+      {metallicSheenId && <rect x="84" y="84" width="15" height="5" rx="2" fill={`url(#${metallicSheenId})`} />}
+      {/* front sight */}
+      <rect x="97" y="81.5" width="1.6" height="3" fill="#1f2937" />
+      {/* grip, angled back toward the hand */}
+      <rect x="94" y="88" width="5" height="9" rx="1.5" fill="#1f2937" transform="rotate(8 96.5 92)" />
+      {/* trigger guard — a simple half-circle arc, same safe-arc technique already used for the hair cap/helmet dome/shield curve */}
+      <path d="M91 89 A3 3 0 0 0 91 95" fill="none" stroke="#1f2937" strokeWidth="1.2" />
     </g>
   );
 }

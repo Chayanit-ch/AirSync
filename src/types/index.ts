@@ -338,6 +338,15 @@ export interface AvatarConfig {
   equippedHat?: "helmet" | "cap" | null;
   /** Recolors the uniform + cape only — the chest badge always renders in the true role color (see `ThemeUniform`) so identity stays readable regardless. `null`/missing means "use the role's default color". */
   uniformColor?: string | null;
+  /** Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `"happy"`. */
+  expression?: string;
+  /** A visual accent overlaid on the uniform (stripes, chevron, etc.) — `null`/missing means plain/solid, no pattern. Optional because saved before this field existed. */
+  uniformPattern?: string | null;
+  /** Recolors that one equipment piece only — `null`/missing means "use its built-in default color", same convention as `uniformColor`. Optional because saved before these fields existed. */
+  weaponColor?: string | null;
+  shieldColor?: string | null;
+  hatColor?: string | null;
+  shoesColor?: string | null;
 }
 
 export interface UserProfile {
