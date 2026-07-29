@@ -326,7 +326,8 @@ export interface AvatarConfig {
   hairStyle: string;
   hairColor: string;
   hasGlasses: boolean;
-  equippedWeapon?: "sword" | "gun" | null;
+  /** `staff`/`chakram` are the "for high levels" tier — see `getUnlockedSlots`'s separate `advancedWeapon` threshold. */
+  equippedWeapon?: "sword" | "gun" | "staff" | "chakram" | null;
   equippedShield: boolean;
   equippedCape: boolean;
   equippedShoes: "basic" | "boots" | null;
@@ -349,6 +350,12 @@ export interface AvatarConfig {
   shoesColor?: string | null;
   /** The armored-look "jacket" layer (belt, gloves, shoulder/arm/leg armor, the more pronounced tier-based torso taper) — `false` reverts to a plain-t-shirt silhouette regardless of level. Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `true` so existing accounts see no change. */
   equippedJacket?: boolean;
+  /** Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `"round"`. */
+  glassesStyle?: string;
+  /** Recolors the legs only — `null`/missing means "use the default charcoal", same convention as `uniformColor`/`shoesColor`. Deliberately separate from `uniformColor` so the shirt and pants can be colored independently. */
+  pantsColor?: string | null;
+  /** The chest emblem shape — `star`/`shield`/`circle`/`diamond`. Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `"star"`. */
+  badgeStyle?: string;
 }
 
 export interface UserProfile {

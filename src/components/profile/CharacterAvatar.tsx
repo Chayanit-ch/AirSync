@@ -17,6 +17,7 @@ import {
   BootsRight,
   CapeEquipment,
   CapEquipment,
+  ChakramEquipment,
   CharacterFace,
   GlassesEquipment,
   Glove,
@@ -34,6 +35,7 @@ import {
   RightLegGuard,
   SanitizerEquipment,
   ShieldEquipment,
+  StaffEquipment,
   SwordEquipment,
   ThemeUniform,
   Wings,
@@ -134,10 +136,13 @@ export function CharacterAvatar({
   // Per-piece color overrides — same "`null`/missing means use the built-in
   // default" convention as `uniformColor` above, just one field per slot
   // instead of one shared color for everything.
-  const weaponColor = config.weaponColor || (config.equippedWeapon === "sword" ? "#78716c" : "#374151");
+  const weaponColor =
+    config.weaponColor ||
+    (config.equippedWeapon === "sword" || config.equippedWeapon === "staff" ? "#78716c" : "#374151");
   const shieldColor = config.shieldColor || accentColor;
   const hatColor = config.hatColor || (config.equippedHat === "helmet" ? "#6b7280" : accentColor);
   const shoesColor = config.shoesColor || (config.equippedShoes === "boots" ? accentColor : "#374151");
+  const pantsColor = config.pantsColor || "#374151";
   // Randomized once per mounted instance so several characters on screen at
   // once (e.g. a leaderboard) don't all blink in perfect unison.
   const [blinkDelay] = useState(() => -(Math.random() * 5));
@@ -229,6 +234,7 @@ export function CharacterAvatar({
           torsoWidth={silhouette.torsoWidth}
           waistTaperRatio={waistTaperRatio}
           pattern={config.uniformPattern}
+          badgeStyle={config.badgeStyle}
         />
         {showPauldrons && (
           <>
@@ -266,29 +272,39 @@ export function CharacterAvatar({
           <HelmetEquipment color={hatColor} metallicSheenId={metallicSheenId} badgeTier={badgeTier} />
         )}
         {config.equippedHat === "cap" && <CapEquipment color={hatColor} />}
-        {config.hasGlasses && <GlassesEquipment />}
+        {config.hasGlasses && <GlassesEquipment style={config.glassesStyle} />}
         {config.equippedMask && <MaskEquipment />}
         {config.equippedSanitizer && <SanitizerEquipment />}
         {showAccentGlow && config.equippedWeapon && (
           <circle cx="90" cy="65" r="12" fill={`url(#${accentGlowId})`} />
         )}
         {config.equippedWeapon === "sword" && (
-          <SwordEquipment color={weaponColor} metallicSheenId={metallicSheenId} />
+          <SwordEquipment
+            color={weaponColor}
+            metallicSheenId={metallicSheenId}
+            glowId={badgeTier >= 5 && showAccentGlow ? accentGlowId : undefined}
+          />
         )}
         {config.equippedWeapon === "gun" && (
           <GunEquipment color={weaponColor} metallicSheenId={metallicSheenId} />
+        )}
+        {config.equippedWeapon === "staff" && (
+          <StaffEquipment color={weaponColor} metallicSheenId={metallicSheenId} />
+        )}
+        {config.equippedWeapon === "chakram" && (
+          <ChakramEquipment color={weaponColor} metallicSheenId={metallicSheenId} />
         )}
         {config.equippedShield && <ShieldEquipment color={shieldColor} metallicSheenId={metallicSheenId} />}
       </g>
 
       <g transform={LEFT_LEG_ROTATION}>
-        <LeftLeg skinColor={skinColor} />
+        <LeftLeg skinColor={skinColor} pantsColor={pantsColor} />
         {showLimbArmor && <LeftLegGuard color={bodyColor} />}
         {config.equippedShoes === "basic" && <BasicShoesLeft color={shoesColor} />}
         {config.equippedShoes === "boots" && <BootsLeft color={shoesColor} />}
       </g>
       <g transform={RIGHT_LEG_ROTATION}>
-        <RightLeg skinColor={skinColor} />
+        <RightLeg skinColor={skinColor} pantsColor={pantsColor} />
         {showLimbArmor && <RightLegGuard color={bodyColor} />}
         {config.equippedShoes === "basic" && <BasicShoesRight color={shoesColor} />}
         {config.equippedShoes === "boots" && <BootsRight color={shoesColor} />}

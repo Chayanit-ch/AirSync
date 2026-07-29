@@ -4,13 +4,16 @@ import type { AvatarConfig, UserType } from "../../types";
 import { useTranslation } from "../../hooks/useTranslation";
 import { updateUserAvatarConfig } from "../../services/userProfile";
 import {
+  BADGE_STYLE_OPTIONS,
   EXPRESSION_OPTIONS,
+  GLASSES_STYLE_OPTIONS,
   HAIR_COLOR_OPTIONS,
   HAIR_STYLE_OPTIONS,
   HAT_OPTIONS,
   SKIN_TONE_OPTIONS,
   UNIFORM_COLOR_OPTIONS,
   UNIFORM_PATTERN_OPTIONS,
+  WEAPON_OPTIONS,
   getUnlockedSlots,
 } from "../../utils/avatarCustomization";
 import { CharacterAvatar } from "./CharacterAvatar";
@@ -262,6 +265,23 @@ export function CharacterCustomizationModal({
             </div>
           </div>
 
+          {draft.hasGlasses && (
+            <div>
+              <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.glassesStyle")}</p>
+              <div className="flex flex-wrap gap-2">
+                {GLASSES_STYLE_OPTIONS.map((opt) => (
+                  <OptionButton
+                    key={opt.value}
+                    label={t(`profile.avatar.glassesStyles.${opt.value}`)}
+                    isSelected={(draft.glassesStyle || "round") === opt.value}
+                    isUnlocked
+                    onClick={() => setDraft((d) => ({ ...d, glassesStyle: opt.value }))}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.mask")}</p>
             <div className="flex flex-wrap gap-2">
@@ -334,18 +354,15 @@ export function CharacterCustomizationModal({
           <div>
             <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.weapon")}</p>
             <div className="flex flex-wrap gap-2">
-              <OptionButton
-                label={t("profile.avatar.weapons.sword")}
-                isSelected={draft.equippedWeapon === "sword"}
-                isUnlocked={unlocked.weapon}
-                onClick={() => setDraft((d) => ({ ...d, equippedWeapon: "sword" }))}
-              />
-              <OptionButton
-                label={t("profile.avatar.weapons.gun")}
-                isSelected={draft.equippedWeapon === "gun"}
-                isUnlocked={unlocked.weapon}
-                onClick={() => setDraft((d) => ({ ...d, equippedWeapon: "gun" }))}
-              />
+              {WEAPON_OPTIONS.map((opt) => (
+                <OptionButton
+                  key={opt.value}
+                  label={t(`profile.avatar.weapons.${opt.value}`)}
+                  isSelected={draft.equippedWeapon === opt.value}
+                  isUnlocked={opt.value === "staff" || opt.value === "chakram" ? unlocked.advancedWeapon : unlocked.weapon}
+                  onClick={() => setDraft((d) => ({ ...d, equippedWeapon: opt.value }))}
+                />
+              ))}
               <OptionButton
                 label={t("profile.avatar.weapons.none")}
                 isSelected={!draft.equippedWeapon}
@@ -465,6 +482,21 @@ export function CharacterCustomizationModal({
           </div>
 
           <div>
+            <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.badgeStyle")}</p>
+            <div className="flex flex-wrap gap-2">
+              {BADGE_STYLE_OPTIONS.map((opt) => (
+                <OptionButton
+                  key={opt.value}
+                  label={t(`profile.avatar.badgeStyles.${opt.value}`)}
+                  isSelected={(draft.badgeStyle || "star") === opt.value}
+                  isUnlocked
+                  onClick={() => setDraft((d) => ({ ...d, badgeStyle: opt.value }))}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
             <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.uniformPattern")}</p>
             <div className="flex flex-wrap gap-2">
               <OptionButton
@@ -506,6 +538,12 @@ export function CharacterCustomizationModal({
               ))}
             </div>
           </div>
+
+          <ColorPickerRow
+            labelKey="profile.avatar.pantsColor"
+            value={draft.pantsColor}
+            onChange={(hex) => setDraft((d) => ({ ...d, pantsColor: hex }))}
+          />
         </div>
 
         <div className="mt-4 border-t border-gray-100 pt-3">

@@ -220,6 +220,33 @@ function UniformPattern({
   return null;
 }
 
+/** One of `BADGE_STYLE_OPTIONS` — `star` (original) plus `shield`/`circle`/`diamond` alternatives, all centered on the same x=50 chest-badge anchor point regardless of tier (torso stays centered there at every silhouette tier). */
+function Badge({ badgeStyle, badgeAccent }: { badgeStyle?: string; badgeAccent: string }) {
+  const commonProps = {
+    fill: "white",
+    stroke: badgeAccent,
+    strokeWidth: 1,
+    strokeLinejoin: "round" as const,
+    opacity: 0.95,
+  };
+  if (badgeStyle === "shield") {
+    return <path d="M50 57 L57 59 L57 67 C57 72 54 75.5 50 77 C46 75.5 43 72 43 67 L43 59 Z" {...commonProps} />;
+  }
+  if (badgeStyle === "circle") {
+    return <circle cx="50" cy="67" r="7" {...commonProps} />;
+  }
+  if (badgeStyle === "diamond") {
+    return <rect x="44" y="61" width="12" height="12" transform="rotate(45 50 67)" {...commonProps} />;
+  }
+  // star (default)
+  return (
+    <path
+      d="M50 58l2.2 4.5 5 .7-3.6 3.5.85 5-4.45-2.3-4.45 2.3.85-5-3.6-3.5 5-.7z"
+      {...commonProps}
+    />
+  );
+}
+
 export function ThemeUniform({
   bodyColor,
   badgeAccent,
@@ -227,6 +254,7 @@ export function ThemeUniform({
   torsoWidth = 40,
   waistTaperRatio,
   pattern,
+  badgeStyle,
 }: {
   bodyColor: string;
   badgeAccent: string;
@@ -234,6 +262,7 @@ export function ThemeUniform({
   torsoWidth?: number;
   waistTaperRatio?: number;
   pattern?: string | null;
+  badgeStyle?: string;
 }) {
   return (
     <g>
@@ -243,14 +272,7 @@ export function ThemeUniform({
       {/* shadow: right edge, deliberately wider than the highlight so the two don't read as symmetric */}
       <path d={torsoSlice(torsoX, torsoWidth, 0.6, 1, waistTaperRatio)} fill="#000000" opacity="0.16" />
       <UniformPattern pattern={pattern} torsoX={torsoX} torsoWidth={torsoWidth} />
-      <path
-        d="M50 58l2.2 4.5 5 .7-3.6 3.5.85 5-4.45-2.3-4.45 2.3.85-5-3.6-3.5 5-.7z"
-        fill="white"
-        stroke={badgeAccent}
-        strokeWidth="1"
-        strokeLinejoin="round"
-        opacity="0.95"
-      />
+      <Badge badgeStyle={badgeStyle} badgeAccent={badgeAccent} />
     </g>
   );
 }
@@ -664,10 +686,11 @@ export function ArmGuard({ color, armX, armWidth }: { color: string; armX: numbe
 }
 
 /** Left leg + plain foot, split out of the old monolithic `CharacterFace` so `CharacterAvatar` can nest it in its own independent pose rotation group. Does NOT scale with silhouette tier (only torso/arms do — legs stay the original fixed footprint). */
-export function LeftLeg({ skinColor }: { skinColor: string }) {
+/** `pantsColor` (default `"#374151"`) recolors the leg only — see `AvatarConfig.pantsColor`, deliberately separate from `uniformColor` so shirt and pants can be colored independently. */
+export function LeftLeg({ skinColor, pantsColor = "#374151" }: { skinColor: string; pantsColor?: string }) {
   return (
     <g>
-      <rect x="36" y="100" width="11" height="42" rx="5" fill="#374151" />
+      <rect x="36" y="100" width="11" height="42" rx="5" fill={pantsColor} />
       <rect x="36" y="100" width="3.5" height="42" rx="5" fill="#ffffff" opacity="0.10" />
       <rect x="43.5" y="100" width="3.5" height="42" rx="5" fill="#000000" opacity="0.16" />
       {/* plain foot — shown only while no shoes equipment is layered on top */}
@@ -677,10 +700,10 @@ export function LeftLeg({ skinColor }: { skinColor: string }) {
 }
 
 /** Right leg + plain foot — mirrored `LeftLeg`. */
-export function RightLeg({ skinColor }: { skinColor: string }) {
+export function RightLeg({ skinColor, pantsColor = "#374151" }: { skinColor: string; pantsColor?: string }) {
   return (
     <g>
-      <rect x="53" y="100" width="11" height="42" rx="5" fill="#374151" />
+      <rect x="53" y="100" width="11" height="42" rx="5" fill={pantsColor} />
       <rect x="53" y="100" width="3.5" height="42" rx="5" fill="#000000" opacity="0.16" />
       <rect x="60.5" y="100" width="3.5" height="42" rx="5" fill="#ffffff" opacity="0.10" />
       <rect x="50" y="138" width="18" height="9" rx="4" fill={skinColor} />
@@ -708,8 +731,30 @@ export function RightLegGuard({ color }: { color: string }) {
   );
 }
 
-/** Level 2 unlock — glasses over the eyes. Upper-body attach point. */
-export function GlassesEquipment() {
+/** Level 2 unlock — glasses over the eyes. Upper-body attach point. `style` (default `"round"`) picks one of `GLASSES_STYLE_OPTIONS` — `square` (rimmed rectangular frames) and `shades` (solid tinted lenses) are the two added alternatives to the original round wire-frame look. */
+export function GlassesEquipment({ style = "round" }: { style?: string }) {
+  if (style === "square") {
+    return (
+      <g className="origin-center animate-equip-in">
+        <rect x="39" y="24.5" width="10" height="7" rx="1.5" fill="none" stroke="#1f2937" strokeWidth="1.6" />
+        <rect x="51" y="24.5" width="10" height="7" rx="1.5" fill="none" stroke="#1f2937" strokeWidth="1.6" />
+        <path d="M49.5 28h1" stroke="#1f2937" strokeWidth="1.6" />
+      </g>
+    );
+  }
+  if (style === "shades") {
+    return (
+      <g className="origin-center animate-equip-in">
+        <rect x="39" y="24.5" width="10" height="7" rx="3" fill="#1f2937" opacity="0.88" />
+        <rect x="51" y="24.5" width="10" height="7" rx="3" fill="#1f2937" opacity="0.88" />
+        <path d="M49.5 27.2h1" stroke="#1f2937" strokeWidth="1.6" />
+        {/* lens shine */}
+        <path d="M41 26 Q43 25 45.5 26" stroke="#ffffff" strokeOpacity="0.4" strokeWidth="1" fill="none" strokeLinecap="round" />
+        <path d="M53 26 Q55 25 57.5 26" stroke="#ffffff" strokeOpacity="0.4" strokeWidth="1" fill="none" strokeLinecap="round" />
+      </g>
+    );
+  }
+  // round (default)
   return (
     <g className="origin-center animate-equip-in">
       <circle cx="44" cy="28" r="5.5" fill="none" stroke="#1f2937" strokeWidth="1.6" />
@@ -754,9 +799,21 @@ export function SanitizerEquipment() {
 }
 
 /** Level 3 unlock — one of two mutually-exclusive weapon slot options. Positioned outside the right arm's baseline x=71-84 range so it never overlaps it. A tapered, pointed-tip blade (straight lines only) instead of a plain rect reads more like an actual sword. Metallic — see `metallicSheenId`. Upper-body attach point. */
-export function SwordEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
+/**
+ * `glowId` (optional — a shared radial-gradient id, e.g. `CharacterAvatar`'s
+ * own `accentGlowId`, only passed once that gradient is actually defined at
+ * tier 5+) renders a soft themed glow behind the blade for a "glowing
+ * sword" look at high level, reusing the existing gradient definition
+ * rather than adding a new one.
+ */
+export function SwordEquipment({
+  color,
+  metallicSheenId,
+  glowId,
+}: MetallicEquipmentProps & { glowId?: string }) {
   return (
     <g className="origin-center animate-equip-in">
+      {glowId && <circle cx="87" cy="60" r="17" fill={`url(#${glowId})`} transform="rotate(15 87 60)" />}
       <path d="M85 76 L85 50 L87 44 L89 50 L89 76 Z" fill="#d1d5db" transform="rotate(15 87 60)" />
       {metallicSheenId && (
         <path d="M85 76 L85 50 L87 44 L89 50 L89 76 Z" fill={`url(#${metallicSheenId})`} transform="rotate(15 87 60)" />
@@ -786,37 +843,89 @@ export function SwordEquipment({ color, metallicSheenId }: MetallicEquipmentProp
  * blocks) than a thin blade-like taper. Still keeps the glowing emitter tip
  * from the earlier "laser gun" pass.
  */
+/** Scaled up from the earlier pass (~1.3x) with a small X-shaped sparkle flash behind the emitter glow, per feedback wanting it bigger with a flash of light. */
 export function GunEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
   return (
     <g className="origin-center animate-equip-in">
       {/* main body block */}
-      <rect x="81" y="83" width="14" height="8" rx="2.5" fill={color} />
-      {metallicSheenId && <rect x="81" y="83" width="14" height="8" rx="2.5" fill={`url(#${metallicSheenId})`} />}
+      <rect x="76" y="81" width="18" height="10" rx="3" fill={color} />
+      {metallicSheenId && <rect x="76" y="81" width="18" height="10" rx="3" fill={`url(#${metallicSheenId})`} />}
       {/* barrel */}
-      <rect x="93" y="85.5" width="5" height="3.5" rx="1.2" fill="#374151" />
+      <rect x="92" y="84" width="7" height="4.5" rx="1.5" fill="#374151" />
       {/* top sight block */}
-      <rect x="85" y="80" width="6" height="3.5" rx="1" fill="#1f2937" />
+      <rect x="81" y="77" width="7" height="4.5" rx="1.2" fill="#1f2937" />
+      {/* muzzle flash — a simple X-shaped sparkle (two crossed rounded rects), same cheap technique as an icon sparkle, no filters */}
+      <g opacity="0.6">
+        <rect x="97.5" y="82" width="3" height="8.5" rx="1.5" fill="#67e8f9" transform="rotate(45 99 86.2)" />
+        <rect x="97.5" y="82" width="3" height="8.5" rx="1.5" fill="#67e8f9" transform="rotate(-45 99 86.2)" />
+      </g>
       {/* emitter glow at the barrel tip */}
-      <circle cx="97.5" cy="87.2" r="2" fill="#22d3ee" opacity="0.4" />
-      <circle cx="97.5" cy="87.2" r="1" fill="#67e8f9" />
+      <circle cx="99" cy="86.2" r="2.3" fill="#22d3ee" opacity="0.45" />
+      <circle cx="99" cy="86.2" r="1.2" fill="#67e8f9" />
       {/* grip, angled back toward the hand */}
-      <rect x="81" y="90" width="6" height="10" rx="2" fill="#1f2937" transform="rotate(12 84 95)" />
+      <rect x="76" y="88" width="7" height="12" rx="2.5" fill="#1f2937" transform="rotate(12 79.5 94)" />
       {/* trigger guard — a simple half-circle arc, same safe-arc technique already used for the hair cap/helmet dome/shield curve */}
-      <path d="M87 91 A2.8 2.8 0 0 0 87 96.5" fill="none" stroke="#1f2937" strokeWidth="1.2" />
+      <path d="M83 89 A3.2 3.2 0 0 0 83 95.4" fill="none" stroke="#1f2937" strokeWidth="1.3" />
     </g>
   );
 }
 
 /** Level 4 unlock. Held out to the left. Metallic — see `metallicSheenId`. A small rotated "gem" accent sits at the shield's center, echoing the ornate gem-inlaid armor language of the reference sheet. Upper-body attach point. */
+/** Adds a highlight (left)/shadow (right) overlay pair and a defined outline stroke — same flat-shading + outline techniques the torso/arms/legs use, so the shield reads with real volume instead of a single flat fill. */
 export function ShieldEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
   return (
     <g className="origin-center animate-equip-in">
-      <path d="M1 56 L13 52 L25 56 L25 76 C25 88 19 95 13 98 C7 95 1 88 1 76 Z" fill={color} />
+      <path
+        d="M1 56 L13 52 L25 56 L25 76 C25 88 19 95 13 98 C7 95 1 88 1 76 Z"
+        fill={color}
+        stroke="#000000"
+        strokeOpacity="0.25"
+        strokeWidth="1"
+      />
       {metallicSheenId && (
         <path d="M1 56 L13 52 L25 56 L25 76 C25 88 19 95 13 98 C7 95 1 88 1 76 Z" fill={`url(#${metallicSheenId})`} />
       )}
+      {/* highlight: left third */}
+      <rect x="1" y="56" width="7" height="32" fill="#ffffff" opacity="0.16" />
+      {/* shadow: right third */}
+      <rect x="18" y="56" width="7" height="32" fill="#000000" opacity="0.18" />
       <path d="M13 58 L13 90 M5 66 L21 66" stroke="white" strokeOpacity="0.5" strokeWidth="1.5" />
       <rect x="9" y="67" width="8" height="8" fill="#ffffff" opacity="0.9" transform="rotate(45 13 71)" />
+    </g>
+  );
+}
+
+/**
+ * Level 5+ ("for high levels") — a magic staff, mutually exclusive with
+ * sword/gun/chakram in the same weapon slot (gated behind
+ * `getUnlockedSlots(level).advancedWeapon`, a later threshold than sword/
+ * gun's). A long rod with a glowing orb at the top. Upper-body attach
+ * point.
+ */
+export function StaffEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
+  return (
+    <g className="origin-center animate-equip-in">
+      <rect x="88.5" y="50" width="3" height="45" rx="1.5" fill={color} />
+      {metallicSheenId && <rect x="88.5" y="50" width="3" height="45" rx="1.5" fill={`url(#${metallicSheenId})`} />}
+      <circle cx="90" cy="46" r="5" fill="#a78bfa" opacity="0.35" />
+      <circle cx="90" cy="46" r="3" fill="#c4b5fd" />
+      <circle cx="90" cy="46" r="1.3" fill="#ffffff" />
+    </g>
+  );
+}
+
+/**
+ * Level 5+ ("for high levels") — a chakram (ring/discus), the other
+ * advanced-tier weapon option. A plain ring plus a smaller inner ring for
+ * detail, both simple circles (no curve-authoring risk). Upper-body attach
+ * point.
+ */
+export function ChakramEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
+  return (
+    <g className="origin-center animate-equip-in">
+      <circle cx="89" cy="70" r="8" fill="none" stroke={color} strokeWidth="3.5" />
+      {metallicSheenId && <circle cx="89" cy="70" r="8" fill="none" stroke={`url(#${metallicSheenId})`} strokeWidth="3.5" />}
+      <circle cx="89" cy="70" r="3.5" fill="none" stroke={color} strokeWidth="1" opacity="0.6" />
     </g>
   );
 }

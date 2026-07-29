@@ -38,6 +38,29 @@ export const HAT_OPTIONS: { value: "helmet" | "cap" }[] = [
   { value: "cap" },
 ];
 
+/** `sword`/`gun` unlock at `getUnlockedSlots(level).weapon` (level 3); `staff`/`chakram` are the "for high levels" tier, gated behind the separate, later `advancedWeapon` threshold (level 5) instead. */
+export const WEAPON_OPTIONS: { value: "sword" | "gun" | "staff" | "chakram" }[] = [
+  { value: "sword" },
+  { value: "gun" },
+  { value: "staff" },
+  { value: "chakram" },
+];
+
+/** No level threshold — same "always available from level 1" precedent as skin tone/hair (see `getUnlockedSlots`'s doc comment). */
+export const GLASSES_STYLE_OPTIONS: { value: string }[] = [
+  { value: "round" },
+  { value: "square" },
+  { value: "shades" },
+];
+
+/** The chest emblem shape — no level threshold, same personalization precedent as `EXPRESSION_OPTIONS`/`GLASSES_STYLE_OPTIONS`. */
+export const BADGE_STYLE_OPTIONS: { value: string }[] = [
+  { value: "star" },
+  { value: "shield" },
+  { value: "circle" },
+  { value: "diamond" },
+];
+
 /** `null`/missing means "use the role's default color" — see `AvatarConfig.uniformColor`. Also reused as-is for the per-piece `weaponColor`/`shieldColor`/`hatColor`/`shoesColor` pickers (same 5 swatches, same "default" convention), rather than maintaining a near-duplicate list per equipment slot. */
 export const UNIFORM_COLOR_OPTIONS: PresetOption[] = [
   { value: "charcoal", hex: "#374151" },
@@ -82,6 +105,9 @@ export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
   hatColor: null,
   shoesColor: null,
   equippedJacket: true,
+  glassesStyle: GLASSES_STYLE_OPTIONS[0].value,
+  pantsColor: null,
+  badgeStyle: BADGE_STYLE_OPTIONS[0].value,
 };
 
 /**
@@ -98,6 +124,8 @@ export function resolveAvatarConfig(config: AvatarConfig | undefined | null): Av
 export interface UnlockedSlots {
   glasses: boolean;
   weapon: boolean;
+  /** The "for high levels" weapon tier (staff/chakram) — a later, separate threshold than `weapon` (sword/gun). */
+  advancedWeapon: boolean;
   shield: boolean;
   cape: boolean;
   bootsShoes: boolean;
@@ -127,6 +155,7 @@ export function getUnlockedSlots(level: number): UnlockedSlots {
   return {
     glasses: level >= 2,
     weapon: level >= 3,
+    advancedWeapon: level >= 5,
     shield: level >= 4,
     cape: level >= 5,
     bootsShoes: level >= 5,
