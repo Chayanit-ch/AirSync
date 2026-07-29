@@ -102,14 +102,22 @@ export function MobileNavDrawer({ open, onClose }: MobileNavDrawerProps) {
         )}
 
         <nav className="flex flex-1 flex-col gap-1 p-2">
-          <button
-            type="button"
-            onClick={handleHowToUse}
-            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            <HelpCircle size={18} className="text-gray-400" />
-            {t("drawer.howToUse")}
-          </button>
+          {/* Guest sessions can browse Home/Map/Alerts, but the tour now also
+              visits /report and /profile — both behind `ProtectedRoute`,
+              which would bounce a guest to /login mid-tour and strand the
+              overlay. None of this button's content applies to a
+              signed-out visitor anyway (followed areas, missions, risk
+              group are all account-specific). */}
+          {currentUser && (
+            <button
+              type="button"
+              onClick={handleHowToUse}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              <HelpCircle size={18} className="text-gray-400" />
+              {t("drawer.howToUse")}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => goTo("/about")}

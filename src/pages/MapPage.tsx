@@ -294,10 +294,8 @@ export function MapPage() {
           never extends underneath it regardless of the two subtrees'
           relative z-index/stacking-context precedence. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-400 flex flex-col gap-2 p-3 pr-16 lg:max-w-sm">
-        <div className="pointer-events-auto">
+        <div data-tour-id="onboarding-map-tools" className="pointer-events-auto flex flex-col gap-2">
           <MapSearchBar value={searchQuery} onChange={setSearchQuery} />
-        </div>
-        <div className="pointer-events-auto">
           <LayerToggle active={activeLayer} onChange={setActiveLayer} />
         </div>
         <div className="pointer-events-auto">

@@ -30,6 +30,7 @@ export function QuickActions() {
       </div>
       <button
         type="button"
+        data-tour-id="onboarding-leaderboard-action"
         onClick={() => setIsLeaderboardOpen(true)}
         className="flex items-center justify-center gap-2 rounded-xl bg-amber-500 py-3.5 font-semibold text-white shadow-sm transition-colors hover:bg-amber-600"
       >

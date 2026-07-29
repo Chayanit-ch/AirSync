@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, HelpCircle, Wind } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import { useOnboardingTour } from "../../contexts/OnboardingTourContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import { NAV_ITEMS } from "./navItems";
@@ -18,8 +19,9 @@ interface SidebarProps {
  */
 export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
   const { t } = useTranslation();
-  // Redirecting to Home (if needed) is handled centrally in `PageLayout`
-  // whenever the tour becomes active — see its comment.
+  const { currentUser } = useAuth();
+  // Redirecting to the right page (if needed) is handled centrally in
+  // `PageLayout` whenever the tour becomes active — see its comment.
   const { start: handleHowToUse } = useOnboardingTour();
 
   return (
@@ -61,17 +63,25 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
         ))}
       </nav>
 
-      <button
-        type="button"
-        onClick={handleHowToUse}
-        title={collapsed ? t("onboarding.howToUseButton") : undefined}
-        className={`flex items-center gap-2 border-t border-gray-100 px-3 py-3 text-sm text-gray-500 hover:bg-gray-50 ${
-          collapsed ? "justify-center" : ""
-        }`}
-      >
-        <HelpCircle size={18} />
-        {!collapsed && <span>{t("onboarding.howToUseButton")}</span>}
-      </button>
+      {/* Guest sessions can browse Home/Map/Alerts, but the tour now also
+          visits /report and /profile — both behind `ProtectedRoute`, which
+          would bounce a guest to /login mid-tour and strand the overlay
+          (rendered inside `PageLayout`, which /login sits outside of). None
+          of this button's content applies to a signed-out visitor anyway
+          (followed areas, missions, risk group are all account-specific). */}
+      {currentUser && (
+        <button
+          type="button"
+          onClick={handleHowToUse}
+          title={collapsed ? t("onboarding.howToUseButton") : undefined}
+          className={`flex items-center gap-2 border-t border-gray-100 px-3 py-3 text-sm text-gray-500 hover:bg-gray-50 ${
+            collapsed ? "justify-center" : ""
+          }`}
+        >
+          <HelpCircle size={18} />
+          {!collapsed && <span>{t("onboarding.howToUseButton")}</span>}
+        </button>
+      )}
 
       <button
         type="button"

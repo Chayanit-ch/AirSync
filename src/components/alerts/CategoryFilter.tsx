@@ -17,7 +17,7 @@ export function CategoryFilter({ active, onChange }: CategoryFilterProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="flex gap-2 overflow-x-auto">
+    <div data-tour-id="onboarding-alerts-filters" className="flex gap-2 overflow-x-auto">
       {FILTERS.map((filter) => (
         <button
           key={filter.id}

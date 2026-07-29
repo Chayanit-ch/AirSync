@@ -28,13 +28,18 @@ export function FollowedAreasSection() {
   const { areas } = useFollowedAreaSummaries(followedAreaIds, stations);
 
   if (authLoading || stationsLoading) {
-    return <FollowedAreasSkeleton />;
+    return (
+      <div data-tour-id="onboarding-followed-areas">
+        <FollowedAreasSkeleton />
+      </div>
+    );
   }
 
   if (followedAreaIds.length === 0) {
     return (
       <Link
         to={currentUser ? "/profile" : "/login"}
+        data-tour-id="onboarding-followed-areas"
         className="flex items-center justify-between gap-3 rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-4 text-left transition-colors hover:bg-gray-100"
       >
         <div className="flex items-center gap-3">
@@ -55,5 +60,9 @@ export function FollowedAreasSection() {
     );
   }
 
-  return <FollowedAreasGrid areas={areas} />;
+  return (
+    <div data-tour-id="onboarding-followed-areas">
+      <FollowedAreasGrid areas={areas} />
+    </div>
+  );
 }

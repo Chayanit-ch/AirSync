@@ -58,14 +58,16 @@ export function AlertsPage() {
         <FeaturedArticleCard article={featuredArticle} />
       ) : null}
 
-      <NewsFeedSection filter={filter} searchQuery={searchQuery} />
+      <div data-tour-id="onboarding-alerts-content" className="flex flex-col gap-4">
+        <NewsFeedSection filter={filter} searchQuery={searchQuery} />
 
-      <KnowledgeArticlesSection
-        articles={remainingArticles}
-        error={error}
-        filter={filter}
-        searchQuery={searchQuery}
-      />
+        <KnowledgeArticlesSection
+          articles={remainingArticles}
+          error={error}
+          filter={filter}
+          searchQuery={searchQuery}
+        />
+      </div>
     </div>
   );
 }

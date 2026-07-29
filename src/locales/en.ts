@@ -586,7 +586,59 @@ export const en: typeof th = {
         title: "Follow the areas you care about",
         body: "In Profile, add the stations you want to keep an eye on. Followed stations show up on your Home page and can send you alerts — even if a station is temporarily offline, you can still follow it.",
       },
+      aiAdvice: {
+        title: "Personalized AI advice",
+        body: "AirSync's AI looks at the air quality here and the risk group you picked in your Profile to suggest what to do — like when to wear a mask or stay indoors.",
+      },
+      leaderboardAction: {
+        title: "See who's helping the most",
+        body: "Tap Leaderboard to see top-rated organizations helping clean the air. Anyone can view it, even with a regular account — and if you're an organization, this is where your rating shows up.",
+      },
+      followedAreas: {
+        title: "Keep your favorite areas close",
+        body: "Add the places you care about from your Profile page and they'll show up here at a glance. While you're in Profile, you'll also find your Daily Missions — quick tasks that earn you points.",
+      },
+      mapTools: {
+        title: "Search and switch views",
+        body: "Use the search box to find a station by province, district, or name. The buttons below it switch what the map shows: PM2.5, AQI, or a heat overlay.",
+      },
+      mapStationTrend: {
+        title: "Ask AI about this station's trend",
+        body: "Tap this to get an AI summary of how air quality here has been changing — no account needed, so anyone can check it.",
+      },
+      reportForm: {
+        title: "Report what you see",
+        body: "Fill in what happened and attach a photo if you have one — our AI automatically looks at the photo and adds helpful suggestions to your report.",
+      },
+      reportHistory: {
+        title: "Track your past reports",
+        body: "Every report you've sent shows up here. Tap one to see its full details and status.",
+      },
+      alertsFilters: {
+        title: "Filter what you read",
+        body: "Tap a category to narrow the news and articles down to just PM2.5 topics, health tips, or everything.",
+      },
+      alertsContent: {
+        title: "News and PM2.5 knowledge",
+        body: "Browse verified news updates alongside easy-to-understand articles about PM2.5 and how it affects your health.",
+      },
+      profileIdentity: {
+        title: "Level up and dress your character",
+        body: "Every action you take earns points that raise your level — track your progress here. Leveling up also unlocks new gear, so tap Customize to change your character's skin tone, hairstyle, weapon, and more.",
+      },
+      profileMissions: {
+        title: "Complete Daily Missions",
+        body: "Finish these simple daily tasks to earn extra points and level up faster.",
+      },
+      profileSettings: {
+        title: "Personalize your experience",
+        body: "Pick your risk group here so the AI advice on your Home page fits you better, add or remove the stations you follow, and turn on Push Notifications or a Daily Summary.",
+      },
+      profileLanguage: {
+        title: "Switch between Thai and English",
+        body: "Tap TH or EN any time to change the app's language — this switch is available on every page.",
+      },
     },
-    finishHint: "That's the tour! Explore the Map and Profile pages any time — you can replay this tour later from the \"How to use\" button.",
+    finishHint: "That's the tour! Explore the Map, Report, Alerts, and Profile pages any time — you can replay this tour later from the \"How to use\" button.",
   },
 };

@@ -1,3 +1,4 @@
+
 // Vercel serverless function — generates personalized short-term/long-term
 // air-quality recommendations via DeepSeek. Stateless proxy only: this
 // function never touches Firestore — the client reads/writes the

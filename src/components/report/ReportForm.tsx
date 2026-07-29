@@ -158,6 +158,7 @@ export function ReportForm({ onSubmitted }: { onSubmitted?: () => void }) {
   return (
     <form
       onSubmit={handleSubmit}
+      data-tour-id="onboarding-report-form"
       className="flex flex-col gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
     >
       <h2 className="text-lg font-bold text-gray-800">{t("report.formTitle")}</h2>

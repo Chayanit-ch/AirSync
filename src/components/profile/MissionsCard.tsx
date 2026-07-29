@@ -119,7 +119,10 @@ export function MissionsCard() {
   }
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+    <div
+      data-tour-id="onboarding-profile-missions"
+      className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+    >
       <div className="mb-3 flex items-center gap-2">
         <ListChecks size={18} className="text-brand-600" />
         <h2 className="text-lg font-bold text-gray-800">{t("missions.sectionTitle")}</h2>

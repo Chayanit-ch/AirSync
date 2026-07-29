@@ -66,41 +66,45 @@ export function ProfilePage() {
   return (
     <div className="flex flex-col gap-4 p-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:p-6">
       <div className="flex flex-col gap-4">
-        <ProfileHeader
-          uid={currentUser?.uid}
-          displayName={currentUser?.displayName || mockUser.displayName}
-          email={currentUser?.email || mockUser.email}
-          photoURL={currentUser?.photoURL}
-          points={userProfile?.points ?? mockUser.points}
-          userType={getUserType(userProfile ?? mockUser)}
-          governmentVerificationStatus={userProfile?.governmentVerificationStatus}
-          onLogout={handleLogout}
-        />
-        <div className="rounded-2xl border border-gray-100 bg-white p-4 text-center shadow-sm">
-          <p className="mb-2 text-sm font-semibold text-gray-700">
-            {isPendingGovernmentVerification(userProfile ?? mockUser)
-              ? t("profile.pendingVerification")
-              : t(LEVEL_LABEL_KEYS[getUserType(userProfile ?? mockUser)], {
-                  level: getLevelFromPoints(userProfile?.points ?? mockUser.points),
-                })}
-          </p>
-          <CharacterAvatar
-            avatarConfig={userProfile?.avatarConfig}
+        <div data-tour-id="onboarding-profile-identity" className="flex flex-col gap-4">
+          <ProfileHeader
+            uid={currentUser?.uid}
+            displayName={currentUser?.displayName || mockUser.displayName}
+            email={currentUser?.email || mockUser.email}
+            photoURL={currentUser?.photoURL}
+            points={userProfile?.points ?? mockUser.points}
             userType={getUserType(userProfile ?? mockUser)}
-            animate
-            className="mx-auto"
+            governmentVerificationStatus={userProfile?.governmentVerificationStatus}
+            onLogout={handleLogout}
           />
-          <button
-            type="button"
-            onClick={() => setIsCustomizingCharacter(true)}
-            className="bg-brand-600 hover:bg-brand-700 mt-3 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-colors"
-          >
-            {t("profile.avatar.customizeButton")}
-          </button>
+          <div className="rounded-2xl border border-gray-100 bg-white p-4 text-center shadow-sm">
+            <p className="mb-2 text-sm font-semibold text-gray-700">
+              {isPendingGovernmentVerification(userProfile ?? mockUser)
+                ? t("profile.pendingVerification")
+                : t(LEVEL_LABEL_KEYS[getUserType(userProfile ?? mockUser)], {
+                    level: getLevelFromPoints(userProfile?.points ?? mockUser.points),
+                  })}
+            </p>
+            <CharacterAvatar
+              avatarConfig={userProfile?.avatarConfig}
+              userType={getUserType(userProfile ?? mockUser)}
+              animate
+              className="mx-auto"
+            />
+            <button
+              type="button"
+              onClick={() => setIsCustomizingCharacter(true)}
+              className="bg-brand-600 hover:bg-brand-700 mt-3 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-colors"
+            >
+              {t("profile.avatar.customizeButton")}
+            </button>
+          </div>
         </div>
         <MissionsCard />
-        <AlertPreferencesCard stations={stations} stationCatalog={allStations} />
-        <PersonalInfoCard />
+        <div data-tour-id="onboarding-profile-settings" className="flex flex-col gap-4">
+          <AlertPreferencesCard stations={stations} stationCatalog={allStations} />
+          <PersonalInfoCard />
+        </div>
       </div>
       <div className="flex flex-col gap-4">
         <PM25StatsCard followedAreaIds={followedAreaIds} />

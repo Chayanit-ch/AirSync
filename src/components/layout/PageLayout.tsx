@@ -34,7 +34,7 @@ function readStoredCollapsed(): boolean {
 export function PageLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readStoredCollapsed);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { isActive: isTourActive } = useOnboardingTour();
+  const { isActive: isTourActive, stepIndex, steps } = useOnboardingTour();
   const location = useLocation();
   const navigate = useNavigate();
   useUpsertFollowedStationHistory();
@@ -43,17 +43,23 @@ export function PageLayout() {
     window.localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(sidebarCollapsed));
   }, [sidebarCollapsed]);
 
-  // Every tour step targets a Home-page element (see `tourSteps.ts`) — but
-  // the auto-start trigger (`OnboardingTourContext`) fires as soon as the
-  // profile loads, regardless of which page that happens to be (e.g. a
-  // fresh signup can land on /profile). Redirect to Home whenever the tour
-  // becomes active from elsewhere, so its spotlight always has a real
-  // target instead of falling back to an un-anchored centered tooltip.
+  // The tour now spans Home/Map/Report/Alerts/Profile (see `tourSteps.ts`),
+  // each step carrying the route its target lives on — but the auto-start
+  // trigger (`OnboardingTourContext`) fires as soon as the profile loads,
+  // regardless of which page that happens to be (e.g. a fresh signup can
+  // land on /profile), and `next()` can advance into a step whose target is
+  // on a different page than the one currently showing. Navigate to
+  // whichever page the *current* step needs whenever it doesn't match the
+  // current route, so every step's spotlight always has a real target
+  // instead of falling back to an un-anchored centered tooltip — this also
+  // reproduces the original Home-only tour's redirect-to-Home-first
+  // behavior, since step 1's page is still `/`.
+  const currentStepPage = isTourActive ? steps[stepIndex]?.page : undefined;
   useEffect(() => {
-    if (isTourActive && location.pathname !== "/") {
-      navigate("/", { replace: true });
+    if (currentStepPage && location.pathname !== currentStepPage) {
+      navigate(currentStepPage, { replace: true });
     }
-  }, [isTourActive, location.pathname, navigate]);
+  }, [currentStepPage, location.pathname, navigate]);
 
   function handleMenuButtonClick() {
     setSidebarCollapsed((prev) => !prev);

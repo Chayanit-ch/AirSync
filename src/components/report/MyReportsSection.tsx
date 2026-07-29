@@ -18,7 +18,7 @@ export function MyReportsSection({ reports, isLoading, onSelectReport }: MyRepor
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col gap-3">
+    <div data-tour-id="onboarding-report-history" className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-gray-800">{t("report.myReports")}</h2>
       </div>

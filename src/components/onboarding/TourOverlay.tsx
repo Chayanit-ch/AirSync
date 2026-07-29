@@ -6,6 +6,14 @@ import { useTranslation } from "../../hooks/useTranslation";
 const SPOTLIGHT_PADDING = 8;
 const TOOLTIP_GAP = 14;
 const VIEWPORT_MARGIN = 12;
+/** How long to keep polling for a step's target before giving up and falling
+ * back to the centered, un-anchored tooltip — generous enough to cover a
+ * cross-page navigation (route swap + that page's own data fetch, e.g. the
+ * Map's station list loading before its bottom sheet can mount) rather than
+ * just a same-page re-render. The Map station-trend step is the slowest
+ * case (waits on the nationwide Air4Thai fetch settling, no client timeout
+ * of its own) — 10s covers a cold/slow connection instead of just a fast one. */
+const TARGET_WAIT_TIMEOUT_MS = 10000;
 
 /**
  * `data-tour-id` can appear on more than one element at once (`Sidebar`'s
@@ -38,25 +46,68 @@ export function TourOverlay() {
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [tooltipSize, setTooltipSize] = useState({ width: 0, height: 0 });
 
+  // Steps can now live on a different page than the one currently showing
+  // (see `tourSteps.ts`'s `page` field and `PageLayout`'s redirect) — a
+  // route swap plus that page's own data fetch (stations loading before the
+  // Map's bottom sheet mounts, reports loading before Report's history list
+  // mounts, etc.) means the target frequently doesn't exist in the DOM yet
+  // on the very first render after `stepIndex` changes. Poll every frame
+  // instead of measuring once, so the spotlight waits for the real render
+  // rather than flashing an "unavailable" warning mid-navigation; only warn
+  // if the target genuinely never shows up within `TARGET_WAIT_TIMEOUT_MS`.
   useLayoutEffect(() => {
     if (!isActive || !step) return;
+    let cancelled = false;
+    let rafId: number | null = null;
+    let hasScrolledIntoView = false;
 
-    function measure() {
+    // Clear the previous step's spotlight immediately so it doesn't sit
+    // frozen over the wrong (now-stale, possibly off-page) position while
+    // this step's target is still being searched for.
+    setTargetRect(null);
+
+    function poll() {
+      if (cancelled) return;
       const target = findVisibleTourTarget(step.targetId);
-      if (!target) {
-        console.warn(`Onboarding tour: no visible element for data-tour-id="${step.targetId}".`);
-        setTargetRect(null);
+      if (target) {
+        setTargetRect(target.getBoundingClientRect());
+        if (!hasScrolledIntoView) {
+          hasScrolledIntoView = true;
+          // Longer pages (Report, Profile) can easily have the target below
+          // the fold on first render — the "scroll" listener below keeps
+          // re-measuring while this animates, so the spotlight tracks it
+          // smoothly into its final position instead of jumping.
+          target.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }
         return;
       }
-      setTargetRect(target.getBoundingClientRect());
+      rafId = requestAnimationFrame(poll);
     }
 
-    measure();
-    window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, true);
+    poll();
+    const timeoutId = setTimeout(() => {
+      cancelled = true;
+      if (rafId != null) cancelAnimationFrame(rafId);
+      if (!findVisibleTourTarget(step.targetId)) {
+        console.warn(
+          `Onboarding tour: no visible element for data-tour-id="${step.targetId}" after waiting ${TARGET_WAIT_TIMEOUT_MS}ms.`,
+        );
+      }
+    }, TARGET_WAIT_TIMEOUT_MS);
+
+    function remeasure() {
+      const target = findVisibleTourTarget(step.targetId);
+      if (target) setTargetRect(target.getBoundingClientRect());
+    }
+    window.addEventListener("resize", remeasure);
+    window.addEventListener("scroll", remeasure, true);
+
     return () => {
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure, true);
+      cancelled = true;
+      if (rafId != null) cancelAnimationFrame(rafId);
+      clearTimeout(timeoutId);
+      window.removeEventListener("resize", remeasure);
+      window.removeEventListener("scroll", remeasure, true);
     };
   }, [isActive, step]);
 

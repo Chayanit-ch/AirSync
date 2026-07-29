@@ -111,7 +111,7 @@ export function AqiHeroCard({
         {/* Full-width, wrapping block — personalized recommendations run
             longer than the old one-liner, so this can no longer share a
             cramped half-width column with the PM2.5 stat. */}
-        <div className="px-4 py-3">
+        <div data-tour-id="onboarding-ai-advice" className="px-4 py-3">
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-400">{t("home.recommendation")}</p>
             {isAiGenerated && (

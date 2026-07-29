@@ -32,7 +32,10 @@ export function TopBar({ onMenuButtonClick }: TopBarProps) {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 p-0.5 text-xs font-semibold">
+        <div
+          data-tour-id="onboarding-language-switch"
+          className="flex items-center rounded-full border border-gray-200 bg-gray-50 p-0.5 text-xs font-semibold"
+        >
           <button
             type="button"
             onClick={() => setLanguage("th")}

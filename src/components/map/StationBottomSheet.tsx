@@ -247,6 +247,7 @@ export function StationBottomSheet({
           </button>
           <button
             type="button"
+            data-tour-id="onboarding-station-trend"
             onClick={handleViewTrendGuidance}
             disabled={trend.isLoading}
             className="bg-brand-600 hover:bg-brand-700 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
