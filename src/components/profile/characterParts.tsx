@@ -514,12 +514,21 @@ function Hair({ hairStyle, hairColor }: { hairStyle: string; hairColor: string }
     );
   }
 
-  // short
+  // short (default) — a side-swept tuft plus a defined parting line, rather
+  // than a plain symmetric dome, per feedback wanting a visible hairline/
+  // part like the reference icon set. The tuft (simple Q-curves, one
+  // control point each) adds asymmetric volume on the left, extending past
+  // the base cap's own x=35 edge; the part line sits at x=40-42, comfortably
+  // below the cap ellipse's own boundary there (y>=13.7 at x=42, >=14.8 at
+  // x=40 — verified against the same ellipse equation `capStrands` uses) so
+  // it can't poke outside the silhouette the way the strand lines once did.
   return (
     <g>
       {cap}
+      <path d="M27 19 Q32 7 45 11 Q38 15 34 21 Q30 21.5 27 19 Z" fill={hairColor} />
       {capShine}
       {capStrands}
+      <path d="M42 14.5 Q40.5 18 40 22" stroke="#000000" strokeOpacity="0.28" strokeWidth="1" fill="none" strokeLinecap="round" />
     </g>
   );
 }
@@ -771,19 +780,29 @@ export function SwordEquipment({ color, metallicSheenId }: MetallicEquipmentProp
  * same "colored circle behind a `<circle>` core" cheap-glow technique used
  * elsewhere (no filters).
  */
+/**
+ * A chunkier, blockier blaster silhouette — closer to the reference sheet's
+ * "Air Blaster"/"Particle Blaster" art (a solid body + separate barrel/sight
+ * blocks) than a thin blade-like taper. Still keeps the glowing emitter tip
+ * from the earlier "laser gun" pass.
+ */
 export function GunEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
   return (
     <g className="origin-center animate-equip-in">
-      {/* body — angled trapezoid instead of a plain rect, tapering toward the emitter */}
-      <path d="M83 87 L97 84 L99 87.5 L84 91 Z" fill={color} />
-      {metallicSheenId && <path d="M83 87 L97 84 L99 87.5 L84 91 Z" fill={`url(#${metallicSheenId})`} />}
-      {/* emitter glow */}
-      <circle cx="99.5" cy="85.8" r="2.6" fill="#22d3ee" opacity="0.35" />
-      <circle cx="99.5" cy="85.8" r="1.3" fill="#67e8f9" />
+      {/* main body block */}
+      <rect x="81" y="83" width="14" height="8" rx="2.5" fill={color} />
+      {metallicSheenId && <rect x="81" y="83" width="14" height="8" rx="2.5" fill={`url(#${metallicSheenId})`} />}
+      {/* barrel */}
+      <rect x="93" y="85.5" width="5" height="3.5" rx="1.2" fill="#374151" />
+      {/* top sight block */}
+      <rect x="85" y="80" width="6" height="3.5" rx="1" fill="#1f2937" />
+      {/* emitter glow at the barrel tip */}
+      <circle cx="97.5" cy="87.2" r="2" fill="#22d3ee" opacity="0.4" />
+      <circle cx="97.5" cy="87.2" r="1" fill="#67e8f9" />
       {/* grip, angled back toward the hand */}
-      <rect x="85" y="90" width="5" height="9" rx="1.5" fill="#1f2937" transform="rotate(10 87.5 94.5)" />
+      <rect x="81" y="90" width="6" height="10" rx="2" fill="#1f2937" transform="rotate(12 84 95)" />
       {/* trigger guard — a simple half-circle arc, same safe-arc technique already used for the hair cap/helmet dome/shield curve */}
-      <path d="M87 91 A2.6 2.6 0 0 0 87 96.2" fill="none" stroke="#1f2937" strokeWidth="1.1" />
+      <path d="M87 91 A2.8 2.8 0 0 0 87 96.5" fill="none" stroke="#1f2937" strokeWidth="1.2" />
     </g>
   );
 }
@@ -862,13 +881,34 @@ export function BootsRight({ color }: EquipmentProps) {
 }
 
 /** Level 3 unlock — one of two mutually-exclusive hat slot options. Renders on top of `Hair` (may cover it, same as real headwear) but keeps the same HAIR_CAP_BASELINE-style clearance above the eyes. Metallic — see `metallicSheenId`. A small crest fin on top echoes the reference sheet's knight-helmet silhouette. Upper-body attach point. */
-export function HelmetEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
+/**
+ * `badgeTier` (default 1, base look) adds side wing/horn plates and a bolder
+ * angular visor brow at tier 5+ — same "most ornate at the top tier"
+ * escalation `Pauldron` already uses, inspired by battle-helm reference art
+ * with dramatic side wings. Straight-line polygons only, kept well inside
+ * the viewBox (x=22-78, y=10-24).
+ */
+export function HelmetEquipment({
+  color,
+  metallicSheenId,
+  badgeTier = 1,
+}: MetallicEquipmentProps & { badgeTier?: number }) {
+  const cool = badgeTier >= 5;
   return (
     <g className="origin-center animate-equip-in">
+      {cool && (
+        <>
+          <path d="M33 22 L22 10 L28 24 L33 24 Z" fill={color} />
+          <path d="M67 22 L78 10 L72 24 L67 24 Z" fill={color} />
+        </>
+      )}
       <path d="M33 24 A17 13 0 0 1 67 24 Z" fill={color} />
       {metallicSheenId && <path d="M33 24 A17 13 0 0 1 67 24 Z" fill={`url(#${metallicSheenId})`} />}
       <rect x="33" y="20" width="34" height="4" rx="2" fill="#e5e7eb" opacity="0.8" />
       <rect x="48" y="13" width="4" height="9" rx="2" fill={color} />
+      {cool && (
+        <path d="M38 21 L50 17.5 L62 21" fill="none" stroke="#e5e7eb" strokeOpacity="0.9" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      )}
     </g>
   );
 }

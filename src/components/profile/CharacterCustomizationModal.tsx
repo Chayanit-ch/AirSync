@@ -444,6 +444,27 @@ export function CharacterCustomizationModal({
           )}
 
           <div>
+            <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.jacket")}</p>
+            <p className="mb-1.5 text-xs text-gray-400">{t("profile.avatar.jacketHint")}</p>
+            <div className="flex flex-wrap gap-2">
+              <OptionButton
+                label={t("profile.avatar.on")}
+                ariaLabel={`${t("profile.avatar.jacket")}: ${t("profile.avatar.on")}`}
+                isSelected={draft.equippedJacket !== false}
+                isUnlocked
+                onClick={() => setDraft((d) => ({ ...d, equippedJacket: true }))}
+              />
+              <OptionButton
+                label={t("profile.avatar.off")}
+                ariaLabel={`${t("profile.avatar.jacket")}: ${t("profile.avatar.off")}`}
+                isSelected={draft.equippedJacket === false}
+                isUnlocked
+                onClick={() => setDraft((d) => ({ ...d, equippedJacket: false }))}
+              />
+            </div>
+          </div>
+
+          <div>
             <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.uniformPattern")}</p>
             <div className="flex flex-wrap gap-2">
               <OptionButton

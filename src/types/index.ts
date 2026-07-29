@@ -347,6 +347,8 @@ export interface AvatarConfig {
   shieldColor?: string | null;
   hatColor?: string | null;
   shoesColor?: string | null;
+  /** The armored-look "jacket" layer (belt, gloves, shoulder/arm/leg armor, the more pronounced tier-based torso taper) — `false` reverts to a plain-t-shirt silhouette regardless of level. Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `true` so existing accounts see no change. */
+  equippedJacket?: boolean;
 }
 
 export interface UserProfile {

@@ -81,6 +81,7 @@ export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
   shieldColor: null,
   hatColor: null,
   shoesColor: null,
+  equippedJacket: true,
 };
 
 /**

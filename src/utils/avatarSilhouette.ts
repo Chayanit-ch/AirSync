@@ -52,6 +52,9 @@ const WAIST_TAPER_RATIO_BY_TIER: Record<number, number> = {
   5: 0.2,
 };
 
+/** Same as tier 1-2's ratio — exported so `CharacterAvatar` can fall back to this exact "plain shirt" taper when the jacket layer is unequipped, regardless of the wearer's actual badge tier, instead of duplicating the magic number. */
+export const CASUAL_WAIST_TAPER_RATIO = WAIST_TAPER_RATIO_BY_TIER[1];
+
 /** `badgeTier` should already be `getBadgeTier(level)`-capped (1-5). */
 export function getSilhouetteMetrics(badgeTier: number): SilhouetteMetrics {
   const torsoWidth = TORSO_WIDTH_BY_TIER[badgeTier] ?? TORSO_WIDTH_BY_TIER[1];

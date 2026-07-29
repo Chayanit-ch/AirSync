@@ -7,7 +7,7 @@ import {
   resolveAvatarConfig,
 } from "../../utils/avatarCustomization";
 import { getBadgeTier } from "../../utils/gamification";
-import { getSilhouetteMetrics } from "../../utils/avatarSilhouette";
+import { CASUAL_WAIST_TAPER_RATIO, getSilhouetteMetrics } from "../../utils/avatarSilhouette";
 import {
   ArmGuard,
   BasicShoesLeft,
@@ -158,11 +158,19 @@ export function CharacterAvatar({
   const metallicSheenId = `metallic-sheen-${safeId}`;
   const accentGlowId = `accent-glow-${safeId}`;
 
+  // The "jacket" is the armored-look layer as a whole (belt, gloves,
+  // shoulder/arm/leg armor, the pronounced tier-based V-taper) — `false`
+  // reverts to a plain-t-shirt silhouette regardless of level, same as
+  // taking off a jacket to reveal the shirt underneath. Missing (older
+  // saved configs) defaults to worn, so nobody's look changes just because
+  // this field didn't exist yet when they last saved.
+  const hasJacket = config.equippedJacket !== false;
+  const waistTaperRatio = hasJacket ? silhouette.waistTaperRatio : CASUAL_WAIST_TAPER_RATIO;
   // Tier 3+: "you've earned real armor now" — same threshold as the
   // hat/weapon unlock and the accent-glow effect.
-  const showPauldrons = badgeTier >= 3;
+  const showPauldrons = hasJacket && badgeTier >= 3;
   // Tier 4+: same threshold as the shield unlock — "more substantial armor".
-  const showLimbArmor = badgeTier >= 4;
+  const showLimbArmor = hasJacket && badgeTier >= 4;
   const showAura = showLevelEffects && badgeTier >= 5;
   // Wings are gated the same as the aura (tier 5+, only above
   // LEVEL_EFFECTS_MIN_SIZE) — a decorative escalation, not a body-shape
@@ -219,7 +227,7 @@ export function CharacterAvatar({
           badgeAccent={accentColor}
           torsoX={silhouette.torsoX}
           torsoWidth={silhouette.torsoWidth}
-          waistTaperRatio={silhouette.waistTaperRatio}
+          waistTaperRatio={waistTaperRatio}
           pattern={config.uniformPattern}
         />
         {showPauldrons && (
@@ -227,7 +235,7 @@ export function CharacterAvatar({
             <Belt
               torsoX={silhouette.torsoX}
               torsoWidth={silhouette.torsoWidth}
-              waistTaperRatio={silhouette.waistTaperRatio}
+              waistTaperRatio={waistTaperRatio}
             />
             <Glove color={bodyColor} cx={silhouette.armLeftX + 6} />
             <Glove color={bodyColor} cx={silhouette.armRightX + silhouette.armWidth - 6} />
@@ -255,7 +263,7 @@ export function CharacterAvatar({
           <circle cx="50" cy="21" r="14" fill={`url(#${accentGlowId})`} />
         )}
         {config.equippedHat === "helmet" && (
-          <HelmetEquipment color={hatColor} metallicSheenId={metallicSheenId} />
+          <HelmetEquipment color={hatColor} metallicSheenId={metallicSheenId} badgeTier={badgeTier} />
         )}
         {config.equippedHat === "cap" && <CapEquipment color={hatColor} />}
         {config.hasGlasses && <GlassesEquipment />}

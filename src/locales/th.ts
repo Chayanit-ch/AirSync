@@ -342,6 +342,8 @@ export const th = {
         none: "ไม่มี",
       },
       shoesColor: "สีรองเท้า",
+      jacket: "เสื้อเกราะ",
+      jacketHint: "ถอดออกเพื่อดูเรียบง่ายแบบเสื้อยืดธรรมดา ใส่กลับเมื่อไหร่ชุดเกราะก็กลับมาเหมือนเดิม",
       uniformPattern: "ลายเสื้อ",
       uniformPatternNone: "เรียบ",
       uniformPatterns: {
