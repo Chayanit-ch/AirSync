@@ -67,7 +67,7 @@ export function PageLayout() {
   }
 
   return (
-    <div className="mx-auto flex h-full max-w-[480px] flex-col overflow-hidden bg-gray-100 shadow-[0_0_0_1px_rgba(0,0,0,0.04)] lg:max-w-none lg:flex-row lg:shadow-none">
+    <div className="mx-auto flex h-full max-w-120 flex-col overflow-hidden bg-gray-100 shadow-[0_0_0_1px_rgba(0,0,0,0.04)] lg:max-w-none lg:flex-row lg:shadow-none">
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}

@@ -142,10 +142,10 @@ export function MissionsCard() {
                   <Icon size={17} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-sm font-semibold break-words text-gray-800">
+                  <p className="line-clamp-2 text-sm font-semibold wrap-break-word text-gray-800">
                     {t(mission.titleKey)}
                   </p>
-                  <p className="mt-0.5 line-clamp-2 text-xs break-words text-gray-400">
+                  <p className="mt-0.5 line-clamp-2 text-xs wrap-break-word text-gray-400">
                     {t(mission.descriptionKey)}
                   </p>
                 </div>
