@@ -9,24 +9,29 @@ import {
 import { getBadgeTier } from "../../utils/gamification";
 import { getSilhouetteMetrics } from "../../utils/avatarSilhouette";
 import {
+  ArmGuard,
   BasicShoesLeft,
   BasicShoesRight,
+  Belt,
   BootsLeft,
   BootsRight,
   CapeEquipment,
   CapEquipment,
   CharacterFace,
   GlassesEquipment,
+  Glove,
   GunEquipment,
   HelmetEquipment,
   LeftArm,
   LeftLeg,
+  LeftLegGuard,
   LevelAura,
   MaskEquipment,
   Pauldron,
   PortraitBackdrop,
   RightArm,
   RightLeg,
+  RightLegGuard,
   SanitizerEquipment,
   ShieldEquipment,
   SwordEquipment,
@@ -153,7 +158,11 @@ export function CharacterAvatar({
   const metallicSheenId = `metallic-sheen-${safeId}`;
   const accentGlowId = `accent-glow-${safeId}`;
 
+  // Tier 3+: "you've earned real armor now" — same threshold as the
+  // hat/weapon unlock and the accent-glow effect.
   const showPauldrons = badgeTier >= 3;
+  // Tier 4+: same threshold as the shield unlock — "more substantial armor".
+  const showLimbArmor = badgeTier >= 4;
   const showAura = showLevelEffects && badgeTier >= 5;
   // Wings are gated the same as the aura (tier 5+, only above
   // LEVEL_EFFECTS_MIN_SIZE) — a decorative escalation, not a body-shape
@@ -210,10 +219,18 @@ export function CharacterAvatar({
           badgeAccent={accentColor}
           torsoX={silhouette.torsoX}
           torsoWidth={silhouette.torsoWidth}
+          waistTaperRatio={silhouette.waistTaperRatio}
           pattern={config.uniformPattern}
         />
         {showPauldrons && (
           <>
+            <Belt
+              torsoX={silhouette.torsoX}
+              torsoWidth={silhouette.torsoWidth}
+              waistTaperRatio={silhouette.waistTaperRatio}
+            />
+            <Glove color={bodyColor} cx={silhouette.armLeftX + 6} />
+            <Glove color={bodyColor} cx={silhouette.armRightX + silhouette.armWidth - 6} />
             <Pauldron
               color={bodyColor}
               armX={silhouette.armLeftX}
@@ -226,6 +243,12 @@ export function CharacterAvatar({
               armWidth={silhouette.armWidth}
               badgeTier={badgeTier}
             />
+          </>
+        )}
+        {showLimbArmor && (
+          <>
+            <ArmGuard color={bodyColor} armX={silhouette.armLeftX} armWidth={silhouette.armWidth} />
+            <ArmGuard color={bodyColor} armX={silhouette.armRightX} armWidth={silhouette.armWidth} />
           </>
         )}
         {showAccentGlow && config.equippedHat && (
@@ -252,11 +275,13 @@ export function CharacterAvatar({
 
       <g transform={LEFT_LEG_ROTATION}>
         <LeftLeg skinColor={skinColor} />
+        {showLimbArmor && <LeftLegGuard color={bodyColor} />}
         {config.equippedShoes === "basic" && <BasicShoesLeft color={shoesColor} />}
         {config.equippedShoes === "boots" && <BootsLeft color={shoesColor} />}
       </g>
       <g transform={RIGHT_LEG_ROTATION}>
         <RightLeg skinColor={skinColor} />
+        {showLimbArmor && <RightLegGuard color={bodyColor} />}
         {config.equippedShoes === "basic" && <BasicShoesRight color={shoesColor} />}
         {config.equippedShoes === "boots" && <BootsRight color={shoesColor} />}
       </g>

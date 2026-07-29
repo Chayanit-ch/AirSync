@@ -110,11 +110,12 @@ export function LevelAura({ tint }: { tint: string }) {
 }
 
 /** Fraction of `torsoWidth` tapered away from each side at the waist (see `ThemeUniform`'s torso outline) — a straight-edged trapezoid, not a curve, so the math stays simple and verifiable by hand instead of risking a malformed bezier shape. */
-const WAIST_TAPER_RATIO = 0.16;
+/** Default taper for any caller that doesn't pass one (matches `getSilhouetteMetrics(1).waistTaperRatio`) — kept only so `torsoOutline`/`torsoSlice` have a sane fallback, not as the source of truth (see `avatarSilhouette.ts`, which now varies this by badge tier: barely tapered/casual at tier 1-2, a more pronounced "armored" V at higher tiers). */
+const DEFAULT_WAIST_TAPER_RATIO = 0.05;
 
-/** The torso's own outline: full `torsoWidth` at the shoulders (y=46, flush with the arm-gap invariant `avatarSilhouette.ts` depends on) tapering inward at the waist (y=102) for a heroic V-taper silhouette instead of a straight-sided rect. */
-function torsoOutline(torsoX: number, torsoWidth: number): string {
-  const waistTaper = torsoWidth * WAIST_TAPER_RATIO;
+/** The torso's own outline: full `torsoWidth` at the shoulders (y=46, flush with the arm-gap invariant `avatarSilhouette.ts` depends on) tapering inward at the waist (y=102) — how MUCH it tapers is `waistTaperRatio` (from `getSilhouetteMetrics()`), a plain-shirt silhouette at low tiers, a heroic V-taper at higher ones. */
+function torsoOutline(torsoX: number, torsoWidth: number, waistTaperRatio = DEFAULT_WAIST_TAPER_RATIO): string {
+  const waistTaper = torsoWidth * waistTaperRatio;
   return `M ${torsoX} 46 L ${torsoX + torsoWidth} 46 L ${torsoX + torsoWidth - waistTaper} 102 L ${torsoX + waistTaper} 102 Z`;
 }
 
@@ -125,14 +126,32 @@ function torsoOutline(torsoX: number, torsoWidth: number): string {
  * `torsoOutline` (rather than an independent rect) guarantees the overlay
  * can never poke outside the tapered silhouette, at any `torsoWidth`.
  */
-function torsoSlice(torsoX: number, torsoWidth: number, fracStart: number, fracEnd: number): string {
-  const waistTaper = torsoWidth * WAIST_TAPER_RATIO;
+function torsoSlice(
+  torsoX: number,
+  torsoWidth: number,
+  fracStart: number,
+  fracEnd: number,
+  waistTaperRatio = DEFAULT_WAIST_TAPER_RATIO,
+): string {
+  const waistTaper = torsoWidth * waistTaperRatio;
   const bottomWidth = torsoWidth - waistTaper * 2;
   const topL = torsoX + torsoWidth * fracStart;
   const topR = torsoX + torsoWidth * fracEnd;
   const botL = torsoX + waistTaper + bottomWidth * fracStart;
   const botR = torsoX + waistTaper + bottomWidth * fracEnd;
   return `M ${topL} 46 L ${topR} 46 L ${botR} 102 L ${botL} 102 Z`;
+}
+
+/** The torso outline's left/right x-position at a given `y` (46-102) — linear interpolation of the same taper `torsoOutline` uses, so anything anchored to the torso's actual edge (e.g. `Belt`) can never sit outside it. */
+function torsoEdgesAtY(
+  torsoX: number,
+  torsoWidth: number,
+  y: number,
+  waistTaperRatio = DEFAULT_WAIST_TAPER_RATIO,
+): { left: number; right: number } {
+  const waistTaper = torsoWidth * waistTaperRatio;
+  const t = (y - 46) / (102 - 46);
+  return { left: torsoX + waistTaper * t, right: torsoX + torsoWidth - waistTaper * t };
 }
 
 /**
@@ -206,21 +225,23 @@ export function ThemeUniform({
   badgeAccent,
   torsoX = 30,
   torsoWidth = 40,
+  waistTaperRatio,
   pattern,
 }: {
   bodyColor: string;
   badgeAccent: string;
   torsoX?: number;
   torsoWidth?: number;
+  waistTaperRatio?: number;
   pattern?: string | null;
 }) {
   return (
     <g>
-      <path d={torsoOutline(torsoX, torsoWidth)} fill={bodyColor} />
+      <path d={torsoOutline(torsoX, torsoWidth, waistTaperRatio)} fill={bodyColor} />
       {/* highlight: left edge */}
-      <path d={torsoSlice(torsoX, torsoWidth, 0, 0.25)} fill="#ffffff" opacity="0.14" />
+      <path d={torsoSlice(torsoX, torsoWidth, 0, 0.25, waistTaperRatio)} fill="#ffffff" opacity="0.14" />
       {/* shadow: right edge, deliberately wider than the highlight so the two don't read as symmetric */}
-      <path d={torsoSlice(torsoX, torsoWidth, 0.6, 1)} fill="#000000" opacity="0.16" />
+      <path d={torsoSlice(torsoX, torsoWidth, 0.6, 1, waistTaperRatio)} fill="#000000" opacity="0.16" />
       <UniformPattern pattern={pattern} torsoX={torsoX} torsoWidth={torsoWidth} />
       <path
         d="M50 58l2.2 4.5 5 .7-3.6 3.5.85 5-4.45-2.3-4.45 2.3.85-5-3.6-3.5 5-.7z"
@@ -232,6 +253,39 @@ export function ThemeUniform({
       />
     </g>
   );
+}
+
+/**
+ * Belt, tier 3+ (same "you've earned real armor now" threshold as
+ * `Pauldron`) — a fixed leather-brown regardless of theme (belts read as
+ * functional gear, not team colors, in most reference art) with a small
+ * buckle. Its width is derived from `torsoEdgesAtY` at the belt's own y, so
+ * it always sits flush with the torso's actual (tier-scaled) taper instead
+ * of an independently-guessed width.
+ */
+export function Belt({
+  torsoX,
+  torsoWidth,
+  waistTaperRatio,
+}: {
+  torsoX: number;
+  torsoWidth: number;
+  waistTaperRatio?: number;
+}) {
+  const y = 93;
+  const height = 5;
+  const { left, right } = torsoEdgesAtY(torsoX, torsoWidth, y + height / 2, waistTaperRatio);
+  return (
+    <g>
+      <rect x={left - 1.5} y={y} width={right - left + 3} height={height} rx="1" fill="#44403c" />
+      <rect x="47" y={y + 0.5} width="6" height={height - 1} rx="1" fill="#a8a29e" />
+    </g>
+  );
+}
+
+/** Gloves, tier 3+ — a slightly larger circle over the hand it covers, same `bodyColor` convention as `Pauldron` (armor matches the uniform). Positioned at the exact same `cx`/`cy` `LeftArm`/`RightArm` already use for the hand, so it can never drift from the hand it's covering. */
+export function Glove({ color, cx }: { color: string; cx: number }) {
+  return <circle cx={cx} cy="90" r="7.5" fill={color} />;
 }
 
 /**
@@ -342,17 +396,46 @@ function Hair({ hairStyle, hairColor }: { hairStyle: string; hairColor: string }
   const capShine = (
     <path d="M40 18 A10 7 0 0 1 53 15" fill="none" stroke="#ffffff" strokeOpacity="0.35" strokeWidth="1.6" strokeLinecap="round" />
   );
+  // Individual strand partings — a fixed color/color-family fill reads as
+  // one flat blob no matter how the silhouette is shaped, so this is what
+  // actually makes it read as "hair" rather than a painted dome: a handful
+  // of thin dark lines following the dome's own curvature (simple quadratic
+  // arcs, one control point each, not a hand-chained bezier), fanning out
+  // from the crown the way real hair partings do.
+  // White, not a dark color: reads consistently against every hair preset,
+  // including black/gray, where a dark overlay would nearly vanish.
+  // Start-y per line is computed off the cap ellipse's own equation
+  // (y = 23 - 11*sqrt(1-((x-50)/15)^2)) with a ~1-unit safety margin BELOW
+  // the curve — the very bug this comment now documents was these lines
+  // starting slightly ABOVE the actual silhouette at the outer x positions
+  // (38/62), poking out over the scalp like whiskers; verified by rendering.
+  const capStrands = (
+    <g stroke="#ffffff" strokeOpacity="0.45" strokeWidth="1.2" strokeLinecap="round" fill="none">
+      <path d="M38 17.5 Q37.5 20.2 38.5 23" />
+      <path d="M44 14 Q43.7 18 44.3 22.5" />
+      <path d="M50 13 Q50 17.5 50 23" />
+      <path d="M56 14 Q56.3 18 55.7 22.5" />
+      <path d="M62 17.5 Q62.5 20.2 61.5 23" />
+    </g>
+  );
 
   if (hairStyle === "long") {
     // Tapered quads (straight lines only) instead of straight-sided rects —
     // wider where they meet the cap, narrowing to a soft point at the tip,
     // for a more natural "flowing strand" silhouette than a blunt rect end.
+    // A couple of strand lines down each side extend the same "visible
+    // partings" language from the cap into the hanging length.
     return (
       <g>
         {cap}
         {capShine}
+        {capStrands}
         <path d="M32 20 L40 20 L37 46 L34 50 Z" fill={hairColor} />
         <path d="M60 20 L68 20 L66 50 L63 46 Z" fill={hairColor} />
+        <g stroke="#ffffff" strokeOpacity="0.4" strokeWidth="1.1" strokeLinecap="round">
+          <path d="M35 22 Q34 34 35.5 47" fill="none" />
+          <path d="M65 22 Q66 34 64.5 47" fill="none" />
+        </g>
       </g>
     );
   }
@@ -365,8 +448,13 @@ function Hair({ hairStyle, hairColor }: { hairStyle: string; hairColor: string }
       <g>
         {cap}
         {capShine}
+        {capStrands}
         <path d={`M33 ${HAIR_CAP_BASELINE} L42 ${HAIR_CAP_BASELINE} L40 41 L35 41 Z`} fill={hairColor} />
         <path d={`M58 ${HAIR_CAP_BASELINE} L67 ${HAIR_CAP_BASELINE} L65 41 L60 41 Z`} fill={hairColor} />
+        <g stroke="#ffffff" strokeOpacity="0.4" strokeWidth="1.1" strokeLinecap="round">
+          <line x1="37" y1={HAIR_CAP_BASELINE + 2} x2="36.5" y2="39" />
+          <line x1="63" y1={HAIR_CAP_BASELINE + 2} x2="63.5" y2="39" />
+        </g>
       </g>
     );
   }
@@ -378,9 +466,11 @@ function Hair({ hairStyle, hairColor }: { hairStyle: string; hairColor: string }
       <g>
         {cap}
         {capShine}
+        {capStrands}
         <circle cx="64" cy="20" r="3" fill={hairColor} />
         <rect x="64" y="18" width="7" height="20" rx="3.5" fill={hairColor} />
         <rect x="65" y="36" width="5" height="14" rx="2.5" fill={hairColor} />
+        <line x1="67" y1="20" x2="67" y2="48" stroke="#ffffff" strokeOpacity="0.4" strokeWidth="1.1" strokeLinecap="round" />
       </g>
     );
   }
@@ -388,7 +478,9 @@ function Hair({ hairStyle, hairColor }: { hairStyle: string; hairColor: string }
   if (hairStyle === "curly") {
     // Cap plus rounded bumps along the top edge for texture — staggered
     // sizes/positions (not identical circles) for a less uniform, more
-    // natural curl pattern. Every bump stays well clear of the eyes.
+    // natural curl pattern. Every bump stays well clear of the eyes. Small
+    // arcs inside each bump suggest individual curls rather than a smooth
+    // painted sphere.
     return (
       <g>
         {cap}
@@ -396,6 +488,12 @@ function Hair({ hairStyle, hairColor }: { hairStyle: string; hairColor: string }
         <circle cx="46" cy="12" r="6.5" fill={hairColor} />
         <circle cx="54" cy="11" r="6.5" fill={hairColor} />
         <circle cx="62" cy="17" r="5.5" fill={hairColor} />
+        <g stroke="#ffffff" strokeOpacity="0.45" strokeWidth="1.1" fill="none" strokeLinecap="round">
+          <path d="M35 16 A3 3 0 0 1 40 15" />
+          <path d="M43 11 A3.5 3.5 0 0 1 49 10.5" />
+          <path d="M51 10.5 A3.5 3.5 0 0 1 57 11" />
+          <path d="M59 15 A3 3 0 0 1 64 16" />
+        </g>
       </g>
     );
   }
@@ -408,6 +506,8 @@ function Hair({ hairStyle, hairColor }: { hairStyle: string; hairColor: string }
     return (
       <g>
         <path d="M35 23 A15 11 0 0 1 50 12 L50 23 Z" fill={hairColor} />
+        <path d="M38 17.5 Q37.5 20.2 38.5 22.5" stroke="#ffffff" strokeOpacity="0.4" strokeWidth="1.1" fill="none" strokeLinecap="round" />
+        <path d="M44 14 Q43.7 18 44.3 22.5" stroke="#ffffff" strokeOpacity="0.4" strokeWidth="1.1" fill="none" strokeLinecap="round" />
         <line x1="53" y1="19" x2="61" y2="19" stroke={hairColor} strokeWidth="1" opacity="0.4" />
         <line x1="53" y1="22" x2="60" y2="22" stroke={hairColor} strokeWidth="1" opacity="0.4" />
       </g>
@@ -419,6 +519,7 @@ function Hair({ hairStyle, hairColor }: { hairStyle: string; hairColor: string }
     <g>
       {cap}
       {capShine}
+      {capStrands}
     </g>
   );
 }
@@ -536,6 +637,23 @@ export function RightArm({ skinColor, armX = 71, armWidth = 13 }: ArmProps) {
   );
 }
 
+/**
+ * Forearm armor (vambrace), tier 4+ (same threshold as `ShieldEquipment`'s
+ * unlock — "more substantial armor"), sitting on the lower arm above the
+ * hand (y=64-82, clear of the hand circle at cy=90 r=7, top edge y=83).
+ * Same `bodyColor` convention as `Pauldron`/`Glove` — armor matches the
+ * uniform. One shared shape for both sides, like `Pauldron`.
+ */
+export function ArmGuard({ color, armX, armWidth }: { color: string; armX: number; armWidth: number }) {
+  const padding = 1;
+  return (
+    <g>
+      <rect x={armX - padding} y="64" width={armWidth + padding * 2} height="18" rx="3" fill={color} />
+      <rect x={armX - padding} y="64" width={armWidth + padding * 2} height="2.5" rx="1.2" fill="#ffffff" opacity="0.4" />
+    </g>
+  );
+}
+
 /** Left leg + plain foot, split out of the old monolithic `CharacterFace` so `CharacterAvatar` can nest it in its own independent pose rotation group. Does NOT scale with silhouette tier (only torso/arms do — legs stay the original fixed footprint). */
 export function LeftLeg({ skinColor }: { skinColor: string }) {
   return (
@@ -557,6 +675,26 @@ export function RightLeg({ skinColor }: { skinColor: string }) {
       <rect x="53" y="100" width="3.5" height="42" rx="5" fill="#000000" opacity="0.16" />
       <rect x="60.5" y="100" width="3.5" height="42" rx="5" fill="#ffffff" opacity="0.10" />
       <rect x="50" y="138" width="18" height="9" rx="4" fill={skinColor} />
+    </g>
+  );
+}
+
+/** Shin armor (greave), tier 4+ (same threshold as `ArmGuard`) — sits on the lower leg (y=112-134), above the foot/shoe footprint (y=138+) so it never collides with `BasicShoesLeft`/`BootsLeft`. Same `bodyColor` convention as `Pauldron`/`ArmGuard`. Left-leg attach point. */
+export function LeftLegGuard({ color }: { color: string }) {
+  return (
+    <g>
+      <rect x="35" y="112" width="13" height="22" rx="3" fill={color} />
+      <rect x="35" y="112" width="3" height="22" rx="1.5" fill="#ffffff" opacity="0.3" />
+    </g>
+  );
+}
+
+/** Right-leg counterpart of `LeftLegGuard`. Right-leg attach point. */
+export function RightLegGuard({ color }: { color: string }) {
+  return (
+    <g>
+      <rect x="52" y="112" width="13" height="22" rx="3" fill={color} />
+      <rect x="62" y="112" width="3" height="22" rx="1.5" fill="#ffffff" opacity="0.3" />
     </g>
   );
 }
@@ -626,18 +764,26 @@ export function SwordEquipment({ color, metallicSheenId }: MetallicEquipmentProp
 }
 
 /** Level 3 unlock — the other mutually-exclusive weapon slot option. Metallic — see `metallicSheenId`. Upper-body attach point. */
+/**
+ * A sleeker sci-fi silhouette (angled body, no visible hammer/sight) with a
+ * glowing emitter tip — the glow is a fixed cyan regardless of theme (laser
+ * energy reads as its own iconic color in most game art, not a team color),
+ * same "colored circle behind a `<circle>` core" cheap-glow technique used
+ * elsewhere (no filters).
+ */
 export function GunEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
   return (
     <g className="origin-center animate-equip-in">
-      {/* barrel */}
-      <rect x="84" y="84" width="15" height="5" rx="2" fill={color} />
-      {metallicSheenId && <rect x="84" y="84" width="15" height="5" rx="2" fill={`url(#${metallicSheenId})`} />}
-      {/* front sight */}
-      <rect x="97" y="81.5" width="1.6" height="3" fill="#1f2937" />
+      {/* body — angled trapezoid instead of a plain rect, tapering toward the emitter */}
+      <path d="M83 87 L97 84 L99 87.5 L84 91 Z" fill={color} />
+      {metallicSheenId && <path d="M83 87 L97 84 L99 87.5 L84 91 Z" fill={`url(#${metallicSheenId})`} />}
+      {/* emitter glow */}
+      <circle cx="99.5" cy="85.8" r="2.6" fill="#22d3ee" opacity="0.35" />
+      <circle cx="99.5" cy="85.8" r="1.3" fill="#67e8f9" />
       {/* grip, angled back toward the hand */}
-      <rect x="94" y="88" width="5" height="9" rx="1.5" fill="#1f2937" transform="rotate(8 96.5 92)" />
+      <rect x="85" y="90" width="5" height="9" rx="1.5" fill="#1f2937" transform="rotate(10 87.5 94.5)" />
       {/* trigger guard — a simple half-circle arc, same safe-arc technique already used for the hair cap/helmet dome/shield curve */}
-      <path d="M91 89 A3 3 0 0 0 91 95" fill="none" stroke="#1f2937" strokeWidth="1.2" />
+      <path d="M87 91 A2.6 2.6 0 0 0 87 96.2" fill="none" stroke="#1f2937" strokeWidth="1.1" />
     </g>
   );
 }
@@ -671,6 +817,9 @@ export function BasicShoesLeft({ color }: EquipmentProps) {
   return (
     <g className="origin-center animate-equip-in">
       <rect x="32" y="139" width="18" height="8" rx="3" fill={color} />
+      {/* sole trim + toe highlight — more detail than a single flat rect */}
+      <rect x="32" y="144.5" width="18" height="2.5" rx="1.2" fill="#1f2937" opacity="0.55" />
+      <rect x="32" y="139" width="18" height="1.6" rx="0.8" fill="#ffffff" opacity="0.3" />
     </g>
   );
 }
@@ -680,16 +829,21 @@ export function BasicShoesRight({ color }: EquipmentProps) {
   return (
     <g className="origin-center animate-equip-in">
       <rect x="50" y="139" width="18" height="8" rx="3" fill={color} />
+      <rect x="50" y="144.5" width="18" height="2.5" rx="1.2" fill="#1f2937" opacity="0.55" />
+      <rect x="50" y="139" width="18" height="1.6" rx="0.8" fill="#ffffff" opacity="0.3" />
     </g>
   );
 }
 
-/** Level 5 unlock — a visually distinct, taller boot, left leg. Left-leg attach point. */
+/** Level 5 unlock — a visually distinct, taller boot, left leg. A strap + small buckle and a sole trim add more detail than a single flat rect. Left-leg attach point. */
 export function BootsLeft({ color }: EquipmentProps) {
   return (
     <g className="origin-center animate-equip-in">
       <rect x="32" y="125" width="18" height="22" rx="5" fill={color} />
       <rect x="32" y="125" width="18" height="4" rx="2" fill="white" opacity="0.35" />
+      <line x1="34" y1="133" x2="48" y2="133" stroke="#1f2937" strokeOpacity="0.35" strokeWidth="1.4" />
+      <rect x="39" y="131.3" width="4" height="3.4" rx="0.8" fill="#a8a29e" />
+      <rect x="32" y="144.5" width="18" height="2.5" rx="1.2" fill="#1f2937" opacity="0.5" />
     </g>
   );
 }
@@ -700,6 +854,9 @@ export function BootsRight({ color }: EquipmentProps) {
     <g className="origin-center animate-equip-in">
       <rect x="50" y="125" width="18" height="22" rx="5" fill={color} />
       <rect x="50" y="125" width="18" height="4" rx="2" fill="white" opacity="0.35" />
+      <line x1="52" y1="133" x2="66" y2="133" stroke="#1f2937" strokeOpacity="0.35" strokeWidth="1.4" />
+      <rect x="57" y="131.3" width="4" height="3.4" rx="0.8" fill="#a8a29e" />
+      <rect x="50" y="144.5" width="18" height="2.5" rx="1.2" fill="#1f2937" opacity="0.5" />
     </g>
   );
 }

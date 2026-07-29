@@ -24,6 +24,8 @@ export interface SilhouetteMetrics {
   armWidth: number;
   armLeftX: number;
   armRightX: number;
+  /** Fraction of `torsoWidth` tapered away from each side at the waist (see `characterParts.tsx`'s `torsoOutline`) — barely tapered at tier 1-2 for a plain/casual silhouette, more pronounced at higher tiers for a more "armored" V-taper build. */
+  waistTaperRatio: number;
 }
 
 const TORSO_WIDTH_BY_TIER: Record<number, number> = {
@@ -42,6 +44,14 @@ const ARM_WIDTH_BY_TIER: Record<number, number> = {
   5: 15,
 };
 
+const WAIST_TAPER_RATIO_BY_TIER: Record<number, number> = {
+  1: 0.05,
+  2: 0.05,
+  3: 0.14,
+  4: 0.16,
+  5: 0.2,
+};
+
 /** `badgeTier` should already be `getBadgeTier(level)`-capped (1-5). */
 export function getSilhouetteMetrics(badgeTier: number): SilhouetteMetrics {
   const torsoWidth = TORSO_WIDTH_BY_TIER[badgeTier] ?? TORSO_WIDTH_BY_TIER[1];
@@ -53,5 +63,6 @@ export function getSilhouetteMetrics(badgeTier: number): SilhouetteMetrics {
     armWidth,
     armLeftX: torsoX - armWidth - GAP,
     armRightX: torsoX + torsoWidth + GAP,
+    waistTaperRatio: WAIST_TAPER_RATIO_BY_TIER[badgeTier] ?? WAIST_TAPER_RATIO_BY_TIER[1],
   };
 }
