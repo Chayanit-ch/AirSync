@@ -23,6 +23,7 @@ import {
   LeftLeg,
   LevelAura,
   MaskEquipment,
+  Pauldron,
   PortraitBackdrop,
   RightArm,
   RightLeg,
@@ -30,6 +31,7 @@ import {
   ShieldEquipment,
   SwordEquipment,
   ThemeUniform,
+  Wings,
 } from "./characterParts";
 
 interface CharacterAvatarProps {
@@ -81,11 +83,11 @@ const VIEWBOX_HEIGHT = 160;
 const LEVEL_EFFECTS_MIN_SIZE = 80;
 
 /** Upper-body pivot (torso top-center) — the whole head/neck/torso/arms/cape/equipment subtree rotates together as one rigid body. */
-const UPPER_BODY_ROTATION = "rotate(-6 50 46)";
-/** Left-leg pivot (top-center of the left leg rect: x=36 w=11 -> center 41.5). */
-const LEFT_LEG_ROTATION = "rotate(-8 41.5 100)";
-/** Right-leg pivot (top-center of the right leg rect: x=53 w=11 -> center 58.5) — asymmetric from the left leg for a "weight on the back foot" dynamic stance rather than a symmetric akimbo look. */
-const RIGHT_LEG_ROTATION = "rotate(6 58.5 100)";
+const UPPER_BODY_ROTATION = "rotate(-9 50 46)";
+/** Left-leg pivot (top-center of the left leg rect: x=36 w=11 -> center 41.5). Positive angle swings the foot outward/left in SVG's y-down rotation convention (verified by rendering — the opposite sign visibly crossed the legs toward each other instead of apart). */
+const LEFT_LEG_ROTATION = "rotate(12 41.5 100)";
+/** Right-leg pivot (top-center of the right leg rect: x=53 w=11 -> center 58.5) — negative angle swings the foot outward/right, and a slightly smaller magnitude than the left leg for a "weight on the back foot" asymmetric stance rather than a symmetric akimbo look. */
+const RIGHT_LEG_ROTATION = "rotate(-9 58.5 100)";
 
 /**
  * Full-body character, portrait-framed, built entirely from the user's own
@@ -144,10 +146,15 @@ export function CharacterAvatar({
   const metallicSheenId = `metallic-sheen-${safeId}`;
   const accentGlowId = `accent-glow-${safeId}`;
 
-  const hasMetallicEquipment =
-    config.equippedWeapon != null || config.equippedShield || config.equippedHat === "helmet";
-  const showAccentGlow = showLevelEffects && badgeTier >= 3;
+  const showPauldrons = badgeTier >= 3;
   const showAura = showLevelEffects && badgeTier >= 5;
+  // Wings are gated the same as the aura (tier 5+, only above
+  // LEVEL_EFFECTS_MIN_SIZE) — a decorative escalation, not a body-shape
+  // change, so it follows the same "skip it at leaderboard-row size" policy.
+  const showWings = showAura;
+  const hasMetallicEquipment =
+    config.equippedWeapon != null || config.equippedShield || config.equippedHat === "helmet" || showWings;
+  const showAccentGlow = showLevelEffects && badgeTier >= 3;
 
   return (
     <svg
@@ -180,6 +187,7 @@ export function CharacterAvatar({
       <PortraitBackdrop tint={backdropTint} />
 
       <g transform={UPPER_BODY_ROTATION}>
+        {showWings && <Wings tint={accentLight} metallicSheenId={metallicSheenId} />}
         {config.equippedCape && <CapeEquipment color={bodyColor} />}
         <LeftArm skinColor={skinColor} armX={silhouette.armLeftX} armWidth={silhouette.armWidth} />
         <RightArm skinColor={skinColor} armX={silhouette.armRightX} armWidth={silhouette.armWidth} />
@@ -195,6 +203,22 @@ export function CharacterAvatar({
           torsoX={silhouette.torsoX}
           torsoWidth={silhouette.torsoWidth}
         />
+        {showPauldrons && (
+          <>
+            <Pauldron
+              color={bodyColor}
+              armX={silhouette.armLeftX}
+              armWidth={silhouette.armWidth}
+              badgeTier={badgeTier}
+            />
+            <Pauldron
+              color={bodyColor}
+              armX={silhouette.armRightX}
+              armWidth={silhouette.armWidth}
+              badgeTier={badgeTier}
+            />
+          </>
+        )}
         {showAccentGlow && config.equippedHat && (
           <circle cx="50" cy="21" r="14" fill={`url(#${accentGlowId})`} />
         )}

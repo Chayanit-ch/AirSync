@@ -14,11 +14,15 @@
  * - eyes: circles cx=44/56 cy=28 r=2      (y 26-30) — every hair/hat shape
  *   below must keep clear of this row (see `HAIR_CAP_BASELINE`).
  * - neck: rect   x=44 y=38 w=12 h=10      (y 38-48, bridges head→torso)
- * - torso: rect  x=torsoX y=46 w=torsoWidth h=56 — `torsoX`/`torsoWidth`
- *   come from `getSilhouetteMetrics()` (see `utils/avatarSilhouette.ts`),
- *   30/40 at badge tier 1-2 (identical to the original fixed values),
- *   growing at tiers 3-4 and 5 for the "broader shoulders" level effect —
- *   always centered on x=50 regardless of tier.
+ * - torso: a tapered trapezoid (see `torsoOutline`), full `torsoWidth` at
+ *   the shoulders (y=46, flush with the arm-gap invariant below) narrowing
+ *   toward the waist (y=102) — `torsoX`/`torsoWidth` come from
+ *   `getSilhouetteMetrics()` (see `utils/avatarSilhouette.ts`), 30/40 at
+ *   badge tier 1-2 (identical to the original fixed values), growing at
+ *   tiers 3-4 and 5 for the "broader shoulders" level effect — always
+ *   centered on x=50 regardless of tier. Shoulder armor (`Pauldron`, tier
+ *   3+) sits over the top of each arm, on top of both the arms and the
+ *   torso in render order.
  * - arms: rects  x=armLeftX/armRightX (also from `getSilhouetteMetrics()`,
  *   16/71 at tier 1-2), OUTSIDE the torso's x-range by a constant 1px gap
  *   at every tier (the gap is the formula's invariant, not a per-tier
@@ -103,6 +107,32 @@ export function LevelAura({ tint }: { tint: string }) {
   return <circle cx="50" cy="70" r="62" fill={tint} opacity="0.22" className="animate-aura-pulse" />;
 }
 
+/** Fraction of `torsoWidth` tapered away from each side at the waist (see `ThemeUniform`'s torso outline) — a straight-edged trapezoid, not a curve, so the math stays simple and verifiable by hand instead of risking a malformed bezier shape. */
+const WAIST_TAPER_RATIO = 0.16;
+
+/** The torso's own outline: full `torsoWidth` at the shoulders (y=46, flush with the arm-gap invariant `avatarSilhouette.ts` depends on) tapering inward at the waist (y=102) for a heroic V-taper silhouette instead of a straight-sided rect. */
+function torsoOutline(torsoX: number, torsoWidth: number): string {
+  const waistTaper = torsoWidth * WAIST_TAPER_RATIO;
+  return `M ${torsoX} 46 L ${torsoX + torsoWidth} 46 L ${torsoX + torsoWidth - waistTaper} 102 L ${torsoX + waistTaper} 102 Z`;
+}
+
+/**
+ * A horizontal slice of the torso's own outline between two width fractions
+ * (0 = left edge, 1 = right edge) — used for the highlight/shadow overlays
+ * below. Deriving the slice from the exact same taper math as
+ * `torsoOutline` (rather than an independent rect) guarantees the overlay
+ * can never poke outside the tapered silhouette, at any `torsoWidth`.
+ */
+function torsoSlice(torsoX: number, torsoWidth: number, fracStart: number, fracEnd: number): string {
+  const waistTaper = torsoWidth * WAIST_TAPER_RATIO;
+  const bottomWidth = torsoWidth - waistTaper * 2;
+  const topL = torsoX + torsoWidth * fracStart;
+  const topR = torsoX + torsoWidth * fracEnd;
+  const botL = torsoX + waistTaper + bottomWidth * fracStart;
+  const botR = torsoX + waistTaper + bottomWidth * fracEnd;
+  return `M ${topL} 46 L ${topR} 46 L ${botR} 102 L ${botL} 102 Z`;
+}
+
 /**
  * Always-on theme layer: uniform torso color + a small chest badge/star —
  * present even on a totally default character, so role stays visually
@@ -115,12 +145,14 @@ export function LevelAura({ tint }: { tint: string }) {
  * renders identically to before) — the badge path stays hardcoded to x=50
  * since the torso is always horizontally centered there regardless of tier.
  *
- * Adds two flat overlay rects (not a gradient — see task 1's "avoid
- * gradients for cloth") for a highlight (left edge) / shadow (right edge)
- * pair, same single "light from upper-left" convention `LeftArm`/`RightArm`/
- * `LeftLeg`/`RightLeg` use, so the whole figure reads as one coherant
- * lighting scheme rather than per-part arbitrary choices. Both overlays
- * reuse the base rect's own `rx` so corners still round off consistently.
+ * The torso is a tapered trapezoid (`torsoOutline`), not a plain rect — full
+ * width at the shoulders, narrower at the waist, for a more heroic build.
+ * Adds two flat overlay shapes, sliced from that same taper (`torsoSlice`,
+ * not a gradient — see task 1's "avoid gradients for cloth"), for a
+ * highlight (left edge) / shadow (right edge) pair — same single "light
+ * from upper-left" convention `LeftArm`/`RightArm`/`LeftLeg`/`RightLeg` use,
+ * so the whole figure reads as one coherant lighting scheme rather than
+ * per-part arbitrary choices.
  */
 export function ThemeUniform({
   bodyColor,
@@ -133,22 +165,13 @@ export function ThemeUniform({
   torsoX?: number;
   torsoWidth?: number;
 }) {
-  const overlayWidth = torsoWidth * 0.25;
   return (
     <g>
-      <rect x={torsoX} y="46" width={torsoWidth} height="56" rx="14" fill={bodyColor} />
+      <path d={torsoOutline(torsoX, torsoWidth)} fill={bodyColor} />
       {/* highlight: left edge */}
-      <rect x={torsoX} y="46" width={overlayWidth} height="56" rx="14" fill="#ffffff" opacity="0.14" />
+      <path d={torsoSlice(torsoX, torsoWidth, 0, 0.25)} fill="#ffffff" opacity="0.14" />
       {/* shadow: right edge, deliberately wider than the highlight so the two don't read as symmetric */}
-      <rect
-        x={torsoX + torsoWidth * 0.6}
-        y="46"
-        width={torsoWidth * 0.4}
-        height="56"
-        rx="14"
-        fill="#000000"
-        opacity="0.16"
-      />
+      <path d={torsoSlice(torsoX, torsoWidth, 0.6, 1)} fill="#000000" opacity="0.16" />
       <path
         d="M50 58l2.2 4.5 5 .7-3.6 3.5.85 5-4.45-2.3-4.45 2.3.85-5-3.6-3.5 5-.7z"
         fill="white"
@@ -157,6 +180,88 @@ export function ThemeUniform({
         strokeLinejoin="round"
         opacity="0.95"
       />
+    </g>
+  );
+}
+
+/**
+ * Shoulder armor, tier 3+ (same threshold as the hat/weapon unlock and the
+ * accent-glow effect — "you've earned real armor now"). Sits over the top
+ * of each arm (`armX`/`armWidth` from `getSilhouetteMetrics()`, same as
+ * `LeftArm`/`RightArm`), rendered by `CharacterAvatar` AFTER both arms and
+ * the torso so it visually rests on top of the shoulder line. One shared
+ * shape for both sides — it's symmetric, so `CharacterAvatar` just
+ * positions two instances rather than needing separate Left/Right variants.
+ * A peaked (house-shaped) silhouette with a light stroke outline — since
+ * its fill is the same `bodyColor` as the torso beneath it, the outline is
+ * what actually reads it as a separate shoulder plate rather than just
+ * blending into the torso/sleeve. Slightly larger, with a bolder trim line
+ * along its peak, at badge tier 5, mirroring the "most ornate at the top
+ * tier" language the aura/accent-glow already use.
+ */
+export function Pauldron({
+  color,
+  armX,
+  armWidth,
+  badgeTier,
+}: {
+  color: string;
+  armX: number;
+  armWidth: number;
+  badgeTier: number;
+}) {
+  const big = badgeTier >= 5;
+  const padding = big ? 4 : 2.5;
+  const height = big ? 16 : 12;
+  const x = armX - padding;
+  const width = armWidth + padding * 2;
+  const peakY = big ? 40 : 42;
+  const peak = `${x} 46 L ${x + width / 2} ${peakY} L ${x + width} 46`;
+  return (
+    <g>
+      <path
+        d={`M ${x} ${44 + height} L ${peak} L ${x + width} ${44 + height} Z`}
+        fill={color}
+        stroke="#ffffff"
+        strokeOpacity="0.6"
+        strokeWidth={big ? 1.3 : 0.9}
+      />
+      {big && <path d={`M ${peak}`} fill="none" stroke="#ffffff" strokeOpacity="0.85" strokeWidth="1.6" />}
+    </g>
+  );
+}
+
+/**
+ * Level-5+ energy wings, rendered alongside `LevelAura` — the reference
+ * silhouette's most iconic top-tier signature. Positioned behind the torso
+ * (see `CharacterAvatar`'s render order, same "drapes from the shoulders"
+ * reasoning as `CapeEquipment`), sized against the tier-5 silhouette
+ * specifically (fixed coordinates, not parameterized by tier, since these
+ * only ever render once `badgeTier` is already capped at 5). Straight-line
+ * polygons only (no curves) to keep the shape easy to verify by hand.
+ * `tint` is the theme's lighter accent variant for a glassy look;
+ * `metallicSheenId` (optional, same shared gradient as armor/weapons) adds
+ * a subtle sheen overlay for a crystalline finish.
+ */
+export function Wings({ tint, metallicSheenId }: { tint: string; metallicSheenId?: string }) {
+  // Extends past `CapeEquipment`'s own footprint (x=18-36 / x=64-82) on
+  // purpose — wings render BEHIND the cape (see `CharacterAvatar`'s render
+  // order), so only the portion sticking out past the cape's edge is meant
+  // to show, and it needs real reach to still read as "wings" rather than
+  // being fully hidden whenever a cape is also equipped (both unlock at the
+  // same tier, so they're shown together most of the time).
+  const leftPath = "M26 50 L3 34 L13 54 L1 74 L22 80 Z";
+  const rightPath = "M74 50 L97 34 L87 54 L99 74 L78 80 Z";
+  return (
+    <g className="origin-center animate-equip-in">
+      <path d={leftPath} fill={tint} opacity="0.6" stroke={tint} strokeWidth="1" />
+      <path d={rightPath} fill={tint} opacity="0.6" stroke={tint} strokeWidth="1" />
+      {metallicSheenId && (
+        <>
+          <path d={leftPath} fill={`url(#${metallicSheenId})`} />
+          <path d={rightPath} fill={`url(#${metallicSheenId})`} />
+        </>
+      )}
     </g>
   );
 }
@@ -389,13 +494,13 @@ export function SanitizerEquipment() {
   );
 }
 
-/** Level 3 unlock — one of two mutually-exclusive weapon slot options. Positioned outside the right arm's baseline x=71-84 range so it never overlaps it. Metallic — see `metallicSheenId`. Upper-body attach point. */
+/** Level 3 unlock — one of two mutually-exclusive weapon slot options. Positioned outside the right arm's baseline x=71-84 range so it never overlaps it. A tapered, pointed-tip blade (straight lines only) instead of a plain rect reads more like an actual sword. Metallic — see `metallicSheenId`. Upper-body attach point. */
 export function SwordEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
   return (
     <g className="origin-center animate-equip-in">
-      <rect x="85" y="44" width="4" height="32" rx="1.5" fill="#d1d5db" transform="rotate(15 87 60)" />
+      <path d="M85 76 L85 50 L87 44 L89 50 L89 76 Z" fill="#d1d5db" transform="rotate(15 87 60)" />
       {metallicSheenId && (
-        <rect x="85" y="44" width="4" height="32" rx="1.5" fill={`url(#${metallicSheenId})`} transform="rotate(15 87 60)" />
+        <path d="M85 76 L85 50 L87 44 L89 50 L89 76 Z" fill={`url(#${metallicSheenId})`} transform="rotate(15 87 60)" />
       )}
       <rect x="82" y="76" width="10" height="4" rx="1.5" fill={color} transform="rotate(15 87 78)" />
       <rect x="85" y="80" width="4" height="9" rx="1.5" fill="#92400e" transform="rotate(15 87 85)" />
@@ -414,7 +519,7 @@ export function GunEquipment({ color, metallicSheenId }: MetallicEquipmentProps)
   );
 }
 
-/** Level 4 unlock. Held out to the left. Metallic — see `metallicSheenId`. Upper-body attach point. */
+/** Level 4 unlock. Held out to the left. Metallic — see `metallicSheenId`. A small rotated "gem" accent sits at the shield's center, echoing the ornate gem-inlaid armor language of the reference sheet. Upper-body attach point. */
 export function ShieldEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
   return (
     <g className="origin-center animate-equip-in">
@@ -423,16 +528,17 @@ export function ShieldEquipment({ color, metallicSheenId }: MetallicEquipmentPro
         <path d="M1 56 L13 52 L25 56 L25 76 C25 88 19 95 13 98 C7 95 1 88 1 76 Z" fill={`url(#${metallicSheenId})`} />
       )}
       <path d="M13 58 L13 90 M5 66 L21 66" stroke="white" strokeOpacity="0.5" strokeWidth="1.5" />
+      <rect x="9" y="67" width="8" height="8" fill="#ffffff" opacity="0.9" transform="rotate(45 13 71)" />
     </g>
   );
 }
 
-/** Level 5 unlock. Rendered BEHIND the body (see `CharacterAvatar`'s render order) so it drapes from the shoulders instead of sitting on top of the torso. Recolorable — see `AvatarConfig.uniformColor`. Cloth, not metallic — no sheen. Upper-body attach point. */
+/** Level 5 unlock. Rendered BEHIND the body (see `CharacterAvatar`'s render order) so it drapes from the shoulders instead of sitting on top of the torso. A flared trapezoid (gathered at the shoulder, wider at the hem, angled bottom edge) rather than a plain rect, for a "flowing" cape read instead of two static rectangular strips. Recolorable — see `AvatarConfig.uniformColor`. Cloth, not metallic — no sheen. Upper-body attach point. */
 export function CapeEquipment({ color }: EquipmentProps) {
   return (
     <g className="origin-center animate-equip-in">
-      <rect x="20" y="50" width="14" height="62" rx="6" fill={color} />
-      <rect x="66" y="50" width="14" height="62" rx="6" fill={color} />
+      <path d="M22 50 L32 50 L36 112 L18 108 Z" fill={color} />
+      <path d="M78 50 L68 50 L64 112 L82 108 Z" fill={color} />
     </g>
   );
 }
@@ -475,13 +581,14 @@ export function BootsRight({ color }: EquipmentProps) {
   );
 }
 
-/** Level 3 unlock — one of two mutually-exclusive hat slot options. Renders on top of `Hair` (may cover it, same as real headwear) but keeps the same HAIR_CAP_BASELINE-style clearance above the eyes. Metallic — see `metallicSheenId`. Upper-body attach point. */
+/** Level 3 unlock — one of two mutually-exclusive hat slot options. Renders on top of `Hair` (may cover it, same as real headwear) but keeps the same HAIR_CAP_BASELINE-style clearance above the eyes. Metallic — see `metallicSheenId`. A small crest fin on top echoes the reference sheet's knight-helmet silhouette. Upper-body attach point. */
 export function HelmetEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
   return (
     <g className="origin-center animate-equip-in">
       <path d="M33 24 A17 13 0 0 1 67 24 Z" fill={color} />
       {metallicSheenId && <path d="M33 24 A17 13 0 0 1 67 24 Z" fill={`url(#${metallicSheenId})`} />}
       <rect x="33" y="20" width="34" height="4" rx="2" fill="#e5e7eb" opacity="0.8" />
+      <rect x="48" y="13" width="4" height="9" rx="2" fill={color} />
     </g>
   );
 }
