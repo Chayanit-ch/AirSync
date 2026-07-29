@@ -182,10 +182,32 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   transform-origin: center;
 }
 
+@keyframes aura-pulse {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.28;
+    transform: scale(1.04);
+  }
+}
+
+.animate-aura-pulse {
+  animation: aura-pulse 4s ease-in-out infinite;
+  /* Same fill-box reasoning as `.animate-equip-in`/`.animate-character-blink`
+     above — scales from the aura circle's own center, not the whole SVG
+     viewport's origin. */
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-character-float,
   .animate-equip-in,
-  .animate-character-blink {
+  .animate-character-blink,
+  .animate-aura-pulse {
     animation: none;
   }
 }

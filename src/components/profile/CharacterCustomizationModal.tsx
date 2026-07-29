@@ -138,7 +138,7 @@ export function CharacterCustomizationModal({
             to see the result (see the modal's max-h-[85vh] + flex-col split
             above, and the flex-1 overflow-y-auto body below). */}
         <div className="mx-4 mt-3 mb-1 flex shrink-0 justify-center rounded-xl border border-gray-100 bg-gray-50 py-3">
-          <CharacterAvatar avatarConfig={draft} userType={userType} size={140} />
+          <CharacterAvatar avatarConfig={draft} userType={userType} level={level} size={140} />
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 pt-3">

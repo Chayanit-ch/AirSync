@@ -62,6 +62,10 @@ export function ProfilePage() {
   // this can never disagree with what the Map shows for the same station.
   const { areas: followedAreaCards } = useFollowedAreaSummaries(followedAreaIds, stations);
   const { reports, isLoading: reportsLoading } = useMyReports();
+  // Hoisted once — used for the level label, the avatar's silhouette/level
+  // effects, and the customization modal's unlock gating, instead of each
+  // recomputing the same `getLevelFromPoints` call independently.
+  const level = getLevelFromPoints(userProfile?.points ?? mockUser.points);
 
   return (
     <div className="flex flex-col gap-4 p-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:p-6">
@@ -81,13 +85,12 @@ export function ProfilePage() {
             <p className="mb-2 text-sm font-semibold text-gray-700">
               {isPendingGovernmentVerification(userProfile ?? mockUser)
                 ? t("profile.pendingVerification")
-                : t(LEVEL_LABEL_KEYS[getUserType(userProfile ?? mockUser)], {
-                    level: getLevelFromPoints(userProfile?.points ?? mockUser.points),
-                  })}
+                : t(LEVEL_LABEL_KEYS[getUserType(userProfile ?? mockUser)], { level })}
             </p>
             <CharacterAvatar
               avatarConfig={userProfile?.avatarConfig}
               userType={getUserType(userProfile ?? mockUser)}
+              level={level}
               animate
               className="mx-auto"
             />
@@ -136,7 +139,7 @@ export function ProfilePage() {
         open={isCustomizingCharacter}
         uid={currentUser?.uid}
         userType={getUserType(userProfile ?? mockUser)}
-        level={getLevelFromPoints(userProfile?.points ?? mockUser.points)}
+        level={level}
         currentConfig={resolveAvatarConfig(userProfile?.avatarConfig)}
         onClose={() => setIsCustomizingCharacter(false)}
       />
