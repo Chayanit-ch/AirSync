@@ -85,6 +85,12 @@ export const UNIFORM_PATTERN_OPTIONS: { value: string }[] = [
   { value: "chevron" },
 ];
 
+/** `"hygiene"` (original) or `"visor"` (a solid hero/guardian mask over the eyes) — no level threshold beyond `equippedMask` itself already requiring one (see `getUnlockedSlots().mask`). */
+export const MASK_STYLE_OPTIONS: { value: string }[] = [
+  { value: "hygiene" },
+  { value: "visor" },
+];
+
 export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
   skinTone: SKIN_TONE_OPTIONS[0].value,
   hairStyle: HAIR_STYLE_OPTIONS[0].value,
@@ -108,6 +114,7 @@ export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
   glassesStyle: GLASSES_STYLE_OPTIONS[0].value,
   pantsColor: null,
   badgeStyle: BADGE_STYLE_OPTIONS[0].value,
+  maskStyle: MASK_STYLE_OPTIONS[0].value,
 };
 
 /**

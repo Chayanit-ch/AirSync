@@ -90,9 +90,18 @@ interface MetallicEquipmentProps extends EquipmentProps {
  */
 const HAIR_CAP_BASELINE = 23;
 
-/** Soft light backdrop disc behind the figure — the "portrait" framing the design asks for. Rendered first (furthest back), outside every pose rotation group so it stays centered regardless of stance. */
+/**
+ * Soft light backdrop disc behind the figure — the "portrait" framing the
+ * design asks for. Rendered first (furthest back), outside every pose
+ * rotation group so it stays centered regardless of stance. `r=48` (not
+ * bigger) is deliberate: centered at cx=50 on a 100-wide viewBox, anything
+ * larger than r=50 gets clipped into a flat-sided shape instead of a clean
+ * circle — confirmed by rendering (a wider radius visibly squared off the
+ * left/right edges, and cut into wide equipment like the gun's muzzle
+ * flash sitting near the same edge).
+ */
 export function PortraitBackdrop({ tint }: { tint: string }) {
-  return <circle cx="50" cy="70" r="56" fill={tint} opacity="0.35" />;
+  return <circle cx="50" cy="70" r="48" fill={tint} opacity="0.35" />;
 }
 
 /**
@@ -106,7 +115,10 @@ export function PortraitBackdrop({ tint }: { tint: string }) {
  * and more present" rather than an unrelated effect.
  */
 export function LevelAura({ tint }: { tint: string }) {
-  return <circle cx="50" cy="70" r="62" fill={tint} opacity="0.22" className="animate-aura-pulse" />;
+  // r=49, same "stay under the cx=50 half-viewBox-width" reasoning as
+  // `PortraitBackdrop` — 1 unit bigger so it still reads as "the bigger,
+  // more present glow" without itself clipping.
+  return <circle cx="50" cy="70" r="49" fill={tint} opacity="0.22" className="animate-aura-pulse" />;
 }
 
 /** Fraction of `torsoWidth` tapered away from each side at the waist (see `ThemeUniform`'s torso outline) — a straight-edged trapezoid, not a curve, so the math stays simple and verifiable by hand instead of risking a malformed bezier shape. */
@@ -765,7 +777,32 @@ export function GlassesEquipment({ style = "round" }: { style?: string }) {
 }
 
 /** Level 2 unlock — a hygiene mask over the nose/mouth. Sits at y=32-42, clear of the eyes (bottom edge y=30), so it never obscures them. Upper-body attach point. */
-export function MaskEquipment() {
+/**
+ * `style` (default `"hygiene"`) picks one of `MASK_STYLE_OPTIONS` —
+ * `"visor"` is a solid angular band across the eyes (a hero/guardian domino
+ * mask look, tapering to points at the temples, with glowing cyan
+ * "eye-slit" accent lines) instead of the original surgical-mask-over-the-
+ * mouth look. Both sit at/near the eyes' own y=26-30 row, so — like
+ * glasses — whichever renders covers the blink animation underneath;
+ * that's expected (an opaque mask covering the eyes is the point).
+ */
+export function MaskEquipment({ style = "hygiene" }: { style?: string }) {
+  if (style === "visor") {
+    return (
+      <g className="origin-center animate-equip-in">
+        <path
+          d="M35 24.5 Q50 22 65 24.5 L63 30.5 Q50 33 37 30.5 Z"
+          fill="#111827"
+          stroke="#67e8f9"
+          strokeOpacity="0.7"
+          strokeWidth="0.9"
+        />
+        <path d="M40 27.5 L47 27" stroke="#67e8f9" strokeWidth="1.3" strokeLinecap="round" opacity="0.85" />
+        <path d="M53 27 L60 27.5" stroke="#67e8f9" strokeWidth="1.3" strokeLinecap="round" opacity="0.85" />
+      </g>
+    );
+  }
+  // hygiene (default)
   return (
     <g className="origin-center animate-equip-in">
       <rect x="40" y="32" width="20" height="10" rx="5" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="0.8" />
@@ -813,7 +850,8 @@ export function SwordEquipment({
 }: MetallicEquipmentProps & { glowId?: string }) {
   return (
     <g className="origin-center animate-equip-in">
-      {glowId && <circle cx="87" cy="60" r="17" fill={`url(#${glowId})`} transform="rotate(15 87 60)" />}
+      {/* r=12, not the original 17 (which put the right edge at x=104, past the viewBox's own x=100 edge and visibly clipped) */}
+      {glowId && <circle cx="87" cy="60" r="12" fill={`url(#${glowId})`} transform="rotate(15 87 60)" />}
       <path d="M85 76 L85 50 L87 44 L89 50 L89 76 Z" fill="#d1d5db" transform="rotate(15 87 60)" />
       {metallicSheenId && (
         <path d="M85 76 L85 50 L87 44 L89 50 L89 76 Z" fill={`url(#${metallicSheenId})`} transform="rotate(15 87 60)" />
@@ -840,32 +878,36 @@ export function SwordEquipment({
 /**
  * A chunkier, blockier blaster silhouette — closer to the reference sheet's
  * "Air Blaster"/"Particle Blaster" art (a solid body + separate barrel/sight
- * blocks) than a thin blade-like taper. Still keeps the glowing emitter tip
- * from the earlier "laser gun" pass.
+ * blocks) than a thin blade-like taper — scaled up (~1.3x) with a small
+ * X-shaped sparkle flash behind the emitter glow. Shifted 5 units left of
+ * the first "scaled up" pass's coordinates: the emitter/flash used to sit
+ * at x~97-101, right at the viewBox's own x=100 edge, which clipped the
+ * flash's diagonal tips — confirmed by rendering (visible square-cut edge
+ * on the glow). Centering the tip at x=94 instead gives it a few units of
+ * clearance.
  */
-/** Scaled up from the earlier pass (~1.3x) with a small X-shaped sparkle flash behind the emitter glow, per feedback wanting it bigger with a flash of light. */
 export function GunEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
   return (
     <g className="origin-center animate-equip-in">
       {/* main body block */}
-      <rect x="76" y="81" width="18" height="10" rx="3" fill={color} />
-      {metallicSheenId && <rect x="76" y="81" width="18" height="10" rx="3" fill={`url(#${metallicSheenId})`} />}
+      <rect x="71" y="81" width="18" height="10" rx="3" fill={color} />
+      {metallicSheenId && <rect x="71" y="81" width="18" height="10" rx="3" fill={`url(#${metallicSheenId})`} />}
       {/* barrel */}
-      <rect x="92" y="84" width="7" height="4.5" rx="1.5" fill="#374151" />
+      <rect x="87" y="84" width="7" height="4.5" rx="1.5" fill="#374151" />
       {/* top sight block */}
-      <rect x="81" y="77" width="7" height="4.5" rx="1.2" fill="#1f2937" />
+      <rect x="76" y="77" width="7" height="4.5" rx="1.2" fill="#1f2937" />
       {/* muzzle flash — a simple X-shaped sparkle (two crossed rounded rects), same cheap technique as an icon sparkle, no filters */}
       <g opacity="0.6">
-        <rect x="97.5" y="82" width="3" height="8.5" rx="1.5" fill="#67e8f9" transform="rotate(45 99 86.2)" />
-        <rect x="97.5" y="82" width="3" height="8.5" rx="1.5" fill="#67e8f9" transform="rotate(-45 99 86.2)" />
+        <rect x="92.5" y="82" width="3" height="8.5" rx="1.5" fill="#67e8f9" transform="rotate(45 94 86.2)" />
+        <rect x="92.5" y="82" width="3" height="8.5" rx="1.5" fill="#67e8f9" transform="rotate(-45 94 86.2)" />
       </g>
       {/* emitter glow at the barrel tip */}
-      <circle cx="99" cy="86.2" r="2.3" fill="#22d3ee" opacity="0.45" />
-      <circle cx="99" cy="86.2" r="1.2" fill="#67e8f9" />
+      <circle cx="94" cy="86.2" r="2.3" fill="#22d3ee" opacity="0.45" />
+      <circle cx="94" cy="86.2" r="1.2" fill="#67e8f9" />
       {/* grip, angled back toward the hand */}
-      <rect x="76" y="88" width="7" height="12" rx="2.5" fill="#1f2937" transform="rotate(12 79.5 94)" />
+      <rect x="71" y="88" width="7" height="12" rx="2.5" fill="#1f2937" transform="rotate(12 74.5 94)" />
       {/* trigger guard — a simple half-circle arc, same safe-arc technique already used for the hair cap/helmet dome/shield curve */}
-      <path d="M83 89 A3.2 3.2 0 0 0 83 95.4" fill="none" stroke="#1f2937" strokeWidth="1.3" />
+      <path d="M78 89 A3.2 3.2 0 0 0 78 95.4" fill="none" stroke="#1f2937" strokeWidth="1.3" />
     </g>
   );
 }

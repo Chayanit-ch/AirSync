@@ -10,6 +10,7 @@ import {
   HAIR_COLOR_OPTIONS,
   HAIR_STYLE_OPTIONS,
   HAT_OPTIONS,
+  MASK_STYLE_OPTIONS,
   SKIN_TONE_OPTIONS,
   UNIFORM_COLOR_OPTIONS,
   UNIFORM_PATTERN_OPTIONS,
@@ -302,6 +303,23 @@ export function CharacterCustomizationModal({
             </div>
           </div>
 
+          {draft.equippedMask && (
+            <div>
+              <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.maskStyle")}</p>
+              <div className="flex flex-wrap gap-2">
+                {MASK_STYLE_OPTIONS.map((opt) => (
+                  <OptionButton
+                    key={opt.value}
+                    label={t(`profile.avatar.maskStyles.${opt.value}`)}
+                    isSelected={(draft.maskStyle || "hygiene") === opt.value}
+                    isUnlocked
+                    onClick={() => setDraft((d) => ({ ...d, maskStyle: opt.value }))}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.sanitizer")}</p>
             <div className="flex flex-wrap gap-2">
@@ -462,7 +480,6 @@ export function CharacterCustomizationModal({
 
           <div>
             <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.jacket")}</p>
-            <p className="mb-1.5 text-xs text-gray-400">{t("profile.avatar.jacketHint")}</p>
             <div className="flex flex-wrap gap-2">
               <OptionButton
                 label={t("profile.avatar.on")}

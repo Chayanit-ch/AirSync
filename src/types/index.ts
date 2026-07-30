@@ -356,6 +356,8 @@ export interface AvatarConfig {
   pantsColor?: string | null;
   /** The chest emblem shape — `star`/`shield`/`circle`/`diamond`. Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `"star"`. */
   badgeStyle?: string;
+  /** `"hygiene"` (original, over the mouth) or `"visor"` (a solid hero/guardian mask over the eyes). Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `"hygiene"`. */
+  maskStyle?: string;
 }
 
 export interface UserProfile {

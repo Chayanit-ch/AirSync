@@ -323,6 +323,11 @@ export const th = {
         shades: "แว่นกันแดด",
       },
       mask: "หน้ากากอนามัย",
+      maskStyle: "แบบหน้ากาก",
+      maskStyles: {
+        hygiene: "หน้ากากอนามัย",
+        visor: "หน้ากากฮีโร่",
+      },
       sanitizer: "เจลล้างมือ",
       hat: "หมวก",
       hats: {
@@ -351,7 +356,6 @@ export const th = {
       },
       shoesColor: "สีรองเท้า",
       jacket: "เสื้อเกราะ",
-      jacketHint: "ถอดออกเพื่อดูเรียบง่ายแบบเสื้อยืดธรรมดา ใส่กลับเมื่อไหร่ชุดเกราะก็กลับมาเหมือนเดิม",
       uniformPattern: "ลายเสื้อ",
       uniformPatternNone: "เรียบ",
       uniformPatterns: {

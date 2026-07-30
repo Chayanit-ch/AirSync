@@ -273,10 +273,13 @@ export function CharacterAvatar({
         )}
         {config.equippedHat === "cap" && <CapEquipment color={hatColor} />}
         {config.hasGlasses && <GlassesEquipment style={config.glassesStyle} />}
-        {config.equippedMask && <MaskEquipment />}
+        {config.equippedMask && <MaskEquipment style={config.maskStyle} />}
         {config.equippedSanitizer && <SanitizerEquipment />}
+        {/* cx/r pulled in from the original (90, r=12 -> right edge at x=102)
+            so it stays within the viewBox's own x=100 edge instead of
+            clipping into a flat side, same fix as the gun's emitter/flash. */}
         {showAccentGlow && config.equippedWeapon && (
-          <circle cx="90" cy="65" r="12" fill={`url(#${accentGlowId})`} />
+          <circle cx="87" cy="65" r="11" fill={`url(#${accentGlowId})`} />
         )}
         {config.equippedWeapon === "sword" && (
           <SwordEquipment

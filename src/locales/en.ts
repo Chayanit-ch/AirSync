@@ -326,6 +326,11 @@ export const en: typeof th = {
         shades: "Shades",
       },
       mask: "Face mask",
+      maskStyle: "Mask style",
+      maskStyles: {
+        hygiene: "Hygiene mask",
+        visor: "Hero visor",
+      },
       sanitizer: "Hand sanitizer",
       hat: "Headwear",
       hats: {
@@ -354,7 +359,6 @@ export const en: typeof th = {
       },
       shoesColor: "Shoes color",
       jacket: "Armor jacket",
-      jacketHint: "Take it off for a plain, casual look — your armor comes back whenever you put it on again.",
       uniformPattern: "Uniform pattern",
       uniformPatternNone: "Plain",
       uniformPatterns: {
