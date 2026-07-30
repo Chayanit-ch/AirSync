@@ -330,8 +330,8 @@ export interface AvatarConfig {
   hairStyle: string;
   hairColor: string;
   hasGlasses: boolean;
-  /** `staff`/`chakram` are the "for high levels" tier — see `getUnlockedSlots`'s separate `advancedWeapon` threshold. */
-  equippedWeapon?: "sword" | "gun" | "staff" | "chakram" | null;
+  /** `staff`/`chakram` are the "for high levels" tier — see `getUnlockedSlots`'s separate `advancedWeapon` threshold. `boomerang`/`slingshot` are ALSO in that same tier but each is role-EXCLUSIVE (organization/government respectively) — see `EXCLUSIVE_WEAPON_BY_TYPE`; the other four weapons stay available to every role. */
+  equippedWeapon?: "sword" | "gun" | "staff" | "chakram" | "boomerang" | "slingshot" | null;
   equippedShield: boolean;
   equippedCape: boolean;
   equippedShoes: "basic" | "boots" | null;
@@ -339,8 +339,8 @@ export interface AvatarConfig {
   equippedMask?: boolean;
   /** Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `false`. */
   equippedSanitizer?: boolean;
-  /** Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `null`. */
-  equippedHat?: "helmet" | "cap" | null;
+  /** `captain` (government-exclusive) and `headset` (organization-exclusive, with a mic boom) are role-exclusive additions — see `EXCLUSIVE_HAT_BY_TYPE`; `headphones` (no mic) stays available to every role alongside the original `helmet`/`cap`. Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `null`. */
+  equippedHat?: "helmet" | "cap" | "captain" | "headset" | "headphones" | null;
   /** Recolors the uniform + cape only — the chest badge always renders in the true role color (see `ThemeUniform`) so identity stays readable regardless. `null`/missing means "use the role's default color". */
   uniformColor?: string | null;
   /** Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `"happy"`. */
@@ -356,6 +356,8 @@ export interface AvatarConfig {
   equippedJacket?: boolean;
   /** Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `"round"`. */
   glassesStyle?: string;
+  /** Recolors the glasses' distinguishing accent — frame for round/square, lens fill for shades, scan-line for the `"scanner"` style, and the glow dot for the `"laser"` style. `null`/missing means "use that style's own built-in color", same convention as `weaponColor`/`shieldColor`. */
+  glassesColor?: string | null;
   /** Recolors the legs only — `null`/missing means "use the default charcoal", same convention as `uniformColor`/`shoesColor`. Deliberately separate from `uniformColor` so the shirt and pants can be colored independently. */
   pantsColor?: string | null;
   /** The chest emblem shape — `star`/`shield`/`circle`/`diamond`/`group`/`scales`. Optional (missing means "use the role's default emblem" — see `BADGE_STYLE_BY_TYPE` — NOT a flat literal default, unlike most other fields here). */

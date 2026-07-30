@@ -6,6 +6,8 @@ import { updateUserAvatarConfig } from "../../services/userProfile";
 import {
   BADGE_STYLE_BY_TYPE,
   BADGE_STYLE_OPTIONS,
+  EXCLUSIVE_HAT_BY_TYPE,
+  EXCLUSIVE_WEAPON_BY_TYPE,
   EXPRESSION_OPTIONS,
   GLASSES_STYLE_OPTIONS,
   HAIR_COLOR_OPTIONS,
@@ -46,6 +48,21 @@ export function CharacterCustomizationModal({
   const [isSaving, setIsSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const unlocked = getUnlockedSlots(level);
+  // Role-exclusive weapons (boomerang/slingshot) never appear in another
+  // role's option list at all — no fake "locked" tease, just not offered,
+  // since there's no level a citizen/government account could ever reach to
+  // unlock organization's boomerang (see `EXCLUSIVE_WEAPON_BY_TYPE`).
+  const availableWeaponOptions = WEAPON_OPTIONS.filter((opt) => {
+    const exclusiveTo = EXCLUSIVE_WEAPON_BY_TYPE[opt.value];
+    return !exclusiveTo || exclusiveTo === userType;
+  });
+  // Same filtering convention as `availableWeaponOptions` above — captain
+  // (government-exclusive) and headset (organization-exclusive) never
+  // appear in another role's hat picker at all (see `EXCLUSIVE_HAT_BY_TYPE`).
+  const availableHatOptions = HAT_OPTIONS.filter((opt) => {
+    const exclusiveTo = EXCLUSIVE_HAT_BY_TYPE[opt.value];
+    return !exclusiveTo || exclusiveTo === userType;
+  });
 
   // Re-sync the draft from whatever's actually saved whenever the modal is
   // (re)opened — never mid-edit, so an in-progress selection is never
@@ -285,6 +302,14 @@ export function CharacterCustomizationModal({
             </div>
           )}
 
+          {draft.hasGlasses && (
+            <ColorPickerRow
+              labelKey="profile.avatar.glassesColor"
+              value={draft.glassesColor}
+              onChange={(hex) => setDraft((d) => ({ ...d, glassesColor: hex }))}
+            />
+          )}
+
           {/* No style picker for mask — its shape is role-locked (see
               `MASK_STYLE_BY_TYPE`) and cosmetically upgrades with level
               instead, so this is only ever an on/off toggle. */}
@@ -331,7 +356,7 @@ export function CharacterCustomizationModal({
           <div>
             <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.hat")}</p>
             <div className="flex flex-wrap gap-2">
-              {HAT_OPTIONS.map((opt) => (
+              {availableHatOptions.map((opt) => (
                 <OptionButton
                   key={opt.value}
                   label={t(`profile.avatar.hats.${opt.value}`)}
@@ -360,12 +385,19 @@ export function CharacterCustomizationModal({
           <div>
             <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.weapon")}</p>
             <div className="flex flex-wrap gap-2">
-              {WEAPON_OPTIONS.map((opt) => (
+              {availableWeaponOptions.map((opt) => (
                 <OptionButton
                   key={opt.value}
                   label={t(`profile.avatar.weapons.${opt.value}`)}
                   isSelected={draft.equippedWeapon === opt.value}
-                  isUnlocked={opt.value === "staff" || opt.value === "chakram" ? unlocked.advancedWeapon : unlocked.weapon}
+                  isUnlocked={
+                    opt.value === "staff" ||
+                    opt.value === "chakram" ||
+                    opt.value === "boomerang" ||
+                    opt.value === "slingshot"
+                      ? unlocked.advancedWeapon
+                      : unlocked.weapon
+                  }
                   onClick={() => setDraft((d) => ({ ...d, equippedWeapon: opt.value }))}
                 />
               ))}

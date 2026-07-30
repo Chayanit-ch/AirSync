@@ -16,15 +16,19 @@ import {
   BasicShoesLeft,
   BasicShoesRight,
   Belt,
+  BoomerangEquipment,
   BootsLeft,
   BootsRight,
   CapeEquipment,
   CapEquipment,
+  CaptainHatEquipment,
   ChakramEquipment,
   CharacterFace,
   GlassesEquipment,
   Glove,
   GunEquipment,
+  HeadphonesEquipment,
+  HeadsetEquipment,
   HelmetEquipment,
   LeftArm,
   LeftLeg,
@@ -38,6 +42,7 @@ import {
   RightLegGuard,
   SanitizerEquipment,
   ShieldEquipment,
+  SlingshotEquipment,
   StaffEquipment,
   SwordEquipment,
   ThemeUniform,
@@ -144,6 +149,9 @@ export function CharacterAvatar({
     (config.equippedWeapon === "sword" || config.equippedWeapon === "staff" ? "#78716c" : "#374151");
   const shieldColor = config.shieldColor || accentColor;
   const hatColor = config.hatColor || (config.equippedHat === "helmet" ? "#6b7280" : accentColor);
+  // `undefined`/`null` passes through so `GlassesEquipment` applies its own
+  // per-style default (a dark frame vs cyan scan-line vs red laser dot).
+  const glassesColor = config.glassesColor ?? undefined;
   const shoesColor = config.shoesColor || (config.equippedShoes === "boots" ? accentColor : "#374151");
   const pantsColor = config.pantsColor || "#374151";
   // Role-based default emblem (star/group/scales) — falls back only when the
@@ -194,7 +202,11 @@ export function CharacterAvatar({
   // change, so it follows the same "skip it at leaderboard-row size" policy.
   const showWings = showAura;
   const hasMetallicEquipment =
-    config.equippedWeapon != null || config.equippedShield || config.equippedHat === "helmet" || showWings;
+    config.equippedWeapon != null ||
+    config.equippedShield ||
+    config.equippedHat === "helmet" ||
+    config.equippedHat === "captain" ||
+    showWings;
   const showAccentGlow = showLevelEffects && badgeTier >= 3;
 
   return (
@@ -224,7 +236,7 @@ export function CharacterAvatar({
         </defs>
       )}
 
-      {showAura && <LevelAura tint={backdropTint} />}
+      {showAura && <LevelAura tint={backdropTint} accentLight={accentLight} />}
       <PortraitBackdrop tint={backdropTint} />
 
       <g transform={UPPER_BODY_ROTATION}>
@@ -285,7 +297,12 @@ export function CharacterAvatar({
           <HelmetEquipment color={hatColor} metallicSheenId={metallicSheenId} badgeTier={badgeTier} />
         )}
         {config.equippedHat === "cap" && <CapEquipment color={hatColor} />}
-        {config.hasGlasses && <GlassesEquipment style={config.glassesStyle} />}
+        {config.equippedHat === "captain" && (
+          <CaptainHatEquipment color={hatColor} metallicSheenId={metallicSheenId} />
+        )}
+        {config.equippedHat === "headset" && <HeadsetEquipment color={hatColor} />}
+        {config.equippedHat === "headphones" && <HeadphonesEquipment color={hatColor} />}
+        {config.hasGlasses && <GlassesEquipment style={config.glassesStyle} color={glassesColor} />}
         {config.equippedMask && (
           <MaskEquipment style={maskStyle} badgeTier={badgeTier} accentColor={accentColor} />
         )}
@@ -311,6 +328,12 @@ export function CharacterAvatar({
         )}
         {config.equippedWeapon === "chakram" && (
           <ChakramEquipment color={weaponColor} metallicSheenId={metallicSheenId} />
+        )}
+        {config.equippedWeapon === "boomerang" && (
+          <BoomerangEquipment color={weaponColor} metallicSheenId={metallicSheenId} />
+        )}
+        {config.equippedWeapon === "slingshot" && (
+          <SlingshotEquipment color={weaponColor} metallicSheenId={metallicSheenId} />
         )}
         {config.equippedShield && (
           <ShieldEquipment color={shieldColor} metallicSheenId={metallicSheenId} shieldStyle={shieldStyle} />

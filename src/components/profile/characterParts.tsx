@@ -106,21 +106,79 @@ export function PortraitBackdrop({ tint }: { tint: string }) {
   return <circle cx="50" cy="70" r="48" fill={tint} opacity="0.35" />;
 }
 
+/** One thin ray of the `LevelAura` sunburst, radiating from (50,70) — a rotated-rectangle-like kite computed from trig rather than hand-picked bezier points, so every ray is guaranteed the same shape and (by construction, for `length<=46`) never reaches past the viewBox's own edges. */
+function auraRayPath(angleDeg: number, length: number, baseWidth = 2.2): string {
+  const rad = (angleDeg * Math.PI) / 180;
+  const tipX = 50 + length * Math.cos(rad);
+  const tipY = 70 + length * Math.sin(rad);
+  const perp = rad + Math.PI / 2;
+  const leftX = 50 + baseWidth * Math.cos(perp);
+  const leftY = 70 + baseWidth * Math.sin(perp);
+  const rightX = 50 - baseWidth * Math.cos(perp);
+  const rightY = 70 - baseWidth * Math.sin(perp);
+  return `M ${leftX.toFixed(1)} ${leftY.toFixed(1)} L ${tipX.toFixed(1)} ${tipY.toFixed(1)} L ${rightX.toFixed(1)} ${rightY.toFixed(1)} Z`;
+}
+
+/** 8 evenly-spaced ray angles, alternating long/short (see `LevelAura`) for a proper sunburst read instead of a plain ring of identical spokes. */
+const AURA_RAY_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+
+/** A small 4-point "sparkle" glyph (a pinched diamond via quadratic curves) — one path, no filter. Twinkles via `.animate-sparkle-twinkle`, staggered with a per-instance `delay` so several on screen at once don't blink in unison (same staggering idea as `CharacterAvatar`'s randomized `blinkDelay`, just fixed per position here instead of randomized). */
+function Sparkle({ cx, cy, size, color, delay }: { cx: number; cy: number; size: number; color: string; delay: number }) {
+  const d = `M ${cx} ${cy - size} Q ${cx + size * 0.15} ${cy - size * 0.15} ${cx + size} ${cy} Q ${cx + size * 0.15} ${cy + size * 0.15} ${cx} ${cy + size} Q ${cx - size * 0.15} ${cy + size * 0.15} ${cx - size} ${cy} Q ${cx - size * 0.15} ${cy - size * 0.15} ${cx} ${cy - size} Z`;
+  return (
+    <path d={d} fill={color} opacity="0.85" className="animate-sparkle-twinkle" style={{ animationDelay: `${delay}s` }} />
+  );
+}
+
+/** A small gem/diamond accent (a rotated square) — same twinkle animation as `Sparkle`, just a different silhouette for visual variety among the aura's scattered accents. */
+function Gem({ cx, cy, size, color, delay }: { cx: number; cy: number; size: number; color: string; delay: number }) {
+  return (
+    <rect
+      x={cx - size / 2}
+      y={cy - size / 2}
+      width={size}
+      height={size}
+      fill={color}
+      opacity="0.8"
+      transform={`rotate(45 ${cx} ${cy})`}
+      className="animate-sparkle-twinkle"
+      style={{ animationDelay: `${delay}s` }}
+    />
+  );
+}
+
 /**
- * Level-5+ aura — a soft translucent glow behind the whole character,
- * communicating "reached the top tier" without redesigning anything.
- * Rendered outside every pose rotation group (same reasoning as
- * `PortraitBackdrop`) so it never tilts with the stance — a tilted
- * background glow would read as a rendering bug, not a pose. `tint` is the
- * user's own theme `backdropTint`, reused rather than a new color, so the
- * aura still reads as "this character's own background glow, just bigger
- * and more present" rather than an unrelated effect.
+ * Level-5+ aura — a soft translucent glow PLUS a radiating sunburst of
+ * rays, a few twinkling sparkle stars, and a couple of gem accents, so
+ * "reached the top tier" reads as a real celebration instead of one plain
+ * circle. Rendered outside every pose rotation group (same reasoning as
+ * `PortraitBackdrop`) so nothing here ever tilts with the stance — a tilted
+ * background effect would read as a rendering bug, not a pose. `tint` (the
+ * user's own theme `backdropTint`) drives the base glow + rays, so the aura
+ * still reads as "this character's own background, just bigger and more
+ * present"; `accentLight` (a more saturated theme color) drives the
+ * sparkles/gems instead, since the pastel `tint` would wash out at their
+ * small size. Every shape stays within `r<=49` of (50,70) by construction
+ * (see `auraRayPath`'s own reasoning), so nothing clips past the viewBox
+ * edge the way an earlier, larger aura radius once did.
  */
-export function LevelAura({ tint }: { tint: string }) {
-  // r=49, same "stay under the cx=50 half-viewBox-width" reasoning as
-  // `PortraitBackdrop` — 1 unit bigger so it still reads as "the bigger,
-  // more present glow" without itself clipping.
-  return <circle cx="50" cy="70" r="49" fill={tint} opacity="0.22" className="animate-aura-pulse" />;
+export function LevelAura({ tint, accentLight }: { tint: string; accentLight: string }) {
+  return (
+    <g>
+      {/* r=49, same "stay under the cx=50 half-viewBox-width" reasoning as `PortraitBackdrop` — 1 unit bigger so it still reads as "the bigger, more present glow" without itself clipping. */}
+      <circle cx="50" cy="70" r="49" fill={tint} opacity="0.22" className="animate-aura-pulse" />
+      <g opacity="0.4" className="animate-aura-pulse">
+        {AURA_RAY_ANGLES.map((angle, i) => (
+          <path key={angle} d={auraRayPath(angle, i % 2 === 0 ? 46 : 38)} fill={tint} />
+        ))}
+      </g>
+      <Sparkle cx={20} cy={40} size={3.2} color={accentLight} delay={0} />
+      <Sparkle cx={82} cy={42} size={2.6} color={accentLight} delay={-0.6} />
+      <Sparkle cx={14} cy={85} size={2.8} color={accentLight} delay={-1.2} />
+      <Gem cx={26} cy={104} size={4} color={accentLight} delay={-0.3} />
+      <Gem cx={80} cy={102} size={3.4} color={accentLight} delay={-0.9} />
+    </g>
+  );
 }
 
 /** Fraction of `torsoWidth` tapered away from each side at the waist (see `ThemeUniform`'s torso outline) — a straight-edged trapezoid, not a curve, so the math stays simple and verifiable by hand instead of risking a malformed bezier shape. */
@@ -873,62 +931,74 @@ export function RightLegGuard({ color }: { color: string }) {
 }
 
 /** Level 2 unlock — glasses over the eyes. Upper-body attach point. `style` (default `"round"`) picks one of `GLASSES_STYLE_OPTIONS` — `square` (rimmed rectangular frames) and `shades` (solid tinted lenses) are the two added alternatives to the original round wire-frame look. */
-export function GlassesEquipment({ style = "round" }: { style?: string }) {
+/**
+ * `color` recolors each style's distinguishing accent (see
+ * `AvatarConfig.glassesColor`'s doc comment) — `undefined`/`null` falls
+ * back to that style's own original built-in color, computed per-branch
+ * below since each style's sensible default differs (dark frame vs cyan
+ * scan-line vs red laser dot).
+ */
+export function GlassesEquipment({ style = "round", color }: { style?: string; color?: string | null }) {
   if (style === "square") {
+    const c = color || "#1f2937";
     return (
       <g className="origin-center animate-equip-in">
-        <rect x="39" y="24.5" width="10" height="7" rx="1.5" fill="none" stroke="#1f2937" strokeWidth="1.6" />
-        <rect x="51" y="24.5" width="10" height="7" rx="1.5" fill="none" stroke="#1f2937" strokeWidth="1.6" />
-        <path d="M49.5 28h1" stroke="#1f2937" strokeWidth="1.6" />
+        <rect x="39" y="24.5" width="10" height="7" rx="1.5" fill="none" stroke={c} strokeWidth="1.6" />
+        <rect x="51" y="24.5" width="10" height="7" rx="1.5" fill="none" stroke={c} strokeWidth="1.6" />
+        <path d="M49.5 28h1" stroke={c} strokeWidth="1.6" />
       </g>
     );
   }
   if (style === "shades") {
+    const c = color || "#1f2937";
     return (
       <g className="origin-center animate-equip-in">
-        <rect x="39" y="24.5" width="10" height="7" rx="3" fill="#1f2937" opacity="0.88" />
-        <rect x="51" y="24.5" width="10" height="7" rx="3" fill="#1f2937" opacity="0.88" />
-        <path d="M49.5 27.2h1" stroke="#1f2937" strokeWidth="1.6" />
+        <rect x="39" y="24.5" width="10" height="7" rx="3" fill={c} opacity="0.88" />
+        <rect x="51" y="24.5" width="10" height="7" rx="3" fill={c} opacity="0.88" />
+        <path d="M49.5 27.2h1" stroke={c} strokeWidth="1.6" />
         {/* lens shine */}
         <path d="M41 26 Q43 25 45.5 26" stroke="#ffffff" strokeOpacity="0.4" strokeWidth="1" fill="none" strokeLinecap="round" />
         <path d="M53 26 Q55 25 57.5 26" stroke="#ffffff" strokeOpacity="0.4" strokeWidth="1" fill="none" strokeLinecap="round" />
       </g>
     );
   }
-  // A sleek tech HUD bar across both eyes with a bright cyan scan-line and
-  // soft glow at each end (a cheap flat-circle "glow", no filter). Reads as
-  // a heroic/tech visor rather than plain eyewear.
+  // A sleek tech HUD bar across both eyes with a bright scan-line and soft
+  // glow at each end (a cheap flat-circle "glow", no filter). Reads as a
+  // heroic/tech visor rather than plain eyewear.
   if (style === "scanner") {
+    const c = color || "#67e8f9";
     return (
       <g className="origin-center animate-equip-in">
         <rect x="38" y="25.5" width="24" height="5" rx="2.5" fill="#111827" opacity="0.85" />
-        <rect x="39" y="27.3" width="22" height="1.1" rx="0.55" fill="#67e8f9" opacity="0.9" />
-        <circle cx="39.5" cy="27.8" r="1.6" fill="#67e8f9" opacity="0.35" />
-        <circle cx="60.5" cy="27.8" r="1.6" fill="#67e8f9" opacity="0.35" />
+        <rect x="39" y="27.3" width="22" height="1.1" rx="0.55" fill={c} opacity="0.9" />
+        <circle cx="39.5" cy="27.8" r="1.6" fill={c} opacity="0.35" />
+        <circle cx="60.5" cy="27.8" r="1.6" fill={c} opacity="0.35" />
       </g>
     );
   }
-  // Round lens frame (same as "round" below) plus a small glowing red
-  // "laser-ready" dot at the center of each lens — a "laser vision" look.
+  // Round lens frame (same as "round" below) plus a small glowing
+  // "laser-ready" dot at the center of each lens.
   if (style === "laser") {
+    const c = color || "#ef4444";
     return (
       <g className="origin-center animate-equip-in">
         <circle cx="44" cy="28" r="5.5" fill="none" stroke="#1f2937" strokeWidth="1.6" />
         <circle cx="56" cy="28" r="5.5" fill="none" stroke="#1f2937" strokeWidth="1.6" />
         <path d="M49.5 28h1" stroke="#1f2937" strokeWidth="1.6" />
-        <circle cx="44" cy="28" r="2.6" fill="#f87171" opacity="0.3" />
-        <circle cx="56" cy="28" r="2.6" fill="#f87171" opacity="0.3" />
-        <circle cx="44" cy="28" r="1" fill="#ef4444" />
-        <circle cx="56" cy="28" r="1" fill="#ef4444" />
+        <circle cx="44" cy="28" r="2.6" fill={c} opacity="0.3" />
+        <circle cx="56" cy="28" r="2.6" fill={c} opacity="0.3" />
+        <circle cx="44" cy="28" r="1" fill={c} />
+        <circle cx="56" cy="28" r="1" fill={c} />
       </g>
     );
   }
   // round (default)
+  const c = color || "#1f2937";
   return (
     <g className="origin-center animate-equip-in">
-      <circle cx="44" cy="28" r="5.5" fill="none" stroke="#1f2937" strokeWidth="1.6" />
-      <circle cx="56" cy="28" r="5.5" fill="none" stroke="#1f2937" strokeWidth="1.6" />
-      <path d="M49.5 28h1" stroke="#1f2937" strokeWidth="1.6" />
+      <circle cx="44" cy="28" r="5.5" fill="none" stroke={c} strokeWidth="1.6" />
+      <circle cx="56" cy="28" r="5.5" fill="none" stroke={c} strokeWidth="1.6" />
+      <path d="M49.5 28h1" stroke={c} strokeWidth="1.6" />
     </g>
   );
 }
@@ -1242,6 +1312,48 @@ export function ChakramEquipment({ color, metallicSheenId }: MetallicEquipmentPr
   );
 }
 
+/**
+ * Level 5+ ("for high levels") weapon, exclusive to `"organization"` (see
+ * `EXCLUSIVE_WEAPON_BY_TYPE`) — a boomerang: a bent V-shaped blade with a
+ * notch at the elbow, both tips kept under x=99 (the viewBox's own x=100
+ * edge) to avoid the flat-clip bug documented elsewhere in this file.
+ * Upper-body attach point, same x=84-99/y=54-86 zone as the other
+ * held-in-hand weapons.
+ */
+export function BoomerangEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
+  const d = "M84 70 L96 56 L99 58 L89 70 L99 82 L96 84 Z";
+  return (
+    <g className="origin-center animate-equip-in">
+      <path d={d} fill={color} stroke="#000000" strokeOpacity="0.25" strokeWidth="1" />
+      {metallicSheenId && <path d={d} fill={`url(#${metallicSheenId})`} />}
+      <path d="M87 68 L94 59" stroke="white" strokeOpacity="0.4" strokeWidth="1" strokeLinecap="round" />
+      <path d="M87 72 L94 81" stroke="white" strokeOpacity="0.4" strokeWidth="1" strokeLinecap="round" />
+    </g>
+  );
+}
+
+/**
+ * Level 5+ ("for high levels") weapon, exclusive to `"government"` (see
+ * `EXCLUSIVE_WEAPON_BY_TYPE`) — a slingshot: a Y-frame (three strokes, not
+ * a filled shape — line-drawn like `ChakramEquipment`'s rings, no
+ * curve-authoring risk), an elastic band + pouch, and a wrapped grip.
+ * Upper-body attach point, same held-in-hand zone as the other weapons.
+ */
+export function SlingshotEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
+  const frameD = "M87 96 L87 78 M87 78 L80 60 M87 78 L94 60";
+  return (
+    <g className="origin-center animate-equip-in">
+      <path d={frameD} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      {metallicSheenId && (
+        <path d={frameD} fill="none" stroke={`url(#${metallicSheenId})`} strokeWidth="3" strokeLinecap="round" />
+      )}
+      <path d="M80 60 L86 72 L94 60" fill="none" stroke="#78716c" strokeWidth="1.2" />
+      <circle cx="86" cy="72" r="2" fill="#78716c" />
+      <rect x="85" y="89" width="4" height="9" rx="1.5" fill="#92400e" />
+    </g>
+  );
+}
+
 /** Level 5 unlock. Rendered BEHIND the body (see `CharacterAvatar`'s render order) so it drapes from the shoulders instead of sitting on top of the torso. A flared trapezoid (gathered at the shoulder, wider at the hem, angled bottom edge) rather than a plain rect, for a "flowing" cape read instead of two static rectangular strips. Recolorable — see `AvatarConfig.uniformColor`. Cloth, not metallic — no sheen. Upper-body attach point. */
 export function CapeEquipment({ color }: EquipmentProps) {
   return (
@@ -1340,6 +1452,65 @@ export function CapEquipment({ color }: EquipmentProps) {
     <g className="origin-center animate-equip-in">
       <path d="M36 21 A14 9 0 0 1 64 21 Z" fill={color} />
       <rect x="38" y="19" width="24" height="5" rx="2.5" fill={color} transform="rotate(-6 50 21)" />
+    </g>
+  );
+}
+
+/**
+ * Government-flavored hat addition (NOT role-exclusive — every role can
+ * still pick it, unlike the exclusive weapons above) — a peaked
+ * captain/officer cap: a rounded dome (same arc technique as `CapEquipment`),
+ * a gold band, and a dark flared peak brim. Metallic (see `metallicSheenId`)
+ * for the dome, echoing `HelmetEquipment`. Upper-body attach point.
+ */
+export function CaptainHatEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
+  return (
+    <g className="origin-center animate-equip-in">
+      <path d="M35 22 A15 10 0 0 1 65 22 Z" fill={color} />
+      {metallicSheenId && <path d="M35 22 A15 10 0 0 1 65 22 Z" fill={`url(#${metallicSheenId})`} />}
+      <rect x="34" y="20.5" width="32" height="3.2" rx="1.4" fill="#facc15" />
+      <path d="M38 23.5 L62 23.5 L66 25.8 L34 25.8 Z" fill="#1f2937" />
+      <circle cx="50" cy="22.1" r="1.6" fill="#facc15" />
+    </g>
+  );
+}
+
+/**
+ * Organization-EXCLUSIVE hat (see `EXCLUSIVE_HAT_BY_TYPE`) — a tech headset:
+ * a thin over-the-head band arc (unfilled, so it reads as a headphone
+ * bridge rather than a solid cap), two ear cups at the temples, and a small
+ * mic boom curving toward the mouth — the mic boom is what distinguishes
+ * this from the role-shared `HeadphonesEquipment` below. Cloth/plastic feel
+ * like `CapEquipment` — no metallic sheen. Upper-body attach point.
+ */
+export function HeadsetEquipment({ color }: EquipmentProps) {
+  return (
+    <g className="origin-center animate-equip-in">
+      <path d="M36 26 A14 13 0 0 1 64 26" fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
+      <rect x="32" y="24" width="5" height="9" rx="2.5" fill={color} />
+      <rect x="63" y="24" width="5" height="9" rx="2.5" fill={color} />
+      <circle cx="34.5" cy="28.5" r="1.6" fill="#111827" opacity="0.6" />
+      <circle cx="65.5" cy="28.5" r="1.6" fill="#111827" opacity="0.6" />
+      <path d="M63 31 Q57 34 52 33" fill="none" stroke={color} strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="52" cy="33" r="1.2" fill="#111827" opacity="0.7" />
+    </g>
+  );
+}
+
+/**
+ * Role-shared hat (available to everyone, unlike `HeadsetEquipment` above) —
+ * plain over-ear headphones: the same band-arc + ear-cup silhouette as
+ * `HeadsetEquipment` but with NO mic boom, so the two read as clearly
+ * related yet distinct pieces of gear. Upper-body attach point.
+ */
+export function HeadphonesEquipment({ color }: EquipmentProps) {
+  return (
+    <g className="origin-center animate-equip-in">
+      <path d="M36 26 A14 13 0 0 1 64 26" fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
+      <rect x="32" y="24" width="5" height="9" rx="2.5" fill={color} />
+      <rect x="63" y="24" width="5" height="9" rx="2.5" fill={color} />
+      <circle cx="34.5" cy="28.5" r="1.6" fill="#111827" opacity="0.6" />
+      <circle cx="65.5" cy="28.5" r="1.6" fill="#111827" opacity="0.6" />
     </g>
   );
 }

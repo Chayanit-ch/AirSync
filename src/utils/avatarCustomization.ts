@@ -33,18 +33,49 @@ export const HAIR_COLOR_OPTIONS: PresetOption[] = [
   { value: "gray", hex: "#9ca3af" },
 ];
 
-export const HAT_OPTIONS: { value: "helmet" | "cap" }[] = [
+/** `captain`/`headset`/`headphones` are additions alongside the original `helmet`/`cap`. `headphones` (no mic — plain over-ear look) stays available to every role, same as `helmet`/`cap`; `captain` and `headset` (WITH a mic boom) are each role-exclusive instead — see `EXCLUSIVE_HAT_BY_TYPE`. */
+export const HAT_OPTIONS: { value: "helmet" | "cap" | "captain" | "headset" | "headphones" }[] = [
   { value: "helmet" },
   { value: "cap" },
+  { value: "captain" },
+  { value: "headset" },
+  { value: "headphones" },
 ];
 
-/** `sword`/`gun` unlock at `getUnlockedSlots(level).weapon` (level 3); `staff`/`chakram` are the "for high levels" tier, gated behind the separate, later `advancedWeapon` threshold (level 5) instead. */
-export const WEAPON_OPTIONS: { value: "sword" | "gun" | "staff" | "chakram" }[] = [
+/**
+ * Hat values present here are locked to ONE role, same "filtered out of
+ * every other role's picker entirely" convention as
+ * `EXCLUSIVE_WEAPON_BY_TYPE` — `captain` (government's peaked officer cap)
+ * and `headset` (organization's mic-equipped headset). Every hat NOT listed
+ * here (helmet/cap/headphones) stays available to every role, unchanged.
+ */
+export const EXCLUSIVE_HAT_BY_TYPE: Partial<Record<string, UserType>> = {
+  captain: "government",
+  headset: "organization",
+};
+
+/** `sword`/`gun` unlock at `getUnlockedSlots(level).weapon` (level 3); `staff`/`chakram`/`boomerang`/`slingshot` are the "for high levels" tier, gated behind the separate, later `advancedWeapon` threshold (level 5) instead. `boomerang`/`slingshot` are ALSO role-exclusive — see `EXCLUSIVE_WEAPON_BY_TYPE` — so the customization modal filters them out of any other role's option list entirely, rather than showing them locked. */
+export const WEAPON_OPTIONS: { value: "sword" | "gun" | "staff" | "chakram" | "boomerang" | "slingshot" }[] = [
   { value: "sword" },
   { value: "gun" },
   { value: "staff" },
   { value: "chakram" },
+  { value: "boomerang" },
+  { value: "slingshot" },
 ];
+
+/**
+ * Weapon values present here are locked to ONE role — everyone else never
+ * sees them in the picker at all (see `CharacterCustomizationModal`'s
+ * `WEAPON_OPTIONS.filter(...)`). Every weapon NOT listed here (sword/gun/
+ * staff/chakram) stays available to every role, unchanged. This is the only
+ * equipment slot with role-exclusive items — badge/mask/shield/hat are all
+ * either freely shared (hats) or merely role-DEFAULTED, never exclusive.
+ */
+export const EXCLUSIVE_WEAPON_BY_TYPE: Partial<Record<string, UserType>> = {
+  boomerang: "organization",
+  slingshot: "government",
+};
 
 /** No level threshold — same "always available from level 1" precedent as skin tone/hair (see `getUnlockedSlots`'s doc comment). `scanner`/`laser` are the "heroic tech" options (glowing HUD bar / laser-dot lenses) — like every option here, freely pickable by any role. */
 export const GLASSES_STYLE_OPTIONS: { value: string }[] = [

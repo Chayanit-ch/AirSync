@@ -203,11 +203,32 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   transform-origin: center;
 }
 
+@keyframes sparkle-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.75);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.animate-sparkle-twinkle {
+  animation: sparkle-twinkle 1.8s ease-in-out infinite;
+  /* Same fill-box reasoning as `.animate-aura-pulse` above — each sparkle/gem
+     scales from its own center, not the whole SVG viewport's origin. */
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-character-float,
   .animate-equip-in,
   .animate-character-blink,
-  .animate-aura-pulse {
+  .animate-aura-pulse,
+  .animate-sparkle-twinkle {
     animation: none;
   }
 }
