@@ -336,6 +336,7 @@ export const en: typeof th = {
       maskStyles: {
         hygiene: "Hygiene mask",
         visor: "Hero visor",
+        inspector: "Inspector visor",
       },
       sanitizer: "Hand sanitizer",
       hat: "Headwear",
@@ -355,6 +356,12 @@ export const en: typeof th = {
       },
       weaponColor: "Weapon color",
       shield: "Shield",
+      shieldStyle: "Shield style",
+      shieldStyles: {
+        round: "Round",
+        tactical: "Tactical",
+        heraldic: "Heraldic",
+      },
       shieldColor: "Shield color",
       cape: "Cape",
       shoes: "Shoes",

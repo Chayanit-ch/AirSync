@@ -11,7 +11,10 @@ import {
   HAIR_COLOR_OPTIONS,
   HAIR_STYLE_OPTIONS,
   HAT_OPTIONS,
+  MASK_STYLE_BY_TYPE,
   MASK_STYLE_OPTIONS,
+  SHIELD_STYLE_BY_TYPE,
+  SHIELD_STYLE_OPTIONS,
   SKIN_TONE_OPTIONS,
   UNIFORM_COLOR_OPTIONS,
   UNIFORM_PATTERN_OPTIONS,
@@ -312,7 +315,7 @@ export function CharacterCustomizationModal({
                   <OptionButton
                     key={opt.value}
                     label={t(`profile.avatar.maskStyles.${opt.value}`)}
-                    isSelected={(draft.maskStyle || "hygiene") === opt.value}
+                    isSelected={(draft.maskStyle ?? MASK_STYLE_BY_TYPE[userType]) === opt.value}
                     isUnlocked
                     onClick={() => setDraft((d) => ({ ...d, maskStyle: opt.value }))}
                   />
@@ -418,6 +421,23 @@ export function CharacterCustomizationModal({
               />
             </div>
           </div>
+
+          {draft.equippedShield && (
+            <div>
+              <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.shieldStyle")}</p>
+              <div className="flex flex-wrap gap-2">
+                {SHIELD_STYLE_OPTIONS.map((opt) => (
+                  <OptionButton
+                    key={opt.value}
+                    label={t(`profile.avatar.shieldStyles.${opt.value}`)}
+                    isSelected={(draft.shieldStyle ?? SHIELD_STYLE_BY_TYPE[userType]) === opt.value}
+                    isUnlocked
+                    onClick={() => setDraft((d) => ({ ...d, shieldStyle: opt.value }))}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {draft.equippedShield && (
             <ColorPickerRow

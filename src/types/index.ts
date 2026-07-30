@@ -358,10 +358,12 @@ export interface AvatarConfig {
   glassesStyle?: string;
   /** Recolors the legs only — `null`/missing means "use the default charcoal", same convention as `uniformColor`/`shoesColor`. Deliberately separate from `uniformColor` so the shirt and pants can be colored independently. */
   pantsColor?: string | null;
-  /** The chest emblem shape — `star`/`shield`/`circle`/`diamond`. Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `"star"`. */
+  /** The chest emblem shape — `star`/`shield`/`circle`/`diamond`/`group`/`scales`. Optional (missing means "use the role's default emblem" — see `BADGE_STYLE_BY_TYPE` — NOT a flat literal default, unlike most other fields here). */
   badgeStyle?: string;
-  /** `"hygiene"` (original, over the mouth) or `"visor"` (a solid hero/guardian mask over the eyes). Optional because saved before this field existed — see `resolveAvatarConfig`, defaults to `"hygiene"`. */
+  /** `"hygiene"` (over the mouth), `"visor"` (solid eye visor), or `"inspector"` (visor with a gold official accent). Optional (missing means "use the role's default style" — see `MASK_STYLE_BY_TYPE` — NOT a flat literal default). */
   maskStyle?: string;
+  /** The shield's shape — `"round"` (original), `"tactical"` (organization's angular plate), or `"heraldic"` (government's kite shield with a scales accent). Optional — missing means "use the role's default shape", see `SHIELD_STYLE_BY_TYPE`. */
+  shieldStyle?: string;
 }
 
 export interface UserProfile {

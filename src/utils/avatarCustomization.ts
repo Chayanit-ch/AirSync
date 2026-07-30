@@ -104,11 +104,33 @@ export const UNIFORM_PATTERN_OPTIONS: { value: string }[] = [
   { value: "chevron" },
 ];
 
-/** `"hygiene"` (original) or `"visor"` (a solid hero/guardian mask over the eyes) — no level threshold beyond `equippedMask` itself already requiring one (see `getUnlockedSlots().mask`). */
+/** `"hygiene"` (original), `"visor"` (a solid hero/guardian mask over the eyes), or `"inspector"` (visor + gold official accent) — no level threshold beyond `equippedMask` itself already requiring one (see `getUnlockedSlots().mask`). `visor`/`inspector` also double as `MASK_STYLE_BY_TYPE`'s role defaults, same "still freely overridable" note as `BADGE_STYLE_OPTIONS`. */
 export const MASK_STYLE_OPTIONS: { value: string }[] = [
   { value: "hygiene" },
   { value: "visor" },
+  { value: "inspector" },
 ];
+
+/** Role-appropriate DEFAULT mask style, same fallback-only convention as `BADGE_STYLE_BY_TYPE` — citizen keeps the plain civilian mask, organization/government get their own "authority" visor look. */
+export const MASK_STYLE_BY_TYPE: Record<UserType, string> = {
+  citizen: "hygiene",
+  organization: "visor",
+  government: "inspector",
+};
+
+/** The shield's shape — `round` (original) plus `tactical`/`heraldic` role-flavored alternatives, same "no level threshold beyond the shield slot itself" precedent as `MASK_STYLE_OPTIONS`. */
+export const SHIELD_STYLE_OPTIONS: { value: string }[] = [
+  { value: "round" },
+  { value: "tactical" },
+  { value: "heraldic" },
+];
+
+/** Role-appropriate DEFAULT shield shape, same fallback-only convention as `BADGE_STYLE_BY_TYPE`/`MASK_STYLE_BY_TYPE`. */
+export const SHIELD_STYLE_BY_TYPE: Record<UserType, string> = {
+  citizen: "round",
+  organization: "tactical",
+  government: "heraldic",
+};
 
 export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
   skinTone: SKIN_TONE_OPTIONS[0].value,
@@ -132,11 +154,12 @@ export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
   equippedJacket: true,
   glassesStyle: GLASSES_STYLE_OPTIONS[0].value,
   pantsColor: null,
-  // No flat literal default here (unlike every other field) — the default is
-  // ROLE-dependent (see `BADGE_STYLE_BY_TYPE`), resolved in `CharacterAvatar`/
-  // `CharacterCustomizationModal` where `userType` is in scope; leaving this
-  // undefined here lets that role fallback apply instead of always "star".
-  maskStyle: MASK_STYLE_OPTIONS[0].value,
+  // `badgeStyle`/`maskStyle`/`shieldStyle` deliberately have NO flat literal
+  // default here (unlike every other field) — their defaults are
+  // ROLE-dependent (see `BADGE_STYLE_BY_TYPE`/`MASK_STYLE_BY_TYPE`/
+  // `SHIELD_STYLE_BY_TYPE`), resolved in `CharacterAvatar`/
+  // `CharacterCustomizationModal` where `userType` is in scope; leaving them
+  // undefined here lets that role fallback apply instead of one fixed value.
 };
 
 /**

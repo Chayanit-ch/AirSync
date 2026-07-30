@@ -1,3 +1,5 @@
+import type { UserType } from "../../types";
+
 /**
  * Layered full-body character SVG fragments for `CharacterAvatar`, on a
  * shared `viewBox="0 0 100 160"` so any combination of face options +
@@ -289,6 +291,95 @@ function Badge({ badgeStyle, badgeAccent }: { badgeStyle?: string; badgeAccent: 
   );
 }
 
+/**
+ * Always-on, no-toggle decorative accent layered on top of the torso — makes
+ * the OUTFIT itself (not just its color) read differently per role, on top
+ * of the existing badge/mask/shield differentiation. Purely cosmetic and
+ * derived only from `userType` (never from level or user choice), so it
+ * can't interact with the level-gated unlock system at all. Every coordinate
+ * is derived from `torsoEdgesAtY` (never a fixed literal), so it always
+ * stays inside the torso's own tapered silhouette regardless of tier/width.
+ */
+function RoleUniformAccent({
+  userType,
+  torsoX,
+  torsoWidth,
+  waistTaperRatio,
+}: {
+  userType: UserType;
+  torsoX: number;
+  torsoWidth: number;
+  waistTaperRatio?: number;
+}) {
+  if (userType === "organization") {
+    // Utility sash: a diagonal field-gear strap with a small buckle.
+    const top = torsoEdgesAtY(torsoX, torsoWidth, 48, waistTaperRatio);
+    const bottom = torsoEdgesAtY(torsoX, torsoWidth, 92, waistTaperRatio);
+    return (
+      <g opacity="0.85">
+        <line
+          x1={top.left + 3}
+          y1={48}
+          x2={bottom.right - 3}
+          y2={92}
+          stroke="#1f2937"
+          strokeOpacity="0.35"
+          strokeWidth="6"
+          strokeLinecap="round"
+        />
+        <rect
+          x={(top.left + bottom.right) / 2 - 3}
+          y={67}
+          width="6"
+          height="6"
+          rx="1"
+          fill="#d1d5db"
+          stroke="#1f2937"
+          strokeOpacity="0.4"
+          strokeWidth="0.6"
+        />
+      </g>
+    );
+  }
+  if (userType === "government") {
+    // Formal double-breasted placket + a small stand-up collar, with gold
+    // buttons — an "official coat" look rather than a plain uniform shirt.
+    const collar = torsoEdgesAtY(torsoX, torsoWidth, 46, waistTaperRatio);
+    const collarSpan = collar.right - collar.left;
+    const edgeAt = (y: number, frac: number) => {
+      const e = torsoEdgesAtY(torsoX, torsoWidth, y, waistTaperRatio);
+      return e.left + (e.right - e.left) * frac;
+    };
+    return (
+      <g opacity="0.9">
+        <path
+          d={`M ${collar.left + collarSpan * 0.3} 46 L 50 43.5 L ${collar.left + collarSpan * 0.7} 46 L ${collar.left + collarSpan * 0.62} 49.5 L 50 47 L ${collar.left + collarSpan * 0.38} 49.5 Z`}
+          fill="#000000"
+          opacity="0.22"
+        />
+        <path
+          d={`M ${edgeAt(50, 0.38)} 50 L ${edgeAt(98, 0.32)} 98`}
+          stroke="#000000"
+          strokeOpacity="0.22"
+          strokeWidth="1.4"
+          fill="none"
+        />
+        <path
+          d={`M ${edgeAt(50, 0.62)} 50 L ${edgeAt(98, 0.68)} 98`}
+          stroke="#000000"
+          strokeOpacity="0.22"
+          strokeWidth="1.4"
+          fill="none"
+        />
+        <circle cx={edgeAt(60, 0.35)} cy={60} r="1.3" fill="#facc15" opacity="0.85" />
+        <circle cx={edgeAt(72, 0.34)} cy={72} r="1.3" fill="#facc15" opacity="0.85" />
+        <circle cx={edgeAt(84, 0.33)} cy={84} r="1.3" fill="#facc15" opacity="0.85" />
+      </g>
+    );
+  }
+  return null;
+}
+
 export function ThemeUniform({
   bodyColor,
   badgeAccent,
@@ -297,6 +388,7 @@ export function ThemeUniform({
   waistTaperRatio,
   pattern,
   badgeStyle,
+  userType,
 }: {
   bodyColor: string;
   badgeAccent: string;
@@ -305,6 +397,7 @@ export function ThemeUniform({
   waistTaperRatio?: number;
   pattern?: string | null;
   badgeStyle?: string;
+  userType: UserType;
 }) {
   return (
     <g>
@@ -314,6 +407,12 @@ export function ThemeUniform({
       {/* shadow: right edge, deliberately wider than the highlight so the two don't read as symmetric */}
       <path d={torsoSlice(torsoX, torsoWidth, 0.6, 1, waistTaperRatio)} fill="#000000" opacity="0.16" />
       <UniformPattern pattern={pattern} torsoX={torsoX} torsoWidth={torsoWidth} />
+      <RoleUniformAccent
+        userType={userType}
+        torsoX={torsoX}
+        torsoWidth={torsoWidth}
+        waistTaperRatio={waistTaperRatio}
+      />
       <Badge badgeStyle={badgeStyle} badgeAccent={badgeAccent} />
     </g>
   );
@@ -832,6 +931,25 @@ export function MaskEquipment({ style = "hygiene" }: { style?: string }) {
       </g>
     );
   }
+  // Government's role-default mask — same visor silhouette as "visor" above,
+  // but a gold "official" accent (instead of cyan "tactical") plus a small
+  // brow badge, so it reads as a distinct "inspector" look at a glance.
+  if (style === "inspector") {
+    return (
+      <g className="origin-center animate-equip-in">
+        <path
+          d="M35 24.5 Q50 22 65 24.5 L63 30.5 Q50 33 37 30.5 Z"
+          fill="#111827"
+          stroke="#facc15"
+          strokeOpacity="0.8"
+          strokeWidth="0.9"
+        />
+        <path d="M40 27.5 L47 27" stroke="#facc15" strokeWidth="1.3" strokeLinecap="round" opacity="0.85" />
+        <path d="M53 27 L60 27.5" stroke="#facc15" strokeWidth="1.3" strokeLinecap="round" opacity="0.85" />
+        <path d="M47.5 25 L50 23.6 L52.5 25 L51.5 27 L48.5 27 Z" fill="#facc15" opacity="0.9" />
+      </g>
+    );
+  }
   // hygiene (default)
   return (
     <g className="origin-center animate-equip-in">
@@ -943,8 +1061,51 @@ export function GunEquipment({ color, metallicSheenId }: MetallicEquipmentProps)
 }
 
 /** Level 4 unlock. Held out to the left. Metallic — see `metallicSheenId`. A small rotated "gem" accent sits at the shield's center, echoing the ornate gem-inlaid armor language of the reference sheet. Upper-body attach point. */
-/** Adds a highlight (left)/shadow (right) overlay pair and a defined outline stroke — same flat-shading + outline techniques the torso/arms/legs use, so the shield reads with real volume instead of a single flat fill. */
-export function ShieldEquipment({ color, metallicSheenId }: MetallicEquipmentProps) {
+/**
+ * Adds a highlight (left)/shadow (right) overlay pair and a defined outline
+ * stroke — same flat-shading + outline techniques the torso/arms/legs use,
+ * so the shield reads with real volume instead of a single flat fill.
+ * `shieldStyle` picks the shape — `round` (original, citizen's role default),
+ * `tactical` (organization's role default, angular hex plate), or `heraldic`
+ * (government's role default, kite shield echoing the scales-badge motif) —
+ * see `SHIELD_STYLE_BY_TYPE`. All three stay within the same x=1-25/y=51-99
+ * bounding box so the held-out-left attach point never shifts between styles.
+ */
+export function ShieldEquipment({
+  color,
+  metallicSheenId,
+  shieldStyle = "round",
+}: MetallicEquipmentProps & { shieldStyle?: string }) {
+  if (shieldStyle === "tactical") {
+    const d = "M13 52 L24 60 L24 82 L13 98 L2 82 L2 60 Z";
+    return (
+      <g className="origin-center animate-equip-in">
+        <path d={d} fill={color} stroke="#000000" strokeOpacity="0.25" strokeWidth="1" />
+        {metallicSheenId && <path d={d} fill={`url(#${metallicSheenId})`} />}
+        <rect x="2" y="60" width="7" height="22" fill="#ffffff" opacity="0.16" />
+        <rect x="17" y="60" width="7" height="22" fill="#000000" opacity="0.18" />
+        <path d="M13 58 L13 90 M5 70 L21 70" stroke="white" strokeOpacity="0.5" strokeWidth="1.4" />
+        <circle cx="13" cy="70" r="3.2" fill="none" stroke="white" strokeOpacity="0.6" strokeWidth="1.2" />
+      </g>
+    );
+  }
+  if (shieldStyle === "heraldic") {
+    const d = "M13 51 L24 55 L24 74 C24 88 19 96 13 99 C7 96 2 88 2 74 L2 55 Z";
+    return (
+      <g className="origin-center animate-equip-in">
+        <path d={d} fill={color} stroke="#000000" strokeOpacity="0.25" strokeWidth="1" />
+        {metallicSheenId && <path d={d} fill={`url(#${metallicSheenId})`} />}
+        <rect x="2" y="55" width="7" height="30" fill="#ffffff" opacity="0.16" />
+        <rect x="18" y="55" width="6" height="30" fill="#000000" opacity="0.18" />
+        {/* small scales-of-justice accent, echoing the government chest badge */}
+        <line x1="13" y1="60" x2="13" y2="76" stroke="white" strokeOpacity="0.7" strokeWidth="1" />
+        <line x1="7" y1="64" x2="19" y2="64" stroke="white" strokeOpacity="0.7" strokeWidth="1" />
+        <circle cx="7" cy="69" r="2.4" fill="none" stroke="white" strokeOpacity="0.7" strokeWidth="1" />
+        <circle cx="19" cy="69" r="2.4" fill="none" stroke="white" strokeOpacity="0.7" strokeWidth="1" />
+      </g>
+    );
+  }
+  // round (default)
   return (
     <g className="origin-center animate-equip-in">
       <path

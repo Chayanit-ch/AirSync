@@ -333,6 +333,7 @@ export const th = {
       maskStyles: {
         hygiene: "หน้ากากอนามัย",
         visor: "หน้ากากฮีโร่",
+        inspector: "หน้ากากผู้ตรวจการ",
       },
       sanitizer: "เจลล้างมือ",
       hat: "หมวก",
@@ -352,6 +353,12 @@ export const th = {
       },
       weaponColor: "สีอาวุธ",
       shield: "โล่",
+      shieldStyle: "แบบโล่",
+      shieldStyles: {
+        round: "ทรงกลม",
+        tactical: "ทรงยุทธวิธี",
+        heraldic: "ทรงตราสัญลักษณ์",
+      },
       shieldColor: "สีโล่",
       cape: "เสื้อคลุม",
       shoes: "รองเท้า",

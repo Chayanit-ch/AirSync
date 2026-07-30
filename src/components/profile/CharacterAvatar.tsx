@@ -4,6 +4,8 @@ import {
   BADGE_STYLE_BY_TYPE,
   DEFAULT_AVATAR_CONFIG,
   HAIR_COLOR_OPTIONS,
+  MASK_STYLE_BY_TYPE,
+  SHIELD_STYLE_BY_TYPE,
   SKIN_TONE_OPTIONS,
   resolveAvatarConfig,
 } from "../../utils/avatarCustomization";
@@ -148,6 +150,9 @@ export function CharacterAvatar({
   // user has never picked a badge; an explicit past choice (including one
   // that happens to equal another role's default) always wins.
   const badgeStyle = config.badgeStyle ?? BADGE_STYLE_BY_TYPE[userType];
+  // Same fallback-only convention as `badgeStyle` above.
+  const maskStyle = config.maskStyle ?? MASK_STYLE_BY_TYPE[userType];
+  const shieldStyle = config.shieldStyle ?? SHIELD_STYLE_BY_TYPE[userType];
   // Randomized once per mounted instance so several characters on screen at
   // once (e.g. a leaderboard) don't all blink in perfect unison.
   const [blinkDelay] = useState(() => -(Math.random() * 5));
@@ -240,6 +245,7 @@ export function CharacterAvatar({
           waistTaperRatio={waistTaperRatio}
           pattern={config.uniformPattern}
           badgeStyle={badgeStyle}
+          userType={userType}
         />
         {showPauldrons && (
           <>
@@ -278,7 +284,7 @@ export function CharacterAvatar({
         )}
         {config.equippedHat === "cap" && <CapEquipment color={hatColor} />}
         {config.hasGlasses && <GlassesEquipment style={config.glassesStyle} />}
-        {config.equippedMask && <MaskEquipment style={config.maskStyle} />}
+        {config.equippedMask && <MaskEquipment style={maskStyle} />}
         {config.equippedSanitizer && <SanitizerEquipment />}
         {/* cx/r pulled in from the original (90, r=12 -> right edge at x=102)
             so it stays within the viewBox's own x=100 edge instead of
@@ -302,7 +308,9 @@ export function CharacterAvatar({
         {config.equippedWeapon === "chakram" && (
           <ChakramEquipment color={weaponColor} metallicSheenId={metallicSheenId} />
         )}
-        {config.equippedShield && <ShieldEquipment color={shieldColor} metallicSheenId={metallicSheenId} />}
+        {config.equippedShield && (
+          <ShieldEquipment color={shieldColor} metallicSheenId={metallicSheenId} shieldStyle={shieldStyle} />
+        )}
       </g>
 
       <g transform={LEFT_LEG_ROTATION}>
