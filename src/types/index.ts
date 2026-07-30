@@ -360,8 +360,6 @@ export interface AvatarConfig {
   pantsColor?: string | null;
   /** The chest emblem shape — `star`/`shield`/`circle`/`diamond`/`group`/`scales`. Optional (missing means "use the role's default emblem" — see `BADGE_STYLE_BY_TYPE` — NOT a flat literal default, unlike most other fields here). */
   badgeStyle?: string;
-  /** `"hygiene"` (over the mouth), `"visor"` (solid eye visor), or `"inspector"` (visor with a gold official accent). Optional (missing means "use the role's default style" — see `MASK_STYLE_BY_TYPE` — NOT a flat literal default). */
-  maskStyle?: string;
   /** The shield's shape — `"round"` (original), `"tactical"` (organization's angular plate), or `"heraldic"` (government's kite shield with a scales accent). Optional — missing means "use the role's default shape", see `SHIELD_STYLE_BY_TYPE`. */
   shieldStyle?: string;
 }

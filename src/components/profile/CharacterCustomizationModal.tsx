@@ -11,8 +11,6 @@ import {
   HAIR_COLOR_OPTIONS,
   HAIR_STYLE_OPTIONS,
   HAT_OPTIONS,
-  MASK_STYLE_BY_TYPE,
-  MASK_STYLE_OPTIONS,
   SHIELD_STYLE_BY_TYPE,
   SHIELD_STYLE_OPTIONS,
   SKIN_TONE_OPTIONS,
@@ -287,6 +285,9 @@ export function CharacterCustomizationModal({
             </div>
           )}
 
+          {/* No style picker for mask — its shape is role-locked (see
+              `MASK_STYLE_BY_TYPE`) and cosmetically upgrades with level
+              instead, so this is only ever an on/off toggle. */}
           <div>
             <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.mask")}</p>
             <div className="flex flex-wrap gap-2">
@@ -306,23 +307,6 @@ export function CharacterCustomizationModal({
               />
             </div>
           </div>
-
-          {draft.equippedMask && (
-            <div>
-              <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.maskStyle")}</p>
-              <div className="flex flex-wrap gap-2">
-                {MASK_STYLE_OPTIONS.map((opt) => (
-                  <OptionButton
-                    key={opt.value}
-                    label={t(`profile.avatar.maskStyles.${opt.value}`)}
-                    isSelected={(draft.maskStyle ?? MASK_STYLE_BY_TYPE[userType]) === opt.value}
-                    isUnlocked
-                    onClick={() => setDraft((d) => ({ ...d, maskStyle: opt.value }))}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
 
           <div>
             <p className="mb-1.5 font-semibold text-gray-700">{t("profile.avatar.sanitizer")}</p>

@@ -330,14 +330,10 @@ export const en: typeof th = {
         round: "Round",
         square: "Square",
         shades: "Shades",
+        scanner: "HUD Scanner",
+        laser: "Laser",
       },
-      mask: "Face mask",
-      maskStyle: "Mask style",
-      maskStyles: {
-        hygiene: "Hygiene mask",
-        visor: "Hero visor",
-        inspector: "Inspector visor",
-      },
+      mask: "Mask",
       sanitizer: "Hand sanitizer",
       hat: "Headwear",
       hats: {

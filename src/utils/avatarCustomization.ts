@@ -46,11 +46,13 @@ export const WEAPON_OPTIONS: { value: "sword" | "gun" | "staff" | "chakram" }[] 
   { value: "chakram" },
 ];
 
-/** No level threshold — same "always available from level 1" precedent as skin tone/hair (see `getUnlockedSlots`'s doc comment). */
+/** No level threshold — same "always available from level 1" precedent as skin tone/hair (see `getUnlockedSlots`'s doc comment). `scanner`/`laser` are the "heroic tech" options (glowing HUD bar / laser-dot lenses) — like every option here, freely pickable by any role. */
 export const GLASSES_STYLE_OPTIONS: { value: string }[] = [
   { value: "round" },
   { value: "square" },
   { value: "shades" },
+  { value: "scanner" },
+  { value: "laser" },
 ];
 
 /** The chest emblem shape — no level threshold, same personalization precedent as `EXPRESSION_OPTIONS`/`GLASSES_STYLE_OPTIONS`. `group`/`scales` exist mainly so `BADGE_STYLE_BY_TYPE` has a distinct emblem per role, but (per "still fully overridable") anyone can pick any of these. */
@@ -104,21 +106,23 @@ export const UNIFORM_PATTERN_OPTIONS: { value: string }[] = [
   { value: "chevron" },
 ];
 
-/** `"hygiene"` (original), `"visor"` (a solid hero/guardian mask over the eyes), or `"inspector"` (visor + gold official accent) — no level threshold beyond `equippedMask` itself already requiring one (see `getUnlockedSlots().mask`). `visor`/`inspector` also double as `MASK_STYLE_BY_TYPE`'s role defaults, same "still freely overridable" note as `BADGE_STYLE_OPTIONS`. */
-export const MASK_STYLE_OPTIONS: { value: string }[] = [
-  { value: "hygiene" },
-  { value: "visor" },
-  { value: "inspector" },
-];
-
-/** Role-appropriate DEFAULT mask style, same fallback-only convention as `BADGE_STYLE_BY_TYPE` — citizen keeps the plain civilian mask, organization/government get their own "authority" visor look. */
+/**
+ * The mask's shape is ROLE-LOCKED, unlike every other equipment
+ * style/color field in this file — citizen "hygiene" (plain civilian mask),
+ * organization "visor" (cyan tactical visor), government "inspector" (gold
+ * official visor). There is deliberately NO picker/options list and no
+ * `AvatarConfig.maskStyle` field for this: the user only ever toggles
+ * `equippedMask` on/off (see `getUnlockedSlots().mask`), and the shape itself
+ * always comes from here. Each shape instead "upgrades" cosmetically with
+ * `badgeTier` — see `MaskEquipment`'s own tier-escalation branches.
+ */
 export const MASK_STYLE_BY_TYPE: Record<UserType, string> = {
   citizen: "hygiene",
   organization: "visor",
   government: "inspector",
 };
 
-/** The shield's shape — `round` (original) plus `tactical`/`heraldic` role-flavored alternatives, same "no level threshold beyond the shield slot itself" precedent as `MASK_STYLE_OPTIONS`. */
+/** The shield's shape — `round` (original) plus `tactical`/`heraldic` role-flavored alternatives — no level threshold beyond `equippedShield` itself already requiring one. Unlike the mask, this stays a free user choice (see `SHIELD_STYLE_BY_TYPE` for the role-appropriate default only). */
 export const SHIELD_STYLE_OPTIONS: { value: string }[] = [
   { value: "round" },
   { value: "tactical" },
@@ -154,12 +158,14 @@ export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
   equippedJacket: true,
   glassesStyle: GLASSES_STYLE_OPTIONS[0].value,
   pantsColor: null,
-  // `badgeStyle`/`maskStyle`/`shieldStyle` deliberately have NO flat literal
-  // default here (unlike every other field) — their defaults are
-  // ROLE-dependent (see `BADGE_STYLE_BY_TYPE`/`MASK_STYLE_BY_TYPE`/
-  // `SHIELD_STYLE_BY_TYPE`), resolved in `CharacterAvatar`/
-  // `CharacterCustomizationModal` where `userType` is in scope; leaving them
-  // undefined here lets that role fallback apply instead of one fixed value.
+  // `badgeStyle`/`shieldStyle` deliberately have NO flat literal default here
+  // (unlike every other field) — their defaults are ROLE-dependent (see
+  // `BADGE_STYLE_BY_TYPE`/`SHIELD_STYLE_BY_TYPE`), resolved in
+  // `CharacterAvatar`/`CharacterCustomizationModal` where `userType` is in
+  // scope; leaving them undefined here lets that role fallback apply instead
+  // of one fixed value. `maskStyle` isn't a field at all — see
+  // `MASK_STYLE_BY_TYPE`'s doc comment for why it's role-LOCKED, not merely
+  // role-defaulted.
 };
 
 /**

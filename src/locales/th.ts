@@ -327,14 +327,10 @@ export const th = {
         round: "ทรงกลม",
         square: "ทรงเหลี่ยม",
         shades: "แว่นกันแดด",
+        scanner: "แว่นสแกนเนอร์",
+        laser: "แว่นเลเซอร์",
       },
-      mask: "หน้ากากอนามัย",
-      maskStyle: "แบบหน้ากาก",
-      maskStyles: {
-        hygiene: "หน้ากากอนามัย",
-        visor: "หน้ากากฮีโร่",
-        inspector: "หน้ากากผู้ตรวจการ",
-      },
+      mask: "หน้ากาก",
       sanitizer: "เจลล้างมือ",
       hat: "หมวก",
       hats: {

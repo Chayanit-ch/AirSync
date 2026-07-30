@@ -895,6 +895,34 @@ export function GlassesEquipment({ style = "round" }: { style?: string }) {
       </g>
     );
   }
+  // A sleek tech HUD bar across both eyes with a bright cyan scan-line and
+  // soft glow at each end (a cheap flat-circle "glow", no filter). Reads as
+  // a heroic/tech visor rather than plain eyewear.
+  if (style === "scanner") {
+    return (
+      <g className="origin-center animate-equip-in">
+        <rect x="38" y="25.5" width="24" height="5" rx="2.5" fill="#111827" opacity="0.85" />
+        <rect x="39" y="27.3" width="22" height="1.1" rx="0.55" fill="#67e8f9" opacity="0.9" />
+        <circle cx="39.5" cy="27.8" r="1.6" fill="#67e8f9" opacity="0.35" />
+        <circle cx="60.5" cy="27.8" r="1.6" fill="#67e8f9" opacity="0.35" />
+      </g>
+    );
+  }
+  // Round lens frame (same as "round" below) plus a small glowing red
+  // "laser-ready" dot at the center of each lens — a "laser vision" look.
+  if (style === "laser") {
+    return (
+      <g className="origin-center animate-equip-in">
+        <circle cx="44" cy="28" r="5.5" fill="none" stroke="#1f2937" strokeWidth="1.6" />
+        <circle cx="56" cy="28" r="5.5" fill="none" stroke="#1f2937" strokeWidth="1.6" />
+        <path d="M49.5 28h1" stroke="#1f2937" strokeWidth="1.6" />
+        <circle cx="44" cy="28" r="2.6" fill="#f87171" opacity="0.3" />
+        <circle cx="56" cy="28" r="2.6" fill="#f87171" opacity="0.3" />
+        <circle cx="44" cy="28" r="1" fill="#ef4444" />
+        <circle cx="56" cy="28" r="1" fill="#ef4444" />
+      </g>
+    );
+  }
   // round (default)
   return (
     <g className="origin-center animate-equip-in">
@@ -907,15 +935,37 @@ export function GlassesEquipment({ style = "round" }: { style?: string }) {
 
 /** Level 2 unlock — a hygiene mask over the nose/mouth. Sits at y=32-42, clear of the eyes (bottom edge y=30), so it never obscures them. Upper-body attach point. */
 /**
- * `style` (default `"hygiene"`) picks one of `MASK_STYLE_OPTIONS` —
- * `"visor"` is a solid angular band across the eyes (a hero/guardian domino
- * mask look, tapering to points at the temples, with glowing cyan
- * "eye-slit" accent lines) instead of the original surgical-mask-over-the-
- * mouth look. Both sit at/near the eyes' own y=26-30 row, so — like
+ * `style` is ROLE-LOCKED (see `MASK_STYLE_BY_TYPE`'s doc comment) — the
+ * caller always passes `MASK_STYLE_BY_TYPE[userType]`, never a free user
+ * choice. `"visor"` (organization) and `"inspector"` (government) are a
+ * solid angular band across the eyes (a hero/guardian domino mask look,
+ * tapering to points at the temples, with glowing accent "eye-slit" lines)
+ * instead of the original `"hygiene"` (citizen) surgical-mask-over-the-mouth
+ * look. All three sit at/near the eyes' own y=26-30 row, so — like
  * glasses — whichever renders covers the blink animation underneath;
  * that's expected (an opaque mask covering the eyes is the point).
+ *
+ * `badgeTier` (1-5, from `getBadgeTier`) makes each role's ONE mask
+ * "upgrade" cosmetically as the wearer levels up, rather than the upgrade
+ * path being a free style swap: tier 3+ (`upgraded`) adds a role-flavored
+ * accent (a colored stitch trim for hygiene, small side vents for visor, a
+ * thin gold border for inspector); tier 5 (`maxed`) adds one more flourish
+ * on top of that. Never gated further by `getUnlockedSlots` beyond
+ * `equippedMask` itself — the escalation is purely cosmetic, same as the
+ * silhouette/pauldron tier escalation elsewhere in this file.
  */
-export function MaskEquipment({ style = "hygiene" }: { style?: string }) {
+export function MaskEquipment({
+  style = "hygiene",
+  badgeTier = 1,
+  accentColor = "#6b7280",
+}: {
+  style?: string;
+  badgeTier?: number;
+  accentColor?: string;
+}) {
+  const upgraded = badgeTier >= 3;
+  const maxed = badgeTier >= 5;
+
   if (style === "visor") {
     return (
       <g className="origin-center animate-equip-in">
@@ -928,6 +978,15 @@ export function MaskEquipment({ style = "hygiene" }: { style?: string }) {
         />
         <path d="M40 27.5 L47 27" stroke="#67e8f9" strokeWidth="1.3" strokeLinecap="round" opacity="0.85" />
         <path d="M53 27 L60 27.5" stroke="#67e8f9" strokeWidth="1.3" strokeLinecap="round" opacity="0.85" />
+        {/* tier 3+: small tactical side vents */}
+        {upgraded && (
+          <>
+            <path d="M35.5 25.5 L32 23" stroke="#9ca3af" strokeWidth="1.2" strokeLinecap="round" />
+            <path d="M64.5 25.5 L68 23" stroke="#9ca3af" strokeWidth="1.2" strokeLinecap="round" />
+          </>
+        )}
+        {/* tier 5: a bright center sensor dot */}
+        {maxed && <circle cx="50" cy="27.2" r="1.1" fill="#67e8f9" opacity="0.9" />}
       </g>
     );
   }
@@ -942,20 +1001,40 @@ export function MaskEquipment({ style = "hygiene" }: { style?: string }) {
           fill="#111827"
           stroke="#facc15"
           strokeOpacity="0.8"
-          strokeWidth="0.9"
+          strokeWidth={upgraded ? 1.3 : 0.9}
         />
         <path d="M40 27.5 L47 27" stroke="#facc15" strokeWidth="1.3" strokeLinecap="round" opacity="0.85" />
         <path d="M53 27 L60 27.5" stroke="#facc15" strokeWidth="1.3" strokeLinecap="round" opacity="0.85" />
         <path d="M47.5 25 L50 23.6 L52.5 25 L51.5 27 L48.5 27 Z" fill="#facc15" opacity="0.9" />
+        {/* tier 3+: a thin gold under-border, echoing higher-rank braid */}
+        {upgraded && (
+          <path d="M36.5 27.5 Q50 30.5 63.5 27.5" fill="none" stroke="#facc15" strokeOpacity="0.5" strokeWidth="0.8" />
+        )}
+        {/* tier 5: small rank chevrons at the temples */}
+        {maxed && (
+          <>
+            <path d="M38 30 L40.5 32" stroke="#facc15" strokeWidth="1" strokeLinecap="round" opacity="0.8" />
+            <path d="M62 30 L59.5 32" stroke="#facc15" strokeWidth="1" strokeLinecap="round" opacity="0.8" />
+          </>
+        )}
       </g>
     );
   }
-  // hygiene (default)
+  // hygiene (default, citizen's role-locked style)
   return (
     <g className="origin-center animate-equip-in">
       <rect x="40" y="32" width="20" height="10" rx="5" fill="#e5e7eb" stroke="#9ca3af" strokeWidth="0.8" />
       <line x1="40" y1="35" x2="34" y2="33" stroke="#9ca3af" strokeWidth="1" />
       <line x1="60" y1="35" x2="66" y2="33" stroke="#9ca3af" strokeWidth="1" />
+      {/* tier 3+: a role-colored stitch trim, so the plain mask still "upgrades" */}
+      {upgraded && (
+        <>
+          <rect x="41" y="33.5" width="18" height="1.1" rx="0.55" fill={accentColor} opacity="0.55" />
+          <rect x="41" y="39.4" width="18" height="1.1" rx="0.55" fill={accentColor} opacity="0.55" />
+        </>
+      )}
+      {/* tier 5: a small center filter accent */}
+      {maxed && <circle cx="50" cy="37" r="1.6" fill={accentColor} opacity="0.85" />}
     </g>
   );
 }
