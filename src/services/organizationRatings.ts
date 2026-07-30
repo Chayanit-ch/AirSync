@@ -108,10 +108,13 @@ export async function getMyRatingFor(orgUid: string): Promise<number | null> {
 }
 
 /**
- * Every organization in the public directory (`organizationProfiles`) — see
- * `services/organizationDirectory.ts` for how entries get there. Every
- * document in this collection is already an organization by construction,
- * so no `where("userType", "==", "organization")` filter is needed.
+ * Every organization AND (approved) government entry in the public
+ * directory (`organizationProfiles`) — see `services/organizationDirectory.ts`
+ * for how entries get there, and `isEligibleForDirectory` for why every
+ * document in this collection is already eligible by construction (no
+ * further `where("userType", "in", [...])` filter is needed here). Callers
+ * that need just one role (e.g. the leaderboard's filter toggle) filter the
+ * returned array client-side by `.userType`.
  */
 export async function listOrganizations(): Promise<OrganizationDirectoryEntry[]> {
   const snapshot = await getDocs(collection(db, "organizationProfiles"));

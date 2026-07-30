@@ -276,21 +276,25 @@ export interface OrganizationRatingSummary {
 }
 
 /**
- * Public directory mirror for organization accounts. Firestore:
- * `organizationProfiles/{orgUid}`. Deliberately holds ONLY non-sensitive
+ * Public directory mirror for organization AND government accounts — despite
+ * the "organization" name (kept to avoid a Firestore collection rename),
+ * this also covers verified government agencies so both can share the same
+ * leaderboard/rating system, filterable by `userType`. Firestore:
+ * `organizationProfiles/{uid}`. Deliberately holds ONLY non-sensitive
  * fields safe for anyone (including guests) to read — never merge this with
  * `users/{uid}`, which stays owner-read-only (see `UserProfile.healthNotes`).
- * Written only by the organization's own client (see
+ * Written only by the account's own client (see
  * `services/organizationDirectory.ts`), whenever their `userType`
- * becomes/stops being `"organization"`, and opportunistically refreshed
- * whenever they view their own Profile page.
+ * becomes/stops being `"organization"` or becomes/stops being an *approved*
+ * `"government"` account, and opportunistically refreshed whenever they view
+ * their own Profile page.
  */
 export interface OrganizationDirectoryEntry {
   uid: string;
   displayName: string;
   photoURL: string;
   points: number;
-  userType: "organization";
+  userType: "organization" | "government";
   updatedAt: Timestamp;
 }
 

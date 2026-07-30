@@ -126,6 +126,7 @@ async function syncOrganizationDirectoryFromLatestDoc(uid: string): Promise<void
     photoURL: profile.photoURL,
     points: profile.points,
     userType: profile.userType ?? "citizen",
+    governmentVerificationStatus: profile.governmentVerificationStatus,
   });
 }
 

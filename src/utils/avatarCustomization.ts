@@ -1,4 +1,4 @@
-import type { AvatarConfig } from "../types";
+import type { AvatarConfig, UserType } from "../types";
 
 export interface PresetOption {
   value: string;
@@ -53,13 +53,32 @@ export const GLASSES_STYLE_OPTIONS: { value: string }[] = [
   { value: "shades" },
 ];
 
-/** The chest emblem shape — no level threshold, same personalization precedent as `EXPRESSION_OPTIONS`/`GLASSES_STYLE_OPTIONS`. */
+/** The chest emblem shape — no level threshold, same personalization precedent as `EXPRESSION_OPTIONS`/`GLASSES_STYLE_OPTIONS`. `group`/`scales` exist mainly so `BADGE_STYLE_BY_TYPE` has a distinct emblem per role, but (per "still fully overridable") anyone can pick any of these. */
 export const BADGE_STYLE_OPTIONS: { value: string }[] = [
   { value: "star" },
   { value: "shield" },
   { value: "circle" },
   { value: "diamond" },
+  { value: "group" },
+  { value: "scales" },
 ];
+
+/**
+ * Role-appropriate DEFAULT chest emblem — citizen "Air Guardian" (star),
+ * organization "Air Guardian Organization" (group/community), government
+ * "Air Inspector" (scales of justice) — so a fresh, never-customized
+ * character is recognizable as its role at a glance (per the reference
+ * design), without touching the level-gated unlock system at all: the badge
+ * has no level threshold (see `getUnlockedSlots`), so this is safe to key
+ * off role alone. Only used as a FALLBACK when `AvatarConfig.badgeStyle` is
+ * unset — a user who's ever picked a different badge keeps their choice
+ * forever, same as every other customization field.
+ */
+export const BADGE_STYLE_BY_TYPE: Record<UserType, string> = {
+  citizen: "star",
+  organization: "group",
+  government: "scales",
+};
 
 /** `null`/missing means "use the role's default color" — see `AvatarConfig.uniformColor`. Also reused as-is for the per-piece `weaponColor`/`shieldColor`/`hatColor`/`shoesColor` pickers (same 5 swatches, same "default" convention), rather than maintaining a near-duplicate list per equipment slot. */
 export const UNIFORM_COLOR_OPTIONS: PresetOption[] = [
@@ -113,7 +132,10 @@ export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
   equippedJacket: true,
   glassesStyle: GLASSES_STYLE_OPTIONS[0].value,
   pantsColor: null,
-  badgeStyle: BADGE_STYLE_OPTIONS[0].value,
+  // No flat literal default here (unlike every other field) — the default is
+  // ROLE-dependent (see `BADGE_STYLE_BY_TYPE`), resolved in `CharacterAvatar`/
+  // `CharacterCustomizationModal` where `userType` is in scope; leaving this
+  // undefined here lets that role fallback apply instead of always "star".
   maskStyle: MASK_STYLE_OPTIONS[0].value,
 };
 

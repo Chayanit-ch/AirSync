@@ -30,6 +30,9 @@ export function OrganizationLeaderboardContent() {
   const [entries, setEntries] = useState<OrganizationWithSummary[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [selectedOrgUid, setSelectedOrgUid] = useState<string | null>(null);
+  // Same screen for both roles, per the request — a filter toggle rather
+  // than a second route/component, since the rating mechanics are identical.
+  const [roleFilter, setRoleFilter] = useState<"organization" | "government">("organization");
 
   const loadAll = useCallback(async () => {
     setLoadError(false);
@@ -62,6 +65,7 @@ export function OrganizationLeaderboardContent() {
   }
 
   const selected = entries?.find((e) => e.organization.uid === selectedOrgUid) ?? null;
+  const filteredEntries = entries?.filter((e) => e.organization.userType === roleFilter) ?? null;
 
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-6">
@@ -71,23 +75,40 @@ export function OrganizationLeaderboardContent() {
       </div>
       <p className="-mt-2 text-sm text-gray-400">{t("leaderboard.pageSubtitle")}</p>
 
+      <div className="flex gap-2">
+        {(["organization", "government"] as const).map((role) => (
+          <button
+            key={role}
+            type="button"
+            onClick={() => setRoleFilter(role)}
+            className={`flex-1 rounded-xl py-2 text-sm font-semibold transition-colors ${
+              roleFilter === role
+                ? "bg-brand-600 text-white"
+                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+            }`}
+          >
+            {t(role === "organization" ? "leaderboard.filterOrganizations" : "leaderboard.filterGovernment")}
+          </button>
+        ))}
+      </div>
+
       {loadError ? (
         <div className="rounded-2xl border border-gray-100 bg-white p-4 text-center text-sm text-gray-400 shadow-sm">
           {t("leaderboard.loadError")}
         </div>
-      ) : entries === null ? (
+      ) : filteredEntries === null ? (
         <div className="flex flex-col gap-2">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-16 animate-pulse rounded-2xl border border-gray-100 bg-gray-100" />
           ))}
         </div>
-      ) : entries.length === 0 ? (
+      ) : filteredEntries.length === 0 ? (
         <div className="rounded-2xl border border-gray-100 bg-white p-4 text-center text-sm text-gray-400 shadow-sm">
-          {t("leaderboard.noOrganizations")}
+          {t(roleFilter === "organization" ? "leaderboard.noOrganizations" : "leaderboard.noGovernment")}
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {entries.map(({ organization, summary }, index) => (
+          {filteredEntries.map(({ organization, summary }, index) => (
             <OrganizationLeaderboardRow
               key={organization.uid}
               rank={index + 1}

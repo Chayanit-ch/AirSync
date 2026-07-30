@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import type { AvatarConfig, UserType } from "../../types";
 import {
+  BADGE_STYLE_BY_TYPE,
   DEFAULT_AVATAR_CONFIG,
   HAIR_COLOR_OPTIONS,
   SKIN_TONE_OPTIONS,
@@ -143,6 +144,10 @@ export function CharacterAvatar({
   const hatColor = config.hatColor || (config.equippedHat === "helmet" ? "#6b7280" : accentColor);
   const shoesColor = config.shoesColor || (config.equippedShoes === "boots" ? accentColor : "#374151");
   const pantsColor = config.pantsColor || "#374151";
+  // Role-based default emblem (star/group/scales) — falls back only when the
+  // user has never picked a badge; an explicit past choice (including one
+  // that happens to equal another role's default) always wins.
+  const badgeStyle = config.badgeStyle ?? BADGE_STYLE_BY_TYPE[userType];
   // Randomized once per mounted instance so several characters on screen at
   // once (e.g. a leaderboard) don't all blink in perfect unison.
   const [blinkDelay] = useState(() => -(Math.random() * 5));
@@ -234,7 +239,7 @@ export function CharacterAvatar({
           torsoWidth={silhouette.torsoWidth}
           waistTaperRatio={waistTaperRatio}
           pattern={config.uniformPattern}
-          badgeStyle={config.badgeStyle}
+          badgeStyle={badgeStyle}
         />
         {showPauldrons && (
           <>

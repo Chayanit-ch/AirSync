@@ -17,20 +17,30 @@ interface DirectoryFields {
   photoURL: string;
   points: number;
   userType: UserType;
+  /** Only relevant when `userType === "government"` — an unapproved government account is treated the same as a non-eligible `userType` (deleted/never upserted), so unverified accounts can't collect public ratings. */
+  governmentVerificationStatus?: "pending" | "approved";
+}
+
+function isEligibleForDirectory(fields: DirectoryFields): boolean {
+  if (fields.userType === "organization") return true;
+  if (fields.userType === "government") return fields.governmentVerificationStatus === "approved";
+  return false;
 }
 
 /**
  * Keeps `organizationProfiles/{uid}` — a public, non-sensitive mirror of an
- * organization's identity (see `OrganizationDirectoryEntry`) — in sync with
- * `users/{uid}`. Only ever called by the account owner's own client (the
- * only one with the data to call it with), matching this collection's
- * owner-write Firestore rules. Best-effort: a sync failure must never block
- * the caller's primary action (signup, profile edit, viewing your own
- * profile), so this only ever logs and swallows errors.
+ * organization/government identity (see `OrganizationDirectoryEntry`) — in
+ * sync with `users/{uid}`. Only ever called by the account owner's own
+ * client (the only one with the data to call it with), matching this
+ * collection's owner-write Firestore rules. Best-effort: a sync failure must
+ * never block the caller's primary action (signup, profile edit, viewing
+ * your own profile), so this only ever logs and swallows errors.
  *
- * Upserts the directory entry while `userType === "organization"`; deletes
- * it otherwise, so someone who switches away from "organization" drops off
- * the public leaderboard instead of leaving a stale entry behind.
+ * Upserts the directory entry while eligible — `userType === "organization"`,
+ * or `userType === "government"` with `governmentVerificationStatus ===
+ * "approved"` (see `isEligibleForDirectory`) — deletes it otherwise, so
+ * switching away from an eligible role/status drops the entry off the public
+ * leaderboard instead of leaving a stale one behind.
  */
 export async function syncOrganizationDirectoryEntry(
   uid: string,
@@ -38,7 +48,7 @@ export async function syncOrganizationDirectoryEntry(
 ): Promise<void> {
   try {
     const ref = doc(db, "organizationProfiles", uid);
-    if (fields.userType !== "organization") {
+    if (!isEligibleForDirectory(fields)) {
       const snapshot = await getDoc(ref);
       if (snapshot.exists()) await deleteDoc(ref);
       return;
@@ -48,7 +58,7 @@ export async function syncOrganizationDirectoryEntry(
       displayName: fields.displayName,
       photoURL: fields.photoURL,
       points: fields.points,
-      userType: "organization",
+      userType: fields.userType,
       updatedAt: serverTimestamp(),
     });
   } catch (error) {

@@ -89,7 +89,7 @@ export function OrganizationRatingModal({
               displayName={organization.displayName}
               size="sm"
               level={level}
-              userType="organization"
+              userType={organization.userType}
             />
             <h2 id="organization-rating-title" className="truncate text-lg font-bold text-gray-900">
               {organization.displayName}
@@ -122,11 +122,21 @@ export function OrganizationRatingModal({
 
         {isSelf ? (
           <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
-            {t("leaderboard.cannotRateSelf")}
+            {t(
+              organization.userType === "government"
+                ? "leaderboard.cannotRateSelfGovernment"
+                : "leaderboard.cannotRateSelf",
+            )}
           </p>
         ) : !currentUser ? (
           <div className="flex flex-col items-center gap-2 rounded-xl border border-gray-100 p-3 text-center">
-            <p className="text-sm text-gray-600">{t("leaderboard.loginToRate")}</p>
+            <p className="text-sm text-gray-600">
+              {t(
+                organization.userType === "government"
+                  ? "leaderboard.loginToRateGovernment"
+                  : "leaderboard.loginToRate",
+              )}
+            </p>
             <button
               type="button"
               onClick={() => navigate("/login")}
@@ -138,7 +148,13 @@ export function OrganizationRatingModal({
         ) : (
           <div className="flex flex-col items-center gap-3 rounded-xl border border-gray-100 p-3">
             <p className="text-sm font-semibold text-gray-700">
-              {myRating ? t("leaderboard.yourRating") : t("leaderboard.rateThisOrganization")}
+              {myRating
+                ? t("leaderboard.yourRating")
+                : t(
+                    organization.userType === "government"
+                      ? "leaderboard.rateThisGovernment"
+                      : "leaderboard.rateThisOrganization",
+                  )}
             </p>
             <StarRating value={draftRating} size={28} interactive onChange={setDraftRating} disabled={isSubmitting} />
             {error && <p className="text-xs font-medium text-red-500">{error}</p>}

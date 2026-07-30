@@ -232,7 +232,7 @@ function UniformPattern({
   return null;
 }
 
-/** One of `BADGE_STYLE_OPTIONS` — `star` (original) plus `shield`/`circle`/`diamond` alternatives, all centered on the same x=50 chest-badge anchor point regardless of tier (torso stays centered there at every silhouette tier). */
+/** One of `BADGE_STYLE_OPTIONS` — `star` (original) plus `shield`/`circle`/`diamond`/`group`/`scales` alternatives, all centered on the same x=50 chest-badge anchor point regardless of tier (torso stays centered there at every silhouette tier). `group`/`scales` are also the ROLE-DEFAULT emblems for organization/government respectively (see `BADGE_STYLE_BY_TYPE`), but remain freely selectable by anyone. */
 function Badge({ badgeStyle, badgeAccent }: { badgeStyle?: string; badgeAccent: string }) {
   const commonProps = {
     fill: "white",
@@ -249,6 +249,36 @@ function Badge({ badgeStyle, badgeAccent }: { badgeStyle?: string; badgeAccent: 
   }
   if (badgeStyle === "diamond") {
     return <rect x="44" y="61" width="12" height="12" transform="rotate(45 50 67)" {...commonProps} />;
+  }
+  // Organization's role-default emblem — a small 3-person "community" icon.
+  if (badgeStyle === "group") {
+    return (
+      <g>
+        <circle cx="50" cy="60" r="3" {...commonProps} />
+        <path d="M45 71 C45 66.5 47.2 64 50 64 C52.8 64 55 66.5 55 71 Z" {...commonProps} />
+        <circle cx="43.5" cy="63" r="2.3" {...commonProps} />
+        <path d="M40 72 C40 68.5 41.7 66.3 43.5 66.3 C45.3 66.3 47 68.5 47 72 Z" {...commonProps} />
+        <circle cx="56.5" cy="63" r="2.3" {...commonProps} />
+        <path d="M53 72 C53 68.5 54.7 66.3 56.5 66.3 C58.3 66.3 60 68.5 60 72 Z" {...commonProps} />
+      </g>
+    );
+  }
+  // Government's role-default emblem — scales of justice. Linework is white
+  // (not `badgeAccent`) since `badgeAccent` is government's own uniform
+  // color — a colored stroke on thin lines would nearly disappear against a
+  // same-family body color, unlike the filled shapes above where the white
+  // FILL (not the thin stroke) is what actually carries the contrast.
+  if (badgeStyle === "scales") {
+    return (
+      <g strokeLinejoin="round" strokeLinecap="round" opacity={0.95}>
+        <line x1="50" y1="58" x2="50" y2="76" stroke="white" strokeWidth={1.3} />
+        <line x1="42" y1="62" x2="58" y2="62" stroke="white" strokeWidth={1.3} />
+        <path d="M42 62 L38.5 70 Q42 72.8 45.5 70 Z" fill="white" stroke={badgeAccent} strokeWidth={0.6} />
+        <path d="M58 62 L54.5 70 Q58 72.8 61.5 70 Z" fill="white" stroke={badgeAccent} strokeWidth={0.6} />
+        <circle cx="50" cy="58" r="1.6" fill="white" />
+        <line x1="46" y1="76" x2="54" y2="76" stroke="white" strokeWidth={1.3} />
+      </g>
+    );
   }
   // star (default)
   return (

@@ -33,7 +33,7 @@ export function OrganizationLeaderboardRow({
         displayName={organization.displayName}
         size="sm"
         level={level}
-        userType="organization"
+        userType={organization.userType}
       />
       {/*
         Alongside the real-identity avatar above, never replacing it — small
@@ -43,7 +43,13 @@ export function OrganizationLeaderboardRow({
         out of scope here) — `undefined` renders the theme-correct default
         character rather than nothing.
       */}
-      <CharacterAvatar avatarConfig={undefined} userType="organization" level={level} size={40} animate={false} />
+      <CharacterAvatar
+        avatarConfig={undefined}
+        userType={organization.userType}
+        level={level}
+        size={40}
+        animate={false}
+      />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-gray-900">{organization.displayName}</p>
         {summary.count > 0 ? (

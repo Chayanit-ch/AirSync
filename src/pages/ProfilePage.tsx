@@ -44,16 +44,23 @@ export function ProfilePage() {
   }
 
   // Opportunistic refresh of the public organizationProfiles mirror whenever
-  // an organization account views its own profile — keeps the leaderboard's
-  // displayName/photoURL/points reasonably fresh without threading a sync
-  // call through missions.ts or every other points-award/profile-edit path.
+  // an organization OR government account views its own profile — keeps the
+  // leaderboard's displayName/photoURL/points reasonably fresh without
+  // threading a sync call through missions.ts or every other points-award/
+  // profile-edit path. This is also the ONLY client-side trigger that can
+  // pick up a government account right after an administrator approves it
+  // (governmentVerificationStatus flips in the Firestore Console, with no
+  // client code running at that moment) — so it must include government,
+  // not just organization.
   useEffect(() => {
-    if (!currentUser || getUserType(userProfile) !== "organization" || !userProfile) return;
+    const type = getUserType(userProfile);
+    if (!currentUser || !userProfile || (type !== "organization" && type !== "government")) return;
     void syncOrganizationDirectoryEntry(currentUser.uid, {
       displayName: userProfile.displayName,
       photoURL: userProfile.photoURL,
       points: userProfile.points,
-      userType: "organization",
+      userType: type,
+      governmentVerificationStatus: userProfile.governmentVerificationStatus,
     });
   }, [currentUser, userProfile]);
 

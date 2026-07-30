@@ -4,6 +4,7 @@ import type { AvatarConfig, UserType } from "../../types";
 import { useTranslation } from "../../hooks/useTranslation";
 import { updateUserAvatarConfig } from "../../services/userProfile";
 import {
+  BADGE_STYLE_BY_TYPE,
   BADGE_STYLE_OPTIONS,
   EXPRESSION_OPTIONS,
   GLASSES_STYLE_OPTIONS,
@@ -505,7 +506,7 @@ export function CharacterCustomizationModal({
                 <OptionButton
                   key={opt.value}
                   label={t(`profile.avatar.badgeStyles.${opt.value}`)}
-                  isSelected={(draft.badgeStyle || "star") === opt.value}
+                  isSelected={(draft.badgeStyle ?? BADGE_STYLE_BY_TYPE[userType]) === opt.value}
                   isUnlocked
                   onClick={() => setDraft((d) => ({ ...d, badgeStyle: opt.value }))}
                 />
