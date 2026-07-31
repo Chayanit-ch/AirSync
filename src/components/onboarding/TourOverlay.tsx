@@ -21,12 +21,24 @@ const TARGET_WAIT_TIMEOUT_MS = 10000;
  * is actually laid out at a given viewport width). Picks the first match
  * that has real layout (not `display:none` behind a `lg:hidden`/`hidden
  * lg:flex` breakpoint class).
+ *
+ * Also requires the match to be horizontally within the viewport.
+ * `MobileNavDrawer` hides via a translate transform rather than
+ * `display:none`, so its contents report a nonzero rect (translated fully
+ * off-canvas to the left) even while closed — without this check, the very
+ * first poll below would immediately "find" that closed-position rect and
+ * freeze on it, before `PageLayout`'s `opensMobileDrawer` effect (see
+ * `tourSteps.ts`) even opens the drawer. Vertical position is deliberately
+ * NOT checked: several steps target elements below the fold, found here
+ * before `scrollIntoView` (below) brings them on screen.
  */
 function findVisibleTourTarget(targetId: string): HTMLElement | null {
   const candidates = document.querySelectorAll<HTMLElement>(`[data-tour-id="${targetId}"]`);
   for (const el of candidates) {
     const rect = el.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) return el;
+    if (rect.width > 0 && rect.height > 0 && rect.left >= -2 && rect.right <= window.innerWidth + 2) {
+      return el;
+    }
   }
   return null;
 }
@@ -155,14 +167,26 @@ export function TourOverlay() {
     : null;
 
   // Anchor the tooltip below/above the target per the step's preferred
-  // placement, then clamp both axes so it never runs off-screen — important
-  // on the app's narrow mobile-frame layout (see `PageLayout`'s max-width).
+  // placement, flipping to whichever side actually has room when the
+  // preferred one doesn't fit — e.g. "extra-resources" prefers "top" (its
+  // desktop target sits near Sidebar's bottom, plenty of room above) but its
+  // mobile target sits near the top of `MobileNavDrawer`'s list instead, so
+  // there's no room above there; without the flip, the clamp below would
+  // just shove the tooltip on top of the very thing it's spotlighting. Then
+  // clamp both axes so it never runs off-screen either — important on the
+  // app's narrow mobile-frame layout (see `PageLayout`'s max-width).
   let tooltipTop: number;
   if (targetRect) {
-    tooltipTop =
-      step.placement === "bottom"
-        ? targetRect.bottom + SPOTLIGHT_PADDING + TOOLTIP_GAP
-        : targetRect.top - SPOTLIGHT_PADDING - TOOLTIP_GAP - tooltipSize.height;
+    const spaceAbove = targetRect.top - SPOTLIGHT_PADDING - TOOLTIP_GAP;
+    const spaceBelow = window.innerHeight - (targetRect.bottom + SPOTLIGHT_PADDING + TOOLTIP_GAP);
+    const prefersBottom = step.placement === "bottom";
+    const fitsPreferredSide = prefersBottom
+      ? spaceBelow >= tooltipSize.height
+      : spaceAbove >= tooltipSize.height;
+    const placeBottom = fitsPreferredSide ? prefersBottom : spaceBelow > spaceAbove;
+    tooltipTop = placeBottom
+      ? targetRect.bottom + SPOTLIGHT_PADDING + TOOLTIP_GAP
+      : targetRect.top - SPOTLIGHT_PADDING - TOOLTIP_GAP - tooltipSize.height;
   } else {
     tooltipTop = window.innerHeight / 2 - tooltipSize.height / 2;
   }

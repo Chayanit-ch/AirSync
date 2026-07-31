@@ -61,6 +61,18 @@ export function PageLayout() {
     }
   }, [currentStepPage, location.pathname, navigate]);
 
+  // The "extra-resources" step's mobile target lives inside
+  // `MobileNavDrawer`, which is only on-screen while `open` — force it open
+  // for that one step (and closed again once the tour moves past it) so
+  // `TourOverlay` has a real element to spotlight on mobile, same as this
+  // effect already does for page navigation above. Keyed on the boolean
+  // itself (not stepIndex) so a manual close mid-step via the drawer's own
+  // backdrop isn't immediately fought/reopened by this effect.
+  const currentStepOpensDrawer = isTourActive ? steps[stepIndex]?.opensMobileDrawer === true : false;
+  useEffect(() => {
+    setDrawerOpen(currentStepOpensDrawer);
+  }, [currentStepOpensDrawer]);
+
   function handleMenuButtonClick() {
     setSidebarCollapsed((prev) => !prev);
     setDrawerOpen(true);

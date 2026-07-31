@@ -120,28 +120,38 @@ export function MobileNavDrawer({ open, onClose }: MobileNavDrawerProps) {
               {t("drawer.howToUse")}
             </button>
           )}
-          {currentUser && (
+          {/* Same `data-tour-id` as `Sidebar`'s equivalent group (see
+              `tourSteps.ts`'s "extra-resources" step) — unlike `nav-bar`/
+              `nav-profile`, this one has no `lg:hidden`/`hidden lg:flex`
+              toggle to rely on for visibility, since this whole drawer is
+              normally off-screen via a transform rather than `display:none`.
+              `PageLayout` forces `open` to true while this step is active so
+              the group actually has real on-screen layout for the tour to
+              spotlight. */}
+          <div data-tour-id="onboarding-extra-resources">
+            {currentUser && (
+              <a
+                href={SATISFACTION_SURVEY_URLS[getUserType(userProfile)]}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={onClose}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                <ClipboardList size={18} className="text-gray-400" />
+                {t("drawer.survey")}
+              </a>
+            )}
             <a
-              href={SATISFACTION_SURVEY_URLS[getUserType(userProfile)]}
+              href={USER_MANUAL_URL}
               target="_blank"
               rel="noopener noreferrer"
               onClick={onClose}
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
-              <ClipboardList size={18} className="text-gray-400" />
-              {t("drawer.survey")}
+              <BookOpen size={18} className="text-gray-400" />
+              {t("drawer.manual")}
             </a>
-          )}
-          <a
-            href={USER_MANUAL_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={onClose}
-            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            <BookOpen size={18} className="text-gray-400" />
-            {t("drawer.manual")}
-          </a>
+          </div>
           <button
             type="button"
             onClick={() => goTo("/about")}

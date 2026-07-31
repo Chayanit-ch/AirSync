@@ -10,13 +10,13 @@
  * depending on viewport, and `TourOverlay` picks whichever one actually has
  * layout (see `findVisibleTourTarget`).
  *
- * `extra-resources` has no mobile counterpart — its target (survey/manual
- * links) only exists in `Sidebar.tsx`'s desktop footer, not `BottomNav.tsx`
- * (the equivalent mobile links live inside `MobileNavDrawer`, which hides
- * via a translate transform rather than `display:none` and so can't be used
- * as a tour target — see `findVisibleTourTarget`'s width/height check). On
- * mobile this step falls back to `TourOverlay`'s un-anchored centered
- * tooltip, same as any step whose target genuinely isn't on screen.
+ * `extra-resources`' mobile equivalent lives inside `MobileNavDrawer`, which
+ * is normally off-screen via a translate transform (not `display:none`), so
+ * unlike `nav-bar`/`nav-profile` there's no breakpoint-driven visibility
+ * toggle for `findVisibleTourTarget` to rely on — the drawer has to actually
+ * be open for its target to have real on-screen layout. `opensMobileDrawer`
+ * marks this step for `PageLayout`, which forces the drawer open while it's
+ * active and closes it again once the tour moves past it.
  *
  * The original 5 steps (hero/map/report/nav/profile) are kept, in their
  * original order and content, as required — everything else was appended
@@ -31,6 +31,8 @@ export interface TourStep {
   placement: "top" | "bottom";
   /** Route this step's target lives on. `PageLayout` navigates here (if not already there) whenever this becomes the active step. */
   page: string;
+  /** True only for the one step whose mobile target lives inside `MobileNavDrawer` — see the header comment above. */
+  opensMobileDrawer?: boolean;
 }
 
 export const TOUR_STEPS: TourStep[] = [
@@ -106,6 +108,7 @@ export const TOUR_STEPS: TourStep[] = [
     bodyKey: "onboarding.steps.extraResources.body",
     placement: "top",
     page: "/",
+    opensMobileDrawer: true,
   },
   // --- Map ---
   {
