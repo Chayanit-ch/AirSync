@@ -645,6 +645,10 @@ export const en: typeof th = {
         title: "Follow the areas you care about",
         body: "In Profile, add the stations you want to keep an eye on. Followed stations show up on your Home page and can send you alerts — even if a station is temporarily offline, you can still follow it.",
       },
+      extraResources: {
+        title: "Satisfaction survey & user manual",
+        body: "Besides the main menu, this spot also has an app satisfaction survey and a detailed user manual you can open any time.",
+      },
       aiAdvice: {
         title: "Personalized AI advice",
         body: "AirSync's AI looks at the air quality here and the risk group you picked in your Profile to suggest what to do — like when to wear a mask or stay indoors.",

@@ -10,6 +10,14 @@
  * depending on viewport, and `TourOverlay` picks whichever one actually has
  * layout (see `findVisibleTourTarget`).
  *
+ * `extra-resources` has no mobile counterpart — its target (survey/manual
+ * links) only exists in `Sidebar.tsx`'s desktop footer, not `BottomNav.tsx`
+ * (the equivalent mobile links live inside `MobileNavDrawer`, which hides
+ * via a translate transform rather than `display:none` and so can't be used
+ * as a tour target — see `findVisibleTourTarget`'s width/height check). On
+ * mobile this step falls back to `TourOverlay`'s un-anchored centered
+ * tooltip, same as any step whose target genuinely isn't on screen.
+ *
  * The original 5 steps (hero/map/report/nav/profile) are kept, in their
  * original order and content, as required — everything else was appended
  * around them or after them.
@@ -88,6 +96,14 @@ export const TOUR_STEPS: TourStep[] = [
     targetId: "onboarding-nav-profile",
     titleKey: "onboarding.steps.profile.title",
     bodyKey: "onboarding.steps.profile.body",
+    placement: "top",
+    page: "/",
+  },
+  {
+    id: "extra-resources",
+    targetId: "onboarding-extra-resources",
+    titleKey: "onboarding.steps.extraResources.title",
+    bodyKey: "onboarding.steps.extraResources.body",
     placement: "top",
     page: "/",
   },

@@ -85,33 +85,40 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
         </button>
       )}
 
-      {currentUser && (
+      {/* Spotlighted as one group by the onboarding tour's "extra-resources"
+          step (see `tourSteps.ts`) — desktop-only, since `MobileNavDrawer`
+          hides its equivalent links via a translate transform rather than
+          `display:none`, which would leave them falsely "visible" (nonzero
+          layout size) to the tour's target lookup even while off-screen. */}
+      <div data-tour-id="onboarding-extra-resources">
+        {currentUser && (
+          <a
+            href={SATISFACTION_SURVEY_URLS[getUserType(userProfile)]}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={collapsed ? t("drawer.survey") : undefined}
+            className={`flex items-center gap-2 border-t border-gray-100 px-3 py-3 text-sm text-gray-500 hover:bg-gray-50 ${
+              collapsed ? "justify-center" : ""
+            }`}
+          >
+            <ClipboardList size={18} />
+            {!collapsed && <span>{t("drawer.survey")}</span>}
+          </a>
+        )}
+
         <a
-          href={SATISFACTION_SURVEY_URLS[getUserType(userProfile)]}
+          href={USER_MANUAL_URL}
           target="_blank"
           rel="noopener noreferrer"
-          title={collapsed ? t("drawer.survey") : undefined}
+          title={collapsed ? t("drawer.manual") : undefined}
           className={`flex items-center gap-2 border-t border-gray-100 px-3 py-3 text-sm text-gray-500 hover:bg-gray-50 ${
             collapsed ? "justify-center" : ""
           }`}
         >
-          <ClipboardList size={18} />
-          {!collapsed && <span>{t("drawer.survey")}</span>}
+          <BookOpen size={18} />
+          {!collapsed && <span>{t("drawer.manual")}</span>}
         </a>
-      )}
-
-      <a
-        href={USER_MANUAL_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        title={collapsed ? t("drawer.manual") : undefined}
-        className={`flex items-center gap-2 border-t border-gray-100 px-3 py-3 text-sm text-gray-500 hover:bg-gray-50 ${
-          collapsed ? "justify-center" : ""
-        }`}
-      >
-        <BookOpen size={18} />
-        {!collapsed && <span>{t("drawer.manual")}</span>}
-      </a>
+      </div>
 
       <button
         type="button"
