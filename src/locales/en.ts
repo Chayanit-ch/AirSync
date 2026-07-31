@@ -604,6 +604,8 @@ export const en: typeof th = {
     about: "About AirSync",
     contact: "Contact & feedback",
     howToUse: "How to use AirSync",
+    survey: "Satisfaction survey",
+    manual: "User manual (Google Drive)",
   },
   about: {
     pageTitle: "About AirSync",

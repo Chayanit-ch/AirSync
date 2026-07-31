@@ -1,8 +1,10 @@
-import { ChevronLeft, ChevronRight, HelpCircle, Wind } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, ClipboardList, HelpCircle, Wind } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { SATISFACTION_SURVEY_URLS, USER_MANUAL_URL } from "../../constants/externalLinks";
 import { useAuth } from "../../contexts/AuthContext";
 import { useOnboardingTour } from "../../contexts/OnboardingTourContext";
 import { useTranslation } from "../../hooks/useTranslation";
+import { getUserType } from "../../utils/userType";
 import { NAV_ITEMS } from "./navItems";
 
 interface SidebarProps {
@@ -19,7 +21,7 @@ interface SidebarProps {
  */
 export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
   const { t } = useTranslation();
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   // Redirecting to the right page (if needed) is handled centrally in
   // `PageLayout` whenever the tour becomes active — see its comment.
   const { start: handleHowToUse } = useOnboardingTour();
@@ -82,6 +84,34 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
           {!collapsed && <span>{t("onboarding.howToUseButton")}</span>}
         </button>
       )}
+
+      {currentUser && (
+        <a
+          href={SATISFACTION_SURVEY_URLS[getUserType(userProfile)]}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={collapsed ? t("drawer.survey") : undefined}
+          className={`flex items-center gap-2 border-t border-gray-100 px-3 py-3 text-sm text-gray-500 hover:bg-gray-50 ${
+            collapsed ? "justify-center" : ""
+          }`}
+        >
+          <ClipboardList size={18} />
+          {!collapsed && <span>{t("drawer.survey")}</span>}
+        </a>
+      )}
+
+      <a
+        href={USER_MANUAL_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={collapsed ? t("drawer.manual") : undefined}
+        className={`flex items-center gap-2 border-t border-gray-100 px-3 py-3 text-sm text-gray-500 hover:bg-gray-50 ${
+          collapsed ? "justify-center" : ""
+        }`}
+      >
+        <BookOpen size={18} />
+        {!collapsed && <span>{t("drawer.manual")}</span>}
+      </a>
 
       <button
         type="button"

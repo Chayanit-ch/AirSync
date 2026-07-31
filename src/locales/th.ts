@@ -601,6 +601,8 @@ export const th = {
     about: "เกี่ยวกับ AirSync",
     contact: "ติดต่อ / ข้อเสนอแนะ",
     howToUse: "วิธีใช้งาน AirSync",
+    survey: "แบบประเมินความพึงพอใจ",
+    manual: "คู่มือการใช้งาน (Google Drive)",
   },
   about: {
     pageTitle: "เกี่ยวกับ AirSync",

@@ -1,9 +1,11 @@
-import { HelpCircle, Info, LogIn, LogOut, Mail, Wind, X } from "lucide-react";
+import { BookOpen, ClipboardList, HelpCircle, Info, LogIn, LogOut, Mail, Wind, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { SATISFACTION_SURVEY_URLS, USER_MANUAL_URL } from "../../constants/externalLinks";
 import { useAuth } from "../../contexts/AuthContext";
 import { useOnboardingTour } from "../../contexts/OnboardingTourContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import { logOut } from "../../services/auth";
+import { getUserType } from "../../utils/userType";
 import { UserAvatar } from "../common/UserAvatar";
 import { VisuallyHidden } from "../shared/VisuallyHidden";
 
@@ -22,7 +24,7 @@ interface MobileNavDrawerProps {
  * room for (About, contact, sign out/in).
  */
 export function MobileNavDrawer({ open, onClose }: MobileNavDrawerProps) {
-  const { currentUser, isLoggingOutRef } = useAuth();
+  const { currentUser, userProfile, isLoggingOutRef } = useAuth();
   // Redirecting to Home (if needed) is handled centrally in `PageLayout`
   // whenever the tour becomes active — see its comment.
   const { start: startTour } = useOnboardingTour();
@@ -118,6 +120,28 @@ export function MobileNavDrawer({ open, onClose }: MobileNavDrawerProps) {
               {t("drawer.howToUse")}
             </button>
           )}
+          {currentUser && (
+            <a
+              href={SATISFACTION_SURVEY_URLS[getUserType(userProfile)]}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onClose}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              <ClipboardList size={18} className="text-gray-400" />
+              {t("drawer.survey")}
+            </a>
+          )}
+          <a
+            href={USER_MANUAL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onClose}
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            <BookOpen size={18} className="text-gray-400" />
+            {t("drawer.manual")}
+          </a>
           <button
             type="button"
             onClick={() => goTo("/about")}
