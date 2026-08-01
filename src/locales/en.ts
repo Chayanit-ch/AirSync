@@ -280,8 +280,6 @@ export const en: typeof th = {
     guardianLevel: "Air Guardian level {level}",
     airProtectionOrgLevel: "Air Protection Organization Level {level}",
     airStewardLevel: "Air Steward Level {level}",
-    accountTypeLabel: "Account type",
-    accountTypeHint: "Shown on your profile as a label and badge — doesn't change what you can do in the app.",
     pendingVerification: "Pending Verification",
     pendingVerificationExplanation: "Your account is currently awaiting verification by our team.",
     avatar: {

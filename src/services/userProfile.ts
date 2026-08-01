@@ -185,35 +185,6 @@ export async function updateRiskGroup(uid: string, riskGroup: RiskGroup): Promis
   await awardMissionBestEffort(uid, SET_RISK_GROUP_MISSION);
 }
 
-/**
- * Updates only the `userType` field — the user's own display identity
- * (citizen/organization/government), editable any time from the Profile
- * page. Purely cosmetic; has no bearing on `role`, which only an
- * administrator can change, and only via the Firestore Console.
- *
- * `previousUserType` is required so this can tell a genuine switch *into*
- * "government" (which should reset `governmentVerificationStatus` to
- * "pending") apart from an unrelated re-save while already "government" —
- * `PersonalInfoCard`'s Save button calls this every time regardless of
- * whether the dropdown actually changed, and blindly re-pending on every
- * save would keep bouncing an already-approved account back to pending.
- */
-export async function updateUserType(
-  uid: string,
-  userType: UserType,
-  previousUserType: UserType,
-): Promise<void> {
-  const fields: Record<string, string | FieldValue> = {
-    userType,
-    updatedAt: serverTimestamp(),
-  };
-  if (userType === "government" && previousUserType !== "government") {
-    fields.governmentVerificationStatus = "pending";
-  }
-  await updateDoc(userDocRef(uid), fields);
-  await syncOrganizationDirectoryFromLatestDoc(uid);
-}
-
 /** Updates one or more `dailyContext` fields without touching anything else or the sibling fields. */
 export async function updateDailyContext(
   uid: string,

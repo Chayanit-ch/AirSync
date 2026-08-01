@@ -277,8 +277,6 @@ export const th = {
     guardianLevel: "ผู้พิทักษ์อากาศระดับ {level}",
     airProtectionOrgLevel: "องค์กรพิทักษ์อากาศ ระดับ {level}",
     airStewardLevel: "ผู้ตรวจการอากาศ ระดับ {level}",
-    accountTypeLabel: "ประเภทบัญชี",
-    accountTypeHint: "แสดงเป็นป้ายชื่อและตราสัญลักษณ์บนโปรไฟล์ของคุณเท่านั้น ไม่มีผลต่อสิทธิ์การใช้งานในแอป",
     pendingVerification: "รอการยืนยันตัวตน",
     pendingVerificationExplanation: "บัญชีของคุณกำลังรอการตรวจสอบจากทีมงานของเรา",
     avatar: {
