@@ -91,6 +91,43 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
 }
 
+/*
+ * Baseline hover/press/focus transition for every interactive element that
+ * doesn't already declare its own `transition-*` utility class. Tailwind
+ * utility classes (specificity 0,1,0) always win over this bare-element
+ * selector (specificity 0,0,1), so the ~30 components that already opt into
+ * a specific transition keep behaving exactly as before — this only
+ * smooths out the ones that had none and so snapped instantly on
+ * hover/active/focus. Deliberately omits `transform` so it can't fight with
+ * Leaflet's own JS-driven transform updates on map controls/markers.
+ */
+button,
+a,
+[role="button"],
+input,
+select,
+textarea,
+summary {
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    color 150ms ease-out,
+    box-shadow 150ms ease-out,
+    opacity 150ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  a,
+  [role="button"],
+  input,
+  select,
+  textarea,
+  summary {
+    transition: none;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 0px;
   height: 0px;
