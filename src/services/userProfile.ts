@@ -50,6 +50,7 @@ function userDocRef(uid: string): DocumentReference {
 function buildDefaultUserDocument(
   user: User,
   displayNameOverride?: string,
+  userType: UserType = "citizen",
 ): NewUserDocument {
   return {
     uid: user.uid,
@@ -57,7 +58,7 @@ function buildDefaultUserDocument(
     email: user.email ?? "",
     photoURL: user.photoURL ?? "",
     role: "citizen",
-    userType: "citizen",
+    userType,
     followedAreaIds: [],
     notificationSettings: {
       pushEnabled: false,
@@ -81,10 +82,20 @@ export async function ensureUserDocument(user: User): Promise<void> {
   const snapshot = await getDoc(ref);
   if (snapshot.exists()) return;
 
+  // This uid's users/{uid} doc is confirmed missing (e.g. recovering from the
+  // RESOURCE_EXHAUSTED write-quota incident where Auth succeeded but the
+  // Firestore write never landed). organizationProfiles/{uid} is a separate
+  // collection keyed by uid, so it can still exist even though users/{uid}
+  // doesn't — check it before defaulting userType to "citizen", so a
+  // recreated doc doesn't leave that organization's directory entry orphaned
+  // with no in-app badge.
+  const orgSnapshot = await getDoc(doc(db, "organizationProfiles", user.uid));
+  const userType: UserType = orgSnapshot.exists() ? "organization" : "citizen";
+
   // Re-read auth.currentUser live (not a possibly-stale callback reference)
   // to give an in-flight updateProfile() call from signUpWithEmail its best
   // chance of having already landed by the time we build the default doc.
-  await setDoc(ref, buildDefaultUserDocument(user));
+  await setDoc(ref, buildDefaultUserDocument(user, undefined, userType));
 }
 
 /**

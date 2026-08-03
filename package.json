@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "seed:articles": "tsx scripts/seed-articles.ts"
+    "seed:articles": "tsx scripts/seed-articles.ts",
+    "check:orphaned-users": "tsx scripts/check-orphaned-user-docs.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
