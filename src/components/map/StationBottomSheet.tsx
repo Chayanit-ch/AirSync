@@ -1,10 +1,11 @@
-import { ChevronDown, ChevronUp, CircleAlert, Clock, ShieldCheck, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronUp, CircleAlert, Clock, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import type { MonitoringStation } from "../../types";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useTrendGuidance } from "../../hooks/useTrendGuidance";
 import { AQI_SEVERITY_META } from "../../utils/aqi";
 import { resolveSource } from "../../utils/dataSource";
+import { AqiFaceIcon } from "../shared/AqiFaceIcon";
 import type { MapLayerMode } from "./LayerToggle";
 
 /** Downward drag distance (px) past which releasing the handle collapses the sheet to `"peek"`. */
@@ -96,7 +97,7 @@ export function StationBottomSheet({
       >
         <div className="flex min-w-0 items-center gap-2.5">
           <span className={`flex shrink-0 items-center justify-center rounded-full p-1.5 ${meta.softBgClass}`}>
-            <ShieldCheck size={15} className={meta.textClass} />
+            <AqiFaceIcon severity={station.severity} size={15} className={meta.textClass} />
           </span>
           <span className="truncate text-sm font-bold text-gray-800">{station.name}</span>
         </div>
@@ -161,7 +162,7 @@ export function StationBottomSheet({
           <span
             className={`flex shrink-0 items-center justify-center rounded-full p-1.5 ${meta.softBgClass}`}
           >
-            <ShieldCheck size={16} className={meta.textClass} />
+            <AqiFaceIcon severity={station.severity} size={16} className={meta.textClass} />
           </span>
           </div>
         </div>

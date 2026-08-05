@@ -20,6 +20,7 @@ interface UseAiAdviceParams {
 }
 
 interface CachedAdvice {
+  tldr: string;
   shortTerm: string;
   longTerm: string;
   generatedAt?: Timestamp;
@@ -28,6 +29,7 @@ interface CachedAdvice {
 }
 
 interface AiAdviceState {
+  tldr: string | null;
   shortTerm: string | null;
   longTerm: string | null;
   isAiGenerated: boolean;
@@ -44,6 +46,7 @@ interface AiAdviceState {
  */
 export function useAiAdvice(params: UseAiAdviceParams): AiAdviceState {
   const { uid, severity, language } = params;
+  const [tldr, setTldr] = useState<string | null>(null);
   const [shortTerm, setShortTerm] = useState<string | null>(null);
   const [longTerm, setLongTerm] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -86,18 +89,23 @@ export function useAiAdvice(params: UseAiAdviceParams): AiAdviceState {
       });
       const data = (await response.json()) as {
         ok: boolean;
+        tldr?: string;
         shortTerm?: string;
         longTerm?: string;
         error?: string;
       };
-      if (!data.ok || !data.shortTerm || !data.longTerm) {
+      if (!data.ok || !data.tldr || !data.shortTerm || !data.longTerm) {
         throw new Error(data.error ?? `AI advice request failed with HTTP ${response.status}`);
       }
 
+      setTldr(data.tldr);
       setShortTerm(data.shortTerm);
       setLongTerm(data.longTerm);
 
+      // Same DeepSeek response, no extra API call — `tldr` is just another
+      // field on the existing cache doc (see the module doc comment).
       await setDoc(doc(db, "users", uid, "aiAdvice", "current"), {
+        tldr: data.tldr,
         shortTerm: data.shortTerm,
         longTerm: data.longTerm,
         generatedAt: serverTimestamp(),
@@ -106,8 +114,9 @@ export function useAiAdvice(params: UseAiAdviceParams): AiAdviceState {
       });
     } catch (error) {
       // No silent fallback: log exactly why, then let the caller's
-      // rule-based recommendation take over (shortTerm/longTerm stay null).
+      // rule-based recommendation take over (tldr/shortTerm/longTerm stay null).
       console.warn("AI advice generation failed, falling back to rule-based recommendation:", error);
+      setTldr(null);
       setShortTerm(null);
       setLongTerm(null);
     } finally {
@@ -135,13 +144,17 @@ export function useAiAdvice(params: UseAiAdviceParams): AiAdviceState {
         const isStale = Date.now() - generatedAtMs > REFRESH_INTERVAL_MS;
         const severityChanged = cached.severity !== severity;
         const languageChanged = cached.language !== language;
+        // Docs cached before the `tldr` field was added — regenerate once so
+        // every cached doc ends up with all three fields, same as a fresh one.
+        const missingTldr = !cached.tldr;
 
         // Show the (possibly stale) cached copy immediately — regeneration
         // happens in the background, never as a blank/loading state.
+        setTldr(cached.tldr ?? null);
         setShortTerm(cached.shortTerm);
         setLongTerm(cached.longTerm);
 
-        if (isStale || severityChanged || languageChanged) {
+        if (isStale || severityChanged || languageChanged || missingTldr) {
           await generate();
         }
       } catch (error) {
@@ -163,9 +176,10 @@ export function useAiAdvice(params: UseAiAdviceParams): AiAdviceState {
   }, [uid, severity, language, generate]);
 
   return {
+    tldr,
     shortTerm,
     longTerm,
-    isAiGenerated: shortTerm !== null && longTerm !== null,
+    isAiGenerated: tldr !== null && shortTerm !== null && longTerm !== null,
     isLoading,
     refresh: generate,
   };

@@ -21,8 +21,8 @@
 // max_tokens budget as the visible answer (confirmed via
 // choices[0].usage.completion_tokens_details.reasoning_tokens in testing),
 // so a heavier reasoning pass could cut the answer off before the JSON
-// braces/quotes closed. A `[SHORT_TERM]`/`[LONG_TERM]` plain-text delimiter
-// format (parsed below) survives truncation instead of hard-failing on it —
+// braces/quotes closed. A `[TLDR]`/`[SHORT_TERM]`/`[LONG_TERM]` plain-text
+// delimiter format (parsed below) survives truncation instead of hard-failing on it —
 // if the model gets cut off mid-sentence, the section is merely shorter,
 // not unparseable.
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
@@ -110,36 +110,44 @@ function yesNo(value: boolean | undefined, language: "th" | "en"): string {
 
 function buildSystemPrompt(language: "th" | "en"): string {
   const languageName = language === "th" ? "Thai (ภาษาไทย)" : "English";
-  return `You are a friendly air-quality health advisor inside AirSync, a Thai air-quality app. Given a user's current air quality conditions and personal context, produce two short recommendation sections.
+  return `You are a friendly air-quality health advisor inside AirSync, a Thai air-quality app. Given a user's current air quality conditions and personal context, produce one quick summary and two short recommendation sections.
 
 Rules you must follow exactly:
 - Respond entirely in ${languageName}.
 - Tone: friendly, encouraging, practical, and easy to read on a mobile screen.
-- Each section must be roughly 3-4 sentences — concise, not a long essay.
+- The summary must be exactly ONE sentence, about 10-15 words, giving the single most important takeaway/action (e.g. "Wear a mask when going outdoors today.").
+- Each of the two advice sections must be roughly 3-4 sentences — concise, not a long essay.
 - Never give specific medical advice: no drug names, no dosages, no diagnoses. You may suggest consulting a healthcare professional if symptoms worsen, and nothing more specific than that.
 - Base your advice only on the context given to you. Do not invent facts.
 - If a current temperature is provided, treat it as optional extra context, not a mandatory topic: only mention heat-related precautions (hydration, avoiding prolonged sun exposure, etc.) when the temperature is unusually high or otherwise meaningfully affects the advice alongside air quality. If temperature is within a normal range, or not provided at all, don't mention it — stick to air-quality advice as usual.
 - The first section is practical actions to consider today or this week, based on the current AQI/conditions and the user's personal context.
 - The second section is sustainable habits and behavioral changes (transportation choices, environmental practices, exposure-reduction habits, energy usage).
-- Respond in EXACTLY this plain-text format, with no JSON, no markdown, and nothing before, between, or after these two blocks other than what's shown:
+- Respond in EXACTLY this plain-text format, with no JSON, no markdown, and nothing before, between, or after these three blocks other than what's shown:
+[TLDR]
+<one-sentence summary here>
 [SHORT_TERM]
 <short-term section text here>
 [LONG_TERM]
 <long-term section text here>`;
 }
 
-/** Tolerant of truncation: as long as both markers appear, each section is
- * whatever text follows its marker (up to the next marker, or end of
+/** Tolerant of truncation: as long as all three markers appear, each section
+ * is whatever text follows its marker (up to the next marker, or end of
  * string) — a mid-sentence cutoff just makes a section shorter, not unusable. */
-function parseAdviceResponse(raw: string): { shortTerm: string; longTerm: string } | null {
+function parseAdviceResponse(
+  raw: string,
+): { tldr: string; shortTerm: string; longTerm: string } | null {
+  const tldrIdx = raw.indexOf("[TLDR]");
   const shortIdx = raw.indexOf("[SHORT_TERM]");
   const longIdx = raw.indexOf("[LONG_TERM]");
-  if (shortIdx === -1 || longIdx === -1 || longIdx <= shortIdx) return null;
+  if (tldrIdx === -1 || shortIdx === -1 || longIdx === -1) return null;
+  if (shortIdx <= tldrIdx || longIdx <= shortIdx) return null;
 
+  const tldr = raw.slice(tldrIdx + "[TLDR]".length, shortIdx).trim();
   const shortTerm = raw.slice(shortIdx + "[SHORT_TERM]".length, longIdx).trim();
   const longTerm = raw.slice(longIdx + "[LONG_TERM]".length).trim();
-  if (!shortTerm || !longTerm) return null;
-  return { shortTerm, longTerm };
+  if (!tldr || !shortTerm || !longTerm) return null;
+  return { tldr, shortTerm, longTerm };
 }
 
 function buildUserPrompt(body: AdviceRequestBody): string {
@@ -255,12 +263,17 @@ export default async function handler(req: IncomingRequest, res: JsonResponse) {
     const parsed = parseAdviceResponse(raw);
     if (!parsed) {
       console.error(
-        `deepseek-advice couldn't find [SHORT_TERM]/[LONG_TERM] markers for uid ${uid}. Raw content: ${raw}`,
+        `deepseek-advice couldn't find [TLDR]/[SHORT_TERM]/[LONG_TERM] markers for uid ${uid}. Raw content: ${raw}`,
       );
-      throw new Error("DeepSeek response missing shortTerm/longTerm sections");
+      throw new Error("DeepSeek response missing tldr/shortTerm/longTerm sections");
     }
 
-    res.status(200).json({ ok: true, shortTerm: parsed.shortTerm, longTerm: parsed.longTerm });
+    res.status(200).json({
+      ok: true,
+      tldr: parsed.tldr,
+      shortTerm: parsed.shortTerm,
+      longTerm: parsed.longTerm,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error(`deepseek-advice failed for uid ${uid}: ${message}`);

@@ -1,8 +1,10 @@
-import { LocateFixed, MapPinOff } from "lucide-react";
+import { ChevronDown, ChevronUp, LocateFixed, MapPinOff, Sparkles } from "lucide-react";
+import { useState } from "react";
 import type { AreaAirQualitySummary, RiskGroup } from "../../types";
 import type { UserLocationStatus } from "../../hooks/useUserLocation";
 import { useTranslation } from "../../hooks/useTranslation";
 import { getPersonalizedRecommendation, resolveRiskGroup } from "../../utils/recommendation";
+import { AqiFaceIcon } from "../shared/AqiFaceIcon";
 
 const HERO_GRADIENT: Record<AreaAirQualitySummary["severity"], string> = {
   good: "from-emerald-500 to-emerald-600",
@@ -23,7 +25,8 @@ interface AqiHeroCardProps {
   onRetryLocation?: () => void;
   /** The signed-in user's `UserProfile.riskGroup` — undefined for guests or profiles saved before this field existed, treated as `"general"` (see `resolveRiskGroup`). */
   riskGroup?: RiskGroup;
-  /** When both are present, these AI-generated sections replace the single rule-based line below — absent/null falls straight back to it (see `useAiAdvice`). */
+  /** When all three are present, this AI-generated content replaces the single rule-based line below — absent/null falls straight back to it (see `useAiAdvice`). */
+  aiTldr?: string | null;
   aiShortTerm?: string | null;
   aiLongTerm?: string | null;
   onRefreshAdvice?: () => void;
@@ -37,59 +40,73 @@ export function AqiHeroCard({
   locationStatus,
   onRetryLocation,
   riskGroup,
+  aiTldr,
   aiShortTerm,
   aiLongTerm,
   onRefreshAdvice,
   isRefreshingAdvice = false,
 }: AqiHeroCardProps) {
   const { t, dict } = useTranslation();
+  const [isAdviceExpanded, setIsAdviceExpanded] = useState(false);
   const severityLabel = dict.common.severity[area.severity];
   const resolvedRiskGroup = resolveRiskGroup(riskGroup);
   const recommendation = getPersonalizedRecommendation(dict, area.severity, resolvedRiskGroup);
   const showRiskGroupCta = resolvedRiskGroup === "general";
-  const isAiGenerated = Boolean(aiShortTerm && aiLongTerm);
+  const isAiGenerated = Boolean(aiTldr && aiShortTerm && aiLongTerm);
   const showLocationRetry =
     (locationStatus === "denied" || locationStatus === "unsupported") && onRetryLocation;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
       <div
-        className={`bg-linear-to-br px-5 pt-4 pb-6 text-white ${HERO_GRADIENT[area.severity]}`}
+        className={`relative overflow-hidden bg-linear-to-br px-5 pt-4 pb-6 text-white ${HERO_GRADIENT[area.severity]}`}
       >
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-white/90">
-            {t("home.airQualityIndex")}
-          </span>
-          <span className="rounded-full bg-white/25 px-3 py-1 text-xs font-semibold">
-            {area.areaName}
-          </span>
-        </div>
-        <p className="mt-1 text-6xl font-extrabold tracking-tight">
-          {area.avgAqi}
-        </p>
-        <p className="mt-1 text-lg font-semibold">{severityLabel}</p>
-
-        {outOfRange && (
-          <div className="mt-3 flex items-start gap-1.5 rounded-lg bg-black/15 px-3 py-2 text-xs text-white/95">
-            <MapPinOff size={14} className="mt-0.5 shrink-0" />
-            <span>
-              {t("home.noNearbyStation")}
-              {distanceKm != null &&
-                ` (${t("home.approxDistance", { km: distanceKm.toFixed(0) })})`}
+        {/* Large, low-opacity face icon reflecting the current severity —
+            purely decorative background texture, never a bright standalone
+            graphic and never allowed to compete with the text below (which
+            is lifted onto its own `relative z-10` stacking context so it
+            always paints on top regardless of this icon's DOM position). */}
+        <AqiFaceIcon
+          severity={area.severity}
+          size={190}
+          className="pointer-events-none absolute -right-8 -bottom-10 text-white/15"
+        />
+        <div className="relative z-10">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-white/90">
+              {t("home.airQualityIndex")}
+            </span>
+            <span className="rounded-full bg-white/25 px-3 py-1 text-xs font-semibold">
+              {area.areaName}
             </span>
           </div>
-        )}
+          <p className="mt-1 text-6xl font-extrabold tracking-tight">
+            {area.avgAqi}
+          </p>
+          <p className="mt-1 text-lg font-semibold">{severityLabel}</p>
 
-        {showLocationRetry && (
-          <button
-            type="button"
-            onClick={onRetryLocation}
-            className="mt-3 flex items-center gap-1.5 rounded-lg bg-black/15 px-3 py-2 text-xs font-medium text-white/95 transition-colors hover:bg-black/25"
-          >
-            <LocateFixed size={14} />
-            {t("home.useMyLocation")}
-          </button>
-        )}
+          {outOfRange && (
+            <div className="mt-3 flex items-start gap-1.5 rounded-lg bg-black/15 px-3 py-2 text-xs text-white/95">
+              <MapPinOff size={14} className="mt-0.5 shrink-0" />
+              <span>
+                {t("home.noNearbyStation")}
+                {distanceKm != null &&
+                  ` (${t("home.approxDistance", { km: distanceKm.toFixed(0) })})`}
+              </span>
+            </div>
+          )}
+
+          {showLocationRetry && (
+            <button
+              type="button"
+              onClick={onRetryLocation}
+              className="mt-3 flex items-center gap-1.5 rounded-lg bg-black/15 px-3 py-2 text-xs font-medium text-white/95 transition-colors hover:bg-black/25"
+            >
+              <LocateFixed size={14} />
+              {t("home.useMyLocation")}
+            </button>
+          )}
+        </div>
       </div>
       <div className="flex flex-col divide-y divide-gray-100 bg-white">
         <div className="grid grid-cols-2 divide-x divide-gray-100">
@@ -123,27 +140,50 @@ export function AqiHeroCard({
 
           {isAiGenerated ? (
             <>
-              <div className="mt-1.5">
-                <p className="text-xs font-semibold text-gray-500">{t("home.shortTermAdvice")}</p>
-                <p className="mt-0.5 text-sm leading-relaxed font-medium text-wrap text-gray-700">
-                  {aiShortTerm}
+              {/* TL;DR — the one-sentence takeaway, shown up front so a
+                  user who just wants "what should I do" never has to open
+                  the detailed sections below. */}
+              <div className="mt-1.5 flex items-start gap-1.5">
+                <Sparkles size={15} className="mt-0.5 shrink-0 text-purple-500" />
+                <p className="text-sm leading-relaxed font-bold text-wrap text-gray-800">
+                  {aiTldr}
                 </p>
               </div>
-              <div className="mt-2.5">
-                <p className="text-xs font-semibold text-gray-500">{t("home.longTermAdvice")}</p>
-                <p className="mt-0.5 text-sm leading-relaxed font-medium text-wrap text-gray-700">
-                  {aiLongTerm}
-                </p>
-              </div>
-              {onRefreshAdvice && (
-                <button
-                  type="button"
-                  onClick={onRefreshAdvice}
-                  disabled={isRefreshingAdvice}
-                  className="text-brand-600 mt-2.5 text-xs font-semibold disabled:opacity-40"
-                >
-                  {isRefreshingAdvice ? t("home.refreshingAdvice") : t("home.getNewAdvice")}
-                </button>
+
+              <button
+                type="button"
+                onClick={() => setIsAdviceExpanded((prev) => !prev)}
+                className="text-brand-600 mt-2 flex items-center gap-1 text-xs font-semibold"
+              >
+                {isAdviceExpanded ? t("home.hideFullAdvice") : t("home.viewFullAdvice")}
+                {isAdviceExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+
+              {isAdviceExpanded && (
+                <>
+                  <div className="mt-2.5">
+                    <p className="text-xs font-semibold text-gray-500">{t("home.shortTermAdvice")}</p>
+                    <p className="mt-0.5 text-sm leading-relaxed font-medium text-wrap text-gray-700">
+                      {aiShortTerm}
+                    </p>
+                  </div>
+                  <div className="mt-2.5">
+                    <p className="text-xs font-semibold text-gray-500">{t("home.longTermAdvice")}</p>
+                    <p className="mt-0.5 text-sm leading-relaxed font-medium text-wrap text-gray-700">
+                      {aiLongTerm}
+                    </p>
+                  </div>
+                  {onRefreshAdvice && (
+                    <button
+                      type="button"
+                      onClick={onRefreshAdvice}
+                      disabled={isRefreshingAdvice}
+                      className="text-brand-600 mt-2.5 text-xs font-semibold disabled:opacity-40"
+                    >
+                      {isRefreshingAdvice ? t("home.refreshingAdvice") : t("home.getNewAdvice")}
+                    </button>
+                  )}
+                </>
               )}
             </>
           ) : (

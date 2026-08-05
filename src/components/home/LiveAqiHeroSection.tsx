@@ -47,6 +47,7 @@ export function LiveAqiHeroSection() {
         locationStatus={locationStatus}
         onRetryLocation={retryLocation}
         riskGroup={userProfile?.riskGroup}
+        aiTldr={advice.tldr}
         aiShortTerm={advice.shortTerm}
         aiLongTerm={advice.longTerm}
         onRefreshAdvice={currentUser ? advice.refresh : undefined}
