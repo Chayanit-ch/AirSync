@@ -15,14 +15,9 @@ function FollowedAreaCard({ area }: { area: AreaAirQualitySummary }) {
 
   return (
     <div
-      className={`relative overflow-hidden rounded-xl border-l-4 bg-white p-3 shadow-sm ${meta.borderClass}`}
+      className={`flex items-start justify-between gap-2 rounded-xl border-l-4 bg-white p-3 shadow-sm ${meta.borderClass}`}
     >
-      <AqiFaceIcon
-        severity={area.severity}
-        size={56}
-        className={`pointer-events-none absolute -top-2 -right-2 opacity-10 ${meta.textClass}`}
-      />
-      <div className="relative">
+      <div className="min-w-0">
         <p className="truncate text-xs text-gray-400">{area.areaName}</p>
         <p className={`mt-1 text-lg font-bold ${meta.textClass}`}>AQI {area.avgAqi}</p>
         <p className="text-xs text-gray-500">
@@ -30,6 +25,11 @@ function FollowedAreaCard({ area }: { area: AreaAirQualitySummary }) {
           {temperature != null ? `${temperature} ${t("common.degrees")}` : t("common.noData")}
         </p>
       </div>
+      {/* Small full-opacity badge — same "light tint bg + saturated icon"
+          treatment as the map's `StationBottomSheet`, not a watermark. */}
+      <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${meta.softBgClass}`}>
+        <AqiFaceIcon severity={area.severity} size={18} className={meta.textClass} />
+      </span>
     </div>
   );
 }

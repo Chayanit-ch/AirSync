@@ -94,6 +94,13 @@ const CORE_AIR_QUALITY_KEYWORDS = [
   "นโยบายด้านมลพิษ",
   "มาตรการควบคุมมลพิษ",
   "การปล่อยมลพิษ",
+  // Burning-ban / clean-air terms — genuinely pollution-specific (unlike
+  // LAW_KEYWORDS below), so these are safe to add straight to the hard gate:
+  // an article that only mentions "ห้ามเผา" and nothing else pollution-y
+  // still deserves to be admitted, same as one that only mentions "ฝุ่น".
+  "ห้ามเผา",
+  "เขตควบคุมการเผา",
+  "อากาศสะอาด",
 ];
 
 // Health-impact keywords — only checked once an article has already matched
@@ -113,7 +120,29 @@ const HEALTH_KEYWORDS = [
   "respiratory",
 ];
 
-type NewsCategory = "pm25" | "health";
+// Legal/regulatory keywords — same "sub-categorize only" rule as
+// HEALTH_KEYWORDS above, deliberately NOT part of the hard admit-gate. Most
+// of these ("กฎหมาย", "พ.ร.บ.", "ประกาศจังหวัด", "โทษปรับ",
+// "ราชกิจจานุเบกษา") are generic administrative/legal terms that show up in
+// totally unrelated news (labor law, traffic law, an unrelated provincial
+// announcement) — letting them admit an article on their own would
+// reintroduce exactly the over-broad-filtering problem
+// CORE_AIR_QUALITY_KEYWORDS was tightened to fix (see that const's comment).
+// Gating them behind an already-confirmed-relevant article means "laws" only
+// ever tags air-quality-related legal/regulatory news, never a random
+// unrelated legal headline that happens to share a word.
+const LAW_KEYWORDS = [
+  "กฎหมาย",
+  "ห้ามเผา",
+  "พ.ร.บ.",
+  "ประกาศจังหวัด",
+  "โทษปรับ",
+  "ราชกิจจานุเบกษา",
+  "เขตควบคุมการเผา",
+  "อากาศสะอาด",
+];
+
+type NewsCategory = "pm25" | "health" | "laws";
 
 interface NewsArticle {
   title: string;
@@ -148,6 +177,10 @@ function matchesAny(text: string, keywords: string[]): boolean {
 
 function classify(text: string): NewsCategory | null {
   if (!matchesAny(text, CORE_AIR_QUALITY_KEYWORDS)) return null;
+  // Checked before HEALTH_KEYWORDS: a burning-ban/announcement story that
+  // also happens to mention health effects is more useful to a reader
+  // filed under "laws" (actionable/regulatory) than under generic "health".
+  if (matchesAny(text, LAW_KEYWORDS)) return "laws";
   if (matchesAny(text, HEALTH_KEYWORDS)) return "health";
   return "pm25";
 }

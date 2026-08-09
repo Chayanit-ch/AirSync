@@ -9,7 +9,7 @@ interface NewsArticle {
   link: string;
   source: string;
   publishedAt: string | null;
-  category: "pm25" | "health";
+  category: "pm25" | "health" | "laws";
 }
 
 interface NewsResponse {

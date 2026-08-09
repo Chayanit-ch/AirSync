@@ -244,6 +244,31 @@ export interface KnowledgeArticle {
   isFeatured?: boolean;
 }
 
+/**
+ * A manually-curated, province-specific legal/regulatory notice. Firestore:
+ * `provincialRegulations/{provinceId}`, where `provinceId` is the exact
+ * `MonitoringStation.province` string (e.g. "สมุทรสาคร") — matched 1:1
+ * against what the rest of the app already shows, so content editors never
+ * have to invent or look up a separate slug/ID scheme.
+ *
+ * Managed ENTIRELY through the Firestore Console by a human who has
+ * verified the content against a real source, same as `knowledgeArticles`
+ * (see `scripts/seed-articles.ts`) — never written to by the app, and never
+ * generated or populated by AI. The app only ever reads this collection
+ * (see `useProvincialRegulation`); it is intentionally empty until someone
+ * manually adds a verified document.
+ */
+export interface ProvincialRegulation {
+  province: string;
+  title: string;
+  titleEn?: string;
+  content: string;
+  contentEn?: string;
+  sourceUrl: string;
+  /** ISO date string — when a human last verified this content against `sourceUrl`. */
+  verifiedDate?: string;
+}
+
 export type UserRole = "citizen" | "admin" | "authority";
 
 /**

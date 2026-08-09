@@ -1,11 +1,12 @@
 import { useTranslation } from "../../hooks/useTranslation";
 
-export type ArticleFilter = "all" | "pm25" | "health";
+export type ArticleFilter = "all" | "pm25" | "health" | "laws";
 
-const FILTERS: { id: ArticleFilter; key: "filterAll" | "filterPm25" | "filterHealth" }[] = [
+const FILTERS: { id: ArticleFilter; key: "filterAll" | "filterPm25" | "filterHealth" | "filterLaws" }[] = [
   { id: "all", key: "filterAll" },
   { id: "pm25", key: "filterPm25" },
   { id: "health", key: "filterHealth" },
+  { id: "laws", key: "filterLaws" },
 ];
 
 interface CategoryFilterProps {

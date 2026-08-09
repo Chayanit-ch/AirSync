@@ -4,7 +4,9 @@ import type { AreaAirQualitySummary, RiskGroup } from "../../types";
 import type { UserLocationStatus } from "../../hooks/useUserLocation";
 import { useTranslation } from "../../hooks/useTranslation";
 import { getPersonalizedRecommendation, resolveRiskGroup } from "../../utils/recommendation";
+import { AQI_SEVERITY_META } from "../../utils/aqi";
 import { AqiFaceIcon } from "../shared/AqiFaceIcon";
+import { DailyActivityChecklist } from "./DailyActivityChecklist";
 
 const HERO_GRADIENT: Record<AreaAirQualitySummary["severity"], string> = {
   good: "from-emerald-500 to-emerald-600",
@@ -59,19 +61,9 @@ export function AqiHeroCard({
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
       <div
-        className={`relative overflow-hidden bg-linear-to-br px-5 pt-4 pb-6 text-white ${HERO_GRADIENT[area.severity]}`}
+        className={`bg-linear-to-br px-5 pt-4 pb-6 text-white ${HERO_GRADIENT[area.severity]}`}
       >
-        {/* Large, low-opacity face icon reflecting the current severity —
-            purely decorative background texture, never a bright standalone
-            graphic and never allowed to compete with the text below (which
-            is lifted onto its own `relative z-10` stacking context so it
-            always paints on top regardless of this icon's DOM position). */}
-        <AqiFaceIcon
-          severity={area.severity}
-          size={190}
-          className="pointer-events-none absolute -right-8 -bottom-10 text-white/15"
-        />
-        <div className="relative z-10">
+        <div>
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-white/90">
               {t("home.airQualityIndex")}
@@ -80,10 +72,25 @@ export function AqiHeroCard({
               {area.areaName}
             </span>
           </div>
-          <p className="mt-1 text-6xl font-extrabold tracking-tight">
-            {area.avgAqi}
-          </p>
-          <p className="mt-1 text-lg font-semibold">{severityLabel}</p>
+          <div className="mt-1 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-6xl font-extrabold tracking-tight">
+                {area.avgAqi}
+              </p>
+              <p className="mt-1 text-lg font-semibold">{severityLabel}</p>
+            </div>
+            {/* Solid, high-contrast severity badge — deliberately NOT a
+                low-opacity background watermark (that made it too hard to
+                see at a glance): a filled circle in the severity's own true
+                color, ringed so it stands out even against a same-hue
+                gradient, sitting beside the number rather than behind it so
+                it can never obscure the AQI value or label. */}
+            <span
+              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ring-2 ring-white/50 ${AQI_SEVERITY_META[area.severity].bgClass}`}
+            >
+              <AqiFaceIcon severity={area.severity} size={38} className="text-white" />
+            </span>
+          </div>
 
           {outOfRange && (
             <div className="mt-3 flex items-start gap-1.5 rounded-lg bg-black/15 px-3 py-2 text-xs text-white/95">
@@ -197,6 +204,10 @@ export function AqiHeroCard({
               {t("home.riskGroupCta")}
             </p>
           )}
+        </div>
+
+        <div className="px-4 py-3">
+          <DailyActivityChecklist severity={area.severity} riskGroup={resolvedRiskGroup} />
         </div>
       </div>
     </div>
